@@ -9,6 +9,7 @@ import os
 import sys
 import time
 from datetime import datetime
+from pathlib import Path
 
 def load_json(path: str, default=None):
     try:
@@ -86,6 +87,12 @@ def build_prompt(analysis_path: str, lit_path: str) -> str:
 def call_deepseek(prompt: str) -> str:
     api_key = os.environ.get("DEEPSEEK_API_KEY", "")
     if not api_key:
+        env_path = Path.home() / ".hermes" / ".env"
+        if env_path.exists():
+            for line in env_path.read_text().splitlines():
+                if line.startswith("DEEPSEEK_API_KEY="):
+                    api_key = line.split("=", 1)[1].strip()
+    if not api_key:
         return "错误：未设置 DEEPSEEK_API_KEY"
 
     import requests
@@ -114,14 +121,27 @@ def call_deepseek(prompt: str) -> str:
 
 def main():
     import argparse
+    from pathlib import Path
     parser = argparse.ArgumentParser(description="文献解读")
-    parser.add_argument("--analysis", default="data/analysis_results.json",
-                        help="统计分析结果 JSON")
-    parser.add_argument("--lit", default="data/literature_results.json",
-                        help="文献检索结果 JSON")
-    parser.add_argument("--out", default="data/literature_interpretation.json",
-                        help="输出路径")
+    parser.add_argument("--analysis", default=None,
+                        help="analysis_results.json 路径")
+    parser.add_argument("--lit", default=None,
+                        help="literature_results.json 路径")
+    parser.add_argument("--out", default=None,
+                        help="输出 JSON 路径")
+    parser.add_argument("--patient-id", default=None, help="诊疗卡号，设置后自动推导路径")
     args = parser.parse_args()
+
+    wiki_data = Path.home() / "wiki" / "data"
+    if args.patient_id:
+        pdata = wiki_data / args.patient_id
+        args.analysis = args.analysis or str(pdata / "analysis_results.json")
+        args.lit = args.lit or str(pdata / "literature_results.json")
+        args.out = args.out or str(pdata / "literature_interpretation.json")
+    else:
+        args.analysis = args.analysis or str(wiki_data / "analysis_results.json")
+        args.lit = args.lit or str(wiki_data / "literature_results.json")
+        args.out = args.out or str(wiki_data / "literature_interpretation.json")
 
     print("构建 prompt...")
     prompt = build_prompt(args.analysis, args.lit)
