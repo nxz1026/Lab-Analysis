@@ -174,12 +174,18 @@ def search_strategy(strategy_name: str, retmax: int) -> dict:
 
 def main():
     import argparse
+    from pathlib import Path
     parser = argparse.ArgumentParser(description="PubMed 文献检索")
     parser.add_argument("--topic", default="all",
-                        help="检索主题 (inflammation|rdw_prognostic|procalcitonin_sepsis|crp_wbc_dissociation|chronic_pancreatitis|monocyte_inflammation|rdw_mortality|sepsis_gram_negative_positive|all)")
+                        help="检索主题：all（默认）/ inflammation / rdw_prognostic 等")
     parser.add_argument("--n", type=int, default=6, help="每策略返回 PMID 数")
-    parser.add_argument("--out", default="data/literature_results.json", help="输出 JSON 路径")
+    parser.add_argument("--patient-id", default=None, help="诊疗卡号，设置后默认输出到 data/{patient-id}/")
+    parser.add_argument("--out", default=None, help="输出 JSON 路径")
     args = parser.parse_args()
+
+    if args.patient_id:
+        default_out = Path.home() / "wiki" / "data" / args.patient_id / "literature_results.json"
+        args.out = args.out or str(default_out)
 
     all_topics = list(SEARCH_STRATEGIES.keys())
     topics = all_topics if args.topic == "all" else [args.topic]

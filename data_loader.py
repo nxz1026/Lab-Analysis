@@ -2,20 +2,32 @@
 # -*- coding: utf-8 -*-
 """
 data_loader.py
-读取所有 lab_report_*/metrics.md，提取数值写入 data/lab_metrics.csv（宽表）+ data/lab_metrics.json
+读取指定病人的 lab_report_*/metrics.md，提取数值写入 data/{patient_id}/lab_metrics.csv + lab_metrics.json
+
+用法：python data_loader.py --patient-id 513229198801040014
 """
 
 import re
 import csv
 import json
+import argparse
 from datetime import datetime
 from pathlib import Path
 
 WIKI_ROOT = Path.home() / "wiki"
-RAW_PAPERS = WIKI_ROOT / "raw" / "papers"
-OUTPUT_DIR = WIKI_ROOT / "data"
-OUTPUT_CSV = OUTPUT_DIR / "lab_metrics.csv"
-OUTPUT_JSON = OUTPUT_DIR / "lab_metrics.json"
+
+
+def build_paths(patient_id: str):
+    """根据 patient_id 构建路径字典。"""
+    raw_papers = WIKI_ROOT / "raw" / f"patient_{patient_id}" / "papers"
+    output_dir = WIKI_ROOT / "data" / patient_id
+    return {
+        "raw_papers": raw_papers,
+        "output_dir": output_dir,
+        "csv": output_dir / "lab_metrics.csv",
+        "json": output_dir / "lab_metrics.json",
+    }
+
 
 # 所有指标（顺序与表格列一致）
 ALL_METRICS = [
@@ -59,13 +71,13 @@ def extract_value(result_str: str):
     return float(m.group(1)) if m else None
 
 
-def load_reports():
+def load_reports(raw_papers: Path):
     """扫描所有报告目录，读取 metadata.md 和 metrics.md。"""
     reports = []
-    if not RAW_PAPERS.exists():
+    if not raw_papers.exists():
         return reports
 
-    for dir_path in sorted(RAW_PAPERS.glob("lab_report_*")):
+    for dir_path in sorted(raw_papers.glob("lab_report_*")):
         if not dir_path.is_dir():
             continue
 
@@ -75,80 +87,136 @@ def load_reports():
         if not meta_path.exists():
             continue
 
-        # 读取 metadata
+def parse_metadata_table(text: str) -> dict:
+    """解析 Markdown 表格格式的 metadata（| 字段 | 值 |）。"""
+    row = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line.startswith("|") or "---" in line or line.startswith("|字段"):
+            continue
+        parts = [p.strip() for p in line.split("|")]
+        if len(parts) >= 3 and parts[1]:
+            key = parts[1].strip()
+            val = parts[2].strip()
+            if key:
+                row[key] = val
+    return row
+
+
+def parse_metrics_yaml(text: str) -> dict:
+    """解析 metrics.md 中的 YAML 格式数据。"""
+    metrics = {}
+    in_metrics = False
+    for line in text.splitlines():
+        if re.match(r"^\s*metrics\s*:", line):
+            in_metrics = True
+            continue
+        if in_metrics and line.strip().startswith("- date:"):
+            continue
+        if in_metrics:
+            m = re.match(r"^\s+(\w+)\s*:\s*(.+)$", line)
+            if m:
+                key, val = m.group(1).strip(), m.group(2).strip().strip('"').strip("'")
+                if val and val.lower() != "null":
+                    try:
+                        metrics[key] = float(val)
+                    except ValueError:
+                        metrics[key] = val
+            elif line.strip() and not line.startswith(" ") and not line.startswith("-"):
+                in_metrics = False
+    return metrics
+
+
+def load_reports(raw_papers: Path):
+    """扫描所有报告目录，读取 metadata.md 和 metrics.md。"""
+    reports = []
+    if not raw_papers.exists():
+        return reports
+
+    for dir_path in sorted(raw_papers.glob("lab_report_*")):
+        if not dir_path.is_dir():
+            continue
+
+        meta_path = dir_path / "metadata.md"
+        metrics_path = dir_path / "metrics.md"
+
+        if not meta_path.exists():
+            continue
+
         meta_text = meta_path.read_text(encoding="utf-8")
+        meta = parse_metadata_table(meta_text)
 
-        date_m = re.search(r'report_date:\s*"?(\d{4}-\d{2}-\d{2})"?', meta_text)
-        report_date = date_m.group(1) if date_m else ""
+        report_date = meta.get("报告日期", "") or meta.get("date", "")
 
-        diag_m = re.search(r"primary_diagnosis:\s*(.+?)(?:\n|$)", meta_text)
-        diagnosis = diag_m.group(1).strip() if diag_m else ""
-
-        dept_m = re.search(r"department:\s*(.+?)(?:\n|$)", meta_text)
-        department = dept_m.group(1).strip() if dept_m else ""
-
-        physician_m = re.search(r"attending_physician:\s*(.+?)(?:\n|$)", meta_text)
-        physician = physician_m.group(1).strip() if physician_m else ""
-
-        visit_m = re.search(r"visit_type:\s*(.+?)(?:\n|$)", meta_text)
-        visit_type = visit_m.group(1).strip() if visit_m else ""
+        # 兼容表格格式的科室字段
+        department = meta.get("科室", "") or meta.get("department", "")
+        physician = meta.get("医生", "") or meta.get("physician", meta.get("送检医生", ""))
+        visit_type = meta.get("报告类型", "") or meta.get("type", "")
 
         is_inpatient = "住院" in department
 
-        # 读取 metrics
         row = {
             "report_id": dir_path.name,
             "report_date": report_date,
-            "diagnosis": diagnosis,
+            "diagnosis": meta.get("诊断", ""),
             "department": department,
             "physician": physician,
             "visit_type": visit_type,
             "is_inpatient": is_inpatient,
         }
 
-        metrics_text = ""
+        # 读取 metrics.yaml
+        metrics_data = {}
         if metrics_path.exists():
             metrics_text = metrics_path.read_text(encoding="utf-8")
+            metrics_data = parse_metrics_yaml(metrics_text)
 
-        # 按字符串长度从长到短排序，避免子串被短名先匹配
-        metrics_sorted = sorted(ALL_METRICS, key=lambda x: -len(x))
+        # 映射 metrics.md 中的字段名到标准名
+        METRIC_ALIASES = {
+            "hsCRP": "hs-CRP",
+            "CRP": "CRP",
+            "WBC": "WBC",
+            "RBC": "RBC",
+            "HGB": "HGB",
+            "HCT": "HCT",
+            "PLT": "PLT",
+            "PCT": "PCT",
+            "P_LCR": "P-LCR",
+            "MCV": "MCV",
+            "MCH": "MCH",
+            "MCHC": "MCHC",
+            "NEUT_percent": "NEUT%",
+            "NEUT_abs": "NEUT#",
+            "LYMPH_percent": "LYMPH%",
+            "LYMPH_abs": "LYMPH#",
+            "MONO_percent": "MONO%",
+            "MONO_abs": "MONO#",
+            "EO_percent": "EO%",
+            "EO_abs": "EO#",
+            "BASO_percent": "BASO%",
+            "BASO_abs": "BASO#",
+            "RDW_SD": "RDW-SD",
+            "RDW_CV": "RDW-CV",
+            "MPV": "MPV",
+            "PDW": "PDW",
+        }
 
-        for line in metrics_text.split("\n"):
-            if "|" not in line:
-                continue
-            parts = [p.strip() for p in line.split("|")]
-            if len(parts) < 6:
-                continue
-            # 在当前行匹配指标
-            for metric in metrics_sorted:
-                item_col = None
-                for i, p in enumerate(parts):
-                    # 精确匹配：指标名必须是该列的主要内容
-                    if p == metric or p.startswith(metric + "（") or p.startswith(metric + " "):
-                        item_col = i
-                        break
-                if item_col is None:
-                    continue
-                result_col = item_col + 1
-                if result_col >= len(parts):
-                    continue
-                result_str = parts[result_col]
-                # 跳过中文描述行
-                if re.search(r"[\u4e00-\u9fff]", result_str) and len(result_str) > 3:
-                    continue
-                val = extract_value(result_str)
-                # 判断状态（↑↓）
-                status = ""
-                for p in parts:
-                    if "↑" in p:
-                        status = "↑"
-                        break
-                    elif "↓" in p:
+        for alias, std_name in METRIC_ALIASES.items():
+            if alias in metrics_data:
+                val = metrics_data[alias]
+                row[std_name] = val
+                # 判断异常状态
+                ref = REF_RANGES.get(std_name)
+                if ref and isinstance(val, (int, float)):
+                    lo, hi = ref
+                    status = ""
+                    if val < lo:
                         status = "↓"
-                        break
-                row[metric] = val
-                row[f"{metric}_status"] = status
-                break  # 一个指标只取第一行
+                    elif val > hi:
+                        status = "↑"
+                    row[f"{std_name}_status"] = status
+                else:
+                    row[f"{std_name}_status"] = ""
 
         reports.append(row)
 
@@ -205,11 +273,19 @@ def to_json(reports, output_path):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="数据加载：读取检验报告，生成结构化数据")
+    parser.add_argument("--patient-id", required=True, help="诊疗卡号，如 513229198801040014")
+    args = parser.parse_args()
+
+    paths = build_paths(args.patient_id)
     print(f"[{datetime.now().isoformat()}] 数据加载开始...")
+    print(f"  病人: {args.patient_id}")
+    print(f"  原始数据: {paths['raw_papers']}")
+    print(f"  输出目录: {paths['output_dir']}")
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    paths["output_dir"].mkdir(parents=True, exist_ok=True)
 
-    reports = load_reports()
+    reports = load_reports(paths["raw_papers"])
     print(f"找到 {len(reports)} 份报告")
 
     if not reports:
@@ -219,8 +295,8 @@ def main():
     for r in reports:
         print(f"  {r['report_date']} | {r['diagnosis']}")
 
-    to_csv(reports, OUTPUT_CSV)
-    to_json(reports, OUTPUT_JSON)
+    to_csv(reports, paths["csv"])
+    to_json(reports, paths["json"])
 
     print(f"[{datetime.now().isoformat()}] 数据加载完成")
 

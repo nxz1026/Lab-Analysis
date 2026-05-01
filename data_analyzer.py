@@ -2,11 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 data_analyzer.py
-数据分析：对 lab_metrics.csv 进行统计分析和建模。
+对指定病人的 lab_metrics.csv 进行统计分析和建模，输出 analysis_results.json + 4张图。
+
+用法：python data_analyzer.py --patient-id 513229198801040014
 依赖：~/wiki/.venv/bin/python (pandas, numpy, scipy, scikit-learn)
 """
 
 import json
+import argparse
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -18,15 +21,20 @@ from pathlib import Path
 from datetime import datetime
 
 WIKI_ROOT = Path.home() / "wiki"
-DATA_DIR = WIKI_ROOT / "data"
-METRICS_CSV = DATA_DIR / "lab_metrics.csv"
-OUTPUT_JSON = DATA_DIR / "analysis_results.json"
 
-# 图表输出路径
-FIG_TREND    = DATA_DIR / "fig_01_trend_regression.png"    # ① 趋势回归图
-FIG_CORR     = DATA_DIR / "fig_02_correlation_heatmap.png" # ② 相关性热力图
-FIG_INFLA    = DATA_DIR / "fig_03_inflammation_status.png"  # ③ 炎症分期图
-FIG_ABNORMAL = DATA_DIR / "fig_04_abnormal_indicators.png"  # ④ 异常指标标注图
+
+def build_paths(patient_id: str):
+    """根据 patient_id 构建路径字典。"""
+    data_dir = WIKI_ROOT / "data" / patient_id
+    return {
+        "data_dir": data_dir,
+        "metrics_csv": data_dir / "lab_metrics.csv",
+        "output_json": data_dir / "analysis_results.json",
+        "fig_trend":    data_dir / "fig_01_trend_regression.png",
+        "fig_corr":     data_dir / "fig_02_correlation_heatmap.png",
+        "fig_infl":     data_dir / "fig_03_inflammation_status.png",
+        "fig_abnorm":   data_dir / "fig_04_abnormal_indicators.png",
+    }
 
 # 数值型指标
 NUMERIC_METRICS = [
@@ -71,7 +79,7 @@ def _save(fig, path: Path):
     print(f"  ✅ 已保存: {path.name}")
 
 
-def plot_trend_regression(df: pd.DataFrame, results: dict):
+def plot_trend_regression(df: pd.DataFrame, results: dict, output_path: Path):
     """① 趋势回归图：7个关键指标的时序折线 + 回归拟合线"""
     _setup_chinese()
     metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]
@@ -130,10 +138,10 @@ def plot_trend_regression(df: pd.DataFrame, results: dict):
 
     fig.suptitle("关键指标趋势回归分析", fontsize=14, fontweight="bold", y=1.01)
     plt.tight_layout()
-    _save(fig, FIG_TREND)
+    _save(fig, output_path)
 
 
-def plot_correlation_heatmap(df: pd.DataFrame):
+def plot_correlation_heatmap(df: pd.DataFrame, output_path: Path):
     """② 相关性热力图：8个关键指标的 Pearson 相关系数"""
     _setup_chinese()
     metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "PCT", "PLT"]
@@ -167,10 +175,10 @@ def plot_correlation_heatmap(df: pd.DataFrame):
 
     fig.suptitle("指标相关性热力图", fontsize=14, fontweight="bold", y=1.01)
     plt.tight_layout()
-    _save(fig, FIG_CORR)
+    _save(fig, output_path)
 
 
-def plot_inflammation_status(df: pd.DataFrame, results: dict):
+def plot_inflammation_status(df: pd.DataFrame, results: dict, output_path: Path):
     """③ 炎症分期柱状图：4次就诊的炎症状态颜色区分"""
     _setup_chinese()
     status_info = results.get("inflammation_classification", {})
@@ -213,10 +221,10 @@ def plot_inflammation_status(df: pd.DataFrame, results: dict):
                 ax.text(i, 1.1, f"hs-CRP\n{hs:.2f}", ha="center", va="bottom", fontsize=8, color="#2c3e50")
 
     plt.tight_layout()
-    _save(fig, FIG_INFLA)
+    _save(fig, output_path)
 
 
-def plot_abnormal_indicators(df: pd.DataFrame, results: dict):
+def plot_abnormal_indicators(df: pd.DataFrame, results: dict, output_path: Path):
     """④ 异常指标标注图：每次就诊各指标是否超出参考范围"""
     _setup_chinese()
     abnormal = results.get("abnormal_summary", {})
@@ -227,7 +235,7 @@ def plot_abnormal_indicators(df: pd.DataFrame, results: dict):
         ax.text(0.5, 0.5, "本次就诊无明显超出参考范围的指标",
                 ha="center", va="center", fontsize=12, color="#27ae60")
         ax.axis("off")
-        _save(fig, FIG_ABNORMAL)
+        _save(fig, output_path)
         return
 
     # 取所有异常指标名，按字母排序
@@ -266,7 +274,7 @@ def plot_abnormal_indicators(df: pd.DataFrame, results: dict):
     ax.legend(handles=legend_elements, loc="upper right", fontsize=9)
 
     plt.tight_layout()
-    _save(fig, FIG_ABNORMAL)
+    _save(fig, output_path)
 
 
 # ────────────────────────────────────────────────────────────────
@@ -357,15 +365,17 @@ def descriptive_stats(series: pd.Series) -> dict:
     }
 
 
-def run():
+def run(patient_id: str):
+    paths = build_paths(patient_id)
     print(f"[{datetime.now().isoformat()}] 开始数据分析...")
+    print(f"  病人: {patient_id}")
 
-    if not METRICS_CSV.exists():
-        print(f"找不到数据文件: {METRICS_CSV}")
-        print("请先运行 data_loader.py")
+    if not paths["metrics_csv"].exists():
+        print(f"找不到数据文件: {paths['metrics_csv']}")
+        print("请先运行 data_loader.py --patient-id " + patient_id)
         return
 
-    df = pd.read_csv(METRICS_CSV)
+    df = pd.read_csv(paths["metrics_csv"])
     df["report_date"] = pd.to_datetime(df["report_date"])
     df = df.sort_values("report_date").reset_index(drop=True)
 
@@ -443,21 +453,25 @@ def run():
     print(f"异常指标: {list(abnormal_summary.keys())}")
 
     # ── 保存 JSON ────────────────────────────────────────────
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
+    paths["data_dir"].mkdir(parents=True, exist_ok=True)
+    with open(paths["output_json"], "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-    print(f"JSON 已保存: {OUTPUT_JSON}")
+    print(f"JSON 已保存: {paths['output_json']}")
 
     # ── 画图 ─────────────────────────────────────────────────
     print("\n📊 开始绘图...")
-    plot_trend_regression(df, results)
-    plot_correlation_heatmap(df)
-    plot_inflammation_status(df, results)
-    plot_abnormal_indicators(df, results)
+    plot_trend_regression(df, results, paths["fig_trend"])
+    plot_correlation_heatmap(df, paths["fig_corr"])
+    plot_inflammation_status(df, results, paths["fig_infl"])
+    plot_abnormal_indicators(df, results, paths["fig_abnorm"])
 
     print(f"[{datetime.now().isoformat()}] 数据分析完成")
     return results
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+    parser = argparse.ArgumentParser(description="统计分析：生成分析结果 + 4类图表")
+    parser.add_argument("--patient-id", required=True, help="诊疗卡号，如 513229198801040014")
+    args = parser.parse_args()
+    run(args.patient_id)
