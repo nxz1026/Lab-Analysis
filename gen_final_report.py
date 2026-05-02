@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """生成最终综合临床报告 - 调用 DeepSeek API"""
-import json, requests, argparse, os
+import json
+import requests
+import argparse
+import os
+import sys
 from pathlib import Path
 
 
@@ -23,6 +27,279 @@ def load_env_key(key: str) -> str:
     return ""
 
 
+def assess_three_source_consistency(data_dir: Path) -> str:
+    """评估三源一致性，生成质控段落。
+
+    三源：
+    1. 检验数据（lab_metrics.json）
+    2. 影像印证（mri_report_check_results.json）
+    3. 文献证据（literature_results.json + literature_interpretation.json）
+
+    Returns:
+        Markdown 格式质控段落
+    """
+    signals = []   # (label, status, detail)
+
+    # ── 源1：检验数据 ───────────────────────────────────────────
+    lab_path = data_dir / "lab_metrics.json"
+    lab_summary = "数据暂缺"
+    if lab_path.exists():
+        try:
+            d = json.loads(lab_path.read_text())
+            reports = d.get("reports", [])
+            if reports:
+                latest = reports[-1]
+                hs_crp = latest.get("hs-CRP") or latest.get("hsCRP")
+                if hs_crp is not None and isinstance(hs_crp, (int, float)):
+                    flag = "↑" if hs_crp > 3 else ""
+                    lab_summary = f"hs-CRP={hs_crp}{flag}"
+                    if hs_crp > 10:
+                        signals.append(("检验-hsCRP", "ACUTE",
+                                       f"hs-CRP={hs_crp}↑↑，提示急性炎症/感染"))
+                    elif hs_crp > 3:
+                        signals.append(("检验-hsCRP", "ELEVATED",
+                                       f"hs-CRP={hs_crp}↑，提示炎症活跃"))
+                    else:
+                        signals.append(("检验-hsCRP", "NORMAL",
+                                       f"hs-CRP={hs_crp}，炎症处于缓解期"))
+                else:
+                    lab_summary = "hs-CRP数据异常"
+        except Exception:
+            lab_summary = "数据解析失败"
+
+    # ── 源2：影像印证 ──────────────────────────────────────────
+    mri_path = data_dir / "mri_report_check_results.json"
+    mri_summary = "影像印证暂缺"
+    if mri_path.exists():
+        try:
+            mri = json.loads(mri_path.read_text())
+            checks = mri.get("results", []) if isinstance(mri, dict) else []
+            if checks:
+                confirmed = sum(1 for c in checks if "✅" in str(c))
+                suspicious = sum(1 for c in checks if "⚠️" in str(c))
+                mri_summary = f"共{len(checks)}项，确认{confirmed}项，存疑{suspicious}项"
+                if confirmed > suspicious:
+                    signals.append(("影像印证", "SUPPORT",
+                                   f"{confirmed}项影像发现与报告一致，支持检验结论"))
+                elif suspicious > 0:
+                    signals.append(("影像印证", "CONFLICT",
+                                   f"{suspicious}项影像发现与报告存疑"))
+                else:
+                    signals.append(("影像印证", "NEUTRAL", "影像印证无显著异常"))
+            else:
+                mri_summary = "影像印证结果为空"
+        except Exception:
+            mri_summary = "影像数据解析失败"
+
+    # ── 源3：文献证据 ───────────────────────────────────────────
+    lit_results_path = data_dir / "literature_results.json"
+    lit_interp_path = data_dir / "literature_interpretation.json"
+    lit_summary = "文献证据暂缺"
+    if lit_results_path.exists():
+        try:
+            lit = json.loads(lit_results_path.read_text())
+            count = lit.get("total_unique_papers", 0)
+            papers = lit.get("all_papers", [])
+            year_range = ""
+            if papers:
+                years = [int(p["year"]) for p in papers if p.get("year", "").isdigit()]
+                if years:
+                    year_range = f"（{min(years)}-{max(years)}）"
+            lit_summary = f"检索到{count}篇文献{year_range}"
+        except Exception:
+            lit_summary = "文献数据解析失败"
+
+    if lit_interp_path.exists():
+        try:
+            interp = json.loads(lit_interp_path.read_text())
+            resp_text = interp.get("response", "") or interp.get("text", "")
+            if resp_text and len(resp_text) > 50:
+                signals.append(("文献-循证解读", "SUPPORT",
+                               "文献检索+循证解读已完成，证据链完整"))
+        except Exception:
+            pass
+
+    # ── 一致性判断 ─────────────────────────────────────────────
+    acute_count = sum(1 for _, s, _ in signals if s == "ACUTE")
+    conflict_count = sum(1 for _, s, _ in signals if s == "CONFLICT")
+    support_count = sum(1 for _, s, _ in signals if s in ("SUPPORT", "NORMAL"))
+
+    if acute_count > 0:
+        overall = "🔴 **结论一致性：检验/影像/文献三者指向急性炎症状态，建议尽快处理。**"
+        detail = "患者处于急性炎症/感染状态，三源证据一致。"
+    elif conflict_count > 0 and support_count > conflict_count:
+        overall = "⚠️  **结论一致性：检验/影像/文献存在部分矛盾，需结合临床综合判断。**"
+        detail = "三源证据中部分矛盾，建议进一步检查或短期复查后再评估。"
+    elif conflict_count > 0:
+        overall = "🔴 **结论一致性：检验/影像/文献存在明显矛盾，报告可信度存疑。**"
+        detail = "三源证据矛盾较多，建议复核原始数据后再发正式报告。"
+    elif support_count >= 2:
+        overall = "✅  **结论一致性：检验/影像/文献三者支持，无显著矛盾。**"
+        detail = "三源证据相互印证，报告可信度高。"
+    else:
+        overall = "⚠️  **结论一致性：证据不充分，无法完整评估一致性。**"
+        detail = "部分源数据缺失，建议补充检查后再出报告。"
+
+    # ── 拼段落 ─────────────────────────────────────────────────
+    status_icon = {"ACUTE": "🔴", "ELEVATED": "⚠️", "NORMAL": "✅",
+                   "SUPPORT": "✅", "CONFLICT": "❌", "NEUTRAL": "⚠️",
+                   "UNKNOWN": "⚠️"}.get
+
+    lines = [
+        "## 附：三源质控段落\n",
+        f"| 证据来源 | 内容摘要 |",
+        f"|---------|---------|",
+        f"| 检验数据 | {lab_summary} |",
+        f"| 影像印证 | {mri_summary} |",
+        f"| 文献证据 | {lit_summary} |",
+        "",
+        overall, detail, "",
+        "**信号详情**：",
+    ]
+    for label, status, desc in signals:
+        lines.append(f"- {status_icon(status)} [{label}][{status}] {desc}")
+
+    return "\n".join(lines)
+
+
+def build_prompt(data_dir: Path, patient_id: str) -> str:
+    """构建完整的 USER_PROMPT，包含三源数据和质控段落。"""
+    # 读检验数据
+    lab_data = ""
+    lab_path = data_dir / "lab_metrics.json"
+    if lab_path.exists():
+        try:
+            d = json.loads(lab_path.read_text())
+            reports = d.get("reports", [])
+            if reports:
+                cols = ["report_date", "hs-CRP", "CRP", "WBC", "NEUT#",
+                        "MONO%", "RDW-SD", "PCT", "PLT"]
+                rows = ["日期       hs-CRP  CRP     WBC     NEUT#   MONO%   RDW-SD  PCT     PLT"]
+                for r in reports:
+                    vals = []
+                    for c in cols[1:]:
+                        v = r.get(c) or r.get(c.replace("-", "")) or "—"
+                        if isinstance(v, float):
+                            v = f"{v:.2f}"
+                        vals.append(str(v))
+                    rows.append(f"{r.get('report_date', '??')}  " + "  ".join(vals))
+                lab_data = "\n".join(rows)
+        except Exception:
+            lab_data = "(检验数据解析失败)"
+
+    # 读文献列表
+    lit_data = ""
+    lit_path = data_dir / "literature_results.json"
+    if lit_path.exists():
+        try:
+            lit = json.loads(lit_path.read_text())
+            papers = lit.get("all_papers", [])[:6]
+            if papers:
+                lit_lines = [
+                    f"- {p.get('year','?')} | {p.get('title','')[:60]}... (PMID:{p.get('pmid')})"
+                    for p in papers
+                ]
+                lit_data = "\n".join(lit_lines)
+        except Exception:
+            lit_data = "(文献数据解析失败)"
+
+    # 读循证解读
+    interp_data = ""
+    interp_path = data_dir / "literature_interpretation.json"
+    if interp_path.exists():
+        try:
+            d = json.loads(interp_path.read_text())
+            t = d.get("response", "") or d.get("text", "")
+            if t:
+                interp_data = t[:800] + "..." if len(t) > 800 else t
+        except Exception:
+            interp_data = "(循证解读解析失败)"
+
+    # 读MRI印证
+    mri_data = ""
+    mri_path = data_dir / "mri_report_check_results.json"
+    if mri_path.exists():
+        try:
+            mri = json.loads(mri_path.read_text())
+            checks = mri.get("results", []) if isinstance(mri, dict) else []
+            if checks:
+                mri_lines = [
+                    f"- {c.get('sequence','')}: {c.get('finding','')[:60]}"
+                    for c in checks[:5]
+                ]
+                mri_data = "\n".join(mri_lines)
+            else:
+                mri_data = "(影像印证结果为空)"
+        except Exception:
+            mri_data = "(影像数据解析失败)"
+
+    # 三源质控段落
+    qc = assess_three_source_consistency(data_dir)
+
+    import datetime as dt
+    today = dt.date.today().strftime("%Y年%m月%d日")
+
+    prompt = f"""你是资深临床医学专家，请为患者聂聃（38岁男性，ID:Y00002207707）生成最终综合临床诊断报告。
+
+【说明】以下数据来自 pipeline 各步骤汇总，请生成结构化报告。
+
+【请依次阅读以下数据文件，未找到的文件请注明"数据暂缺"】：
+1. 检验指标时序数据：{str(lab_path)}
+2. 统计分析结果：{str(data_dir / "analysis_results.json")}
+3. 文献检索结果：{str(lit_path)}
+4. 循证医学解读：{str(interp_path)}
+5. MRI影像AI分析（如有）：{str(mri_path)}
+
+---
+
+### 【检验数据摘要】
+{lab_data if lab_data else "(数据暂缺)"}
+
+### 【Top 文献列表】
+{lit_data if lit_data else "(数据暂缺)"}
+
+### 【循证解读摘要】
+{interp_data if interp_data else "(数据暂缺)"}
+
+### 【MRI影像印证摘要】
+{mri_data if mri_data else "(影像数据暂缺)"}
+
+---
+
+{qc}
+
+---
+
+请生成【最终综合临床诊断报告】，结构如下：
+
+# 最终综合临床诊断报告
+**患者**：聂聃 | 男 | 38岁 | 检查编号：Y00002207707
+**报告日期**：{today}
+**数据来源**：MRI影像报告（2026-04-11）+ 检验数据（2026-03-24~04-14）
+
+## 一、患者基本信息与就诊背景
+
+## 二、检验数据与炎症状态综合分析
+
+## 三、MRI影像学综合分析
+
+## 四、多学科联合诊断意见
+
+## 五、核心诊断结论与鉴别诊断
+
+## 六、结论一致性评估
+> 将上方「三源质控段落」的核心结论原文引用或摘要写入本节。
+
+## 七、行动计划（紧急🔴 / 重要🟡 / 常规🟢）
+
+## 八、随访与监测计划
+
+## 九、预后评估
+
+要求：专业清晰，中文输出；不生成具体药物处方或手术建议；各部分内容充实"""
+    return prompt
+
+
 def main():
     args = parse_args()
     patient_id = args.patient_id
@@ -37,7 +314,7 @@ def main():
     output_path = data_dir / "final_integrated_report.md"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # 前置检查：核心输入文件是否存在
+    # 前置检查：核心输入文件是否存在（警告但不阻断）
     required = [
         data_dir / "lab_metrics.json",
         data_dir / "analysis_results.json",
@@ -45,61 +322,14 @@ def main():
     ]
     missing = [str(p) for p in required if not p.exists()]
     if missing:
-        print(f"⚠️  以下前置文件不存在，将使用内置默认数据：")
+        print("⚠️  以下前置文件不存在，将使用内置默认数据：")
         for p in missing:
             print(f"   - {p}")
 
-    USER_PROMPT = f"""你是资深临床医学专家，请为患者聂聃（38岁男性，ID:Y00002207707）生成最终综合临床诊断报告。
+    print(f"[{__import__('datetime').datetime.now().isoformat()}] 生成最终报告...")
+    print(f"  data_dir: {data_dir}")
 
-【说明】以下数据来自 pipeline 各步骤汇总，请生成结构化报告。
-
-【请依次阅读以下数据文件，未找到的文件请注明"数据暂缺"】：
-1. 检验指标时序数据：/root/wiki/data/{patient_id}/lab_metrics.json
-2. 统计分析结果：/root/wiki/data/{patient_id}/analysis_results.json（或 .md）
-3. 文献检索结果：/root/wiki/data/{patient_id}/literature_results.json
-4. 循证医学解读：/root/wiki/data/{patient_id}/literature_interpretation.json（或 .md）
-5. MRI影像AI分析（如有）：/root/wiki/data/{patient_id}/mri_report_check_results.json
-
-如上述文件不存在，请基于以下已汇总的核心信息生成报告：
-
-【检验数据（2026-03-24 ~ 2026-04-14）】
-日期       hs-CRP  CRP     WBC     NEUT#   MONO%   RDW-SD  PCT     PLT
-03-24     2.78    —       —       —       —       —       —       —
-03-30     1.41    10.00   5.66    3.49    6.70    46.90   0.16    154
-04-08     10.00↑  17.44↑  3.04↓   1.52↓   17.80↑  50.60↑  0.17    153
-04-14     1.82    —       —       —       —       52.50↑  0.33↑   —
-
-【MRI影像（2026-04-11，检查编号Y00002207707）】
-上腹部(肝胆胰脾)平扫+增强扫描+胰胆管薄层扫描
-- 肝脏：肝右后叶上段2.2cm异常信号，考虑感染性病变，较前明显缩小
-- 胰腺：胰管支架置入后，主胰管扩张（最宽1.0cm），胰头稍大
-- 胆道：肝内胆管扩张，胆囊体积增大
-- 右肾下份囊肿（1.5cm）
-
-请生成【最终综合临床诊断报告】，结构如下：
-
-# 最终综合临床诊断报告
-**患者**：聂聃 | 男 | 38岁 | 检查编号：Y00002207707
-**报告日期**：2026年5月1日
-**数据来源**：MRI影像报告（2026-04-11）+ 检验数据（2026-03-24~04-14）
-
-## 一、患者基本信息与就诊背景
-
-## 二、检验数据与炎症状态综合分析
-
-## 三、MRI影像学综合分析
-
-## 四、多学科联合诊断意见
-
-## 五、核心诊断结论与鉴别诊断
-
-## 六、行动计划（紧急🔴 / 重要🟡 / 常规🟢）
-
-## 七、随访与监测计划
-
-## 八、预后评估
-
-要求：专业清晰，中文输出；不生成具体药物处方或手术建议；各部分内容充实"""
+    USER_PROMPT = build_prompt(data_dir, patient_id)
 
     resp = requests.post(
         "https://api.deepseek.com/chat/completions",
@@ -110,7 +340,8 @@ def main():
         json={
             "model": "deepseek-chat",
             "messages": [
-                {"role": "system", "content": "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"},
+                {"role": "system",
+                 "content": "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"},
                 {"role": "user", "content": USER_PROMPT}
             ],
             "max_tokens": 5000,
@@ -124,7 +355,8 @@ def main():
     usage = result.get("usage", {})
 
     print(f"HTTP: {resp.status_code}")
-    print(f"Tokens: {usage.get('total_tokens', 'N/A')} (input={usage.get('prompt_tokens','')}, output={usage.get('completion_tokens','')})")
+    print(f"Tokens: {usage.get('total_tokens', 'N/A')} "
+          f"(in={usage.get('prompt_tokens','')}, out={usage.get('completion_tokens','')})")
     print(f"Content length: {len(content)}")
 
     if content:

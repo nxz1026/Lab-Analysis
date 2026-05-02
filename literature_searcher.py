@@ -59,8 +59,20 @@ SEARCH_STRATEGIES = {
 }
 
 
-def esearch(query: str, retmax: int = 8, sort: str = "relevance") -> dict:
-    """esearch: 搜索 PMID 列表"""
+def esearch(query: str, retmax: int = 8, sort: str = "relevance",
+             date_filter: str = "5") -> dict:
+    """esearch: 搜索 PMID 列表
+
+    Args:
+        date_filter: 年份数，默认5即近5年。设为0则不过滤。
+    """
+    import urllib.parse
+    # 近 N 年过滤：Date - Publication 字段限制
+    if date_filter and int(date_filter) > 0:
+        n_years_ago = datetime.now().year - int(date_filter)
+        date_clause = f' AND ("{n_years_ago}"[Date - Publication] : "2099"[Date - Publication])'
+        query = query + date_clause
+
     params = urllib.parse.urlencode({
         "db": "pubmed",
         "term": query,
@@ -92,7 +104,10 @@ def efetch(pmids: list[str]) -> str:
 
 
 def parse_papers(raw_text: str) -> list[dict]:
-    """解析 efetch 原始文本为结构化论文列表"""
+    """解析 efetch 原始文本为结构化论文列表
+
+    提取字段：pmid, title, abstract, year, journal
+    """
     blocks = re.split(r'\n(?=PMID:)', raw_text)
     papers = []
     for block in blocks:
@@ -104,6 +119,25 @@ def parse_papers(raw_text: str) -> list[dict]:
             continue
         pmid = pmid_m.group(1)
         lines = block.split('\n')
+
+        # 提取年份（格式：2024 Jan; / 2024 Mar 15; / 2024;）
+        year = ""
+        year_m = re.search(r'\b(19|20)\d{2}\b', block)
+        if year_m:
+            year = year_m.group(0)
+
+        # 提取期刊名（DOI 行之前的第一行通常是期刊缩写）
+        journal = ""
+        doi_idx = -1
+        for i, line in enumerate(lines):
+            if re.match(r'^(doi:|DOI:)', line.strip()):
+                doi_idx = i
+                break
+        if doi_idx > 3:
+            # 取 DOI 行之前、非标题的那一行
+            candidate = lines[doi_idx - 1].strip().rstrip('.').rstrip(';').strip()
+            if 3 < len(candidate) < 100 and not candidate.startswith('Copyright'):
+                journal = candidate
 
         # 提取标题
         title = ""
@@ -138,19 +172,22 @@ def parse_papers(raw_text: str) -> list[dict]:
                 if len(ls) > 10:
                     abstract_parts.append(ls)
         abstract = ' '.join(abstract_parts)[:1000]
-        papers.append({"pmid": pmid, "title": title, "abstract": abstract})
+        papers.append({
+            "pmid": pmid, "title": title, "abstract": abstract,
+            "year": year, "journal": journal,
+        })
     return papers
 
 
-def search_strategy(strategy_name: str, retmax: int) -> dict:
+def search_strategy(strategy_name: str, retmax: int, date_filter: str = "5") -> dict:
     """执行单个检索策略"""
     if strategy_name not in SEARCH_STRATEGIES:
         raise ValueError(f"Unknown strategy: {strategy_name}")
 
     cfg = SEARCH_STRATEGIES[strategy_name]
-    print(f"  Searching [{strategy_name}]: {cfg['query']}")
+    print(f"  Searching [{strategy_name}]: {cfg['query']}  [近{date_filter}年]")
 
-    result = esearch(cfg["query"], retmax=retmax, sort=cfg["sort"])
+    result = esearch(cfg["query"], retmax=retmax, sort=cfg["sort"], date_filter=date_filter)
     count = int(result.get("esearchresult", {}).get("count", 0))
     pmids = result["esearchresult"]["idlist"]
 
@@ -179,6 +216,8 @@ def main():
     parser.add_argument("--topic", default="all",
                         help="检索主题：all（默认）/ inflammation / rdw_prognostic 等")
     parser.add_argument("--n", type=int, default=6, help="每策略返回 PMID 数")
+    parser.add_argument("--years", type=int, default=5,
+                        help="限制近 N 年内的文献（默认5，设为0则不过滤）")
     parser.add_argument("--patient-id", default=None, help="诊疗卡号，设置后默认输出到 data/{patient-id}/")
     parser.add_argument("--out", default=None, help="输出 JSON 路径")
     args = parser.parse_args()
@@ -202,8 +241,9 @@ def main():
         "all_papers": [],
     }
 
+    date_filter = str(args.years)
     for topic in topics:
-        sr = search_strategy(topic, retmax=args.n)
+        sr = search_strategy(topic, retmax=args.n, date_filter=date_filter)
         results["searches"].append(sr)
         results["all_papers"].extend(sr["papers"])
 
