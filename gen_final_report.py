@@ -75,9 +75,9 @@ def assess_three_source_consistency(data_dir: Path) -> str:
             mri = json.loads(mri_path.read_text())
             checks = mri.get("results", []) if isinstance(mri, dict) else []
             if checks:
-                confirmed = sum(1 for c in checks if "✅" in str(c))
-                suspicious = sum(1 for c in checks if "⚠️" in str(c))
-                mri_summary = f"共{len(checks)}项，确认{confirmed}项，存疑{suspicious}项"
+                confirmed = sum(1 for c in checks if c.get("status") == "success")
+                suspicious = sum(1 for c in checks if c.get("status") == "partial")
+                mri_summary = f"共{len(checks)}项，成功{confirmed}项，存疑{suspicious}项"
                 if confirmed > suspicious:
                     signals.append(("影像印证", "SUPPORT",
                                    f"{confirmed}项影像发现与报告一致，支持检验结论"))
@@ -224,7 +224,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
             checks = mri.get("results", []) if isinstance(mri, dict) else []
             if checks:
                 mri_lines = [
-                    f"- {c.get('sequence','')}: {c.get('finding','')[:60]}"
+                    f"- {c.get('seq_name','')}: {c.get('analysis', [{}])[0].get('text','')[:60]}"
                     for c in checks[:5]
                 ]
                 mri_data = "\n".join(mri_lines)
