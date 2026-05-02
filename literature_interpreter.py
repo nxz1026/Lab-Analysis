@@ -168,7 +168,13 @@ def main():
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
+    # 同时写人类可读的 Markdown 版本
+    md_path = Path(args.out).with_suffix(".md")
+    md_content = f"# 循证医学解读报告\n\n**生成时间**: {output['generated']}\n**模型**: {output['model']}\n\n---\n\n{response}\n"
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write(md_content)
     print(f"\n✅ 文献解读完成 → {args.out}")
+    print(f"📄 Markdown 已保存: {md_path}")
     print("\n" + "="*60)
     print(response)
     print("="*60)
