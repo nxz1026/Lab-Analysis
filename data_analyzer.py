@@ -461,6 +461,51 @@ def run(patient_id: str):
         json.dump(results, f, ensure_ascii=False, indent=2)
     print(f"JSON 已保存: {paths['output_json']}")
 
+    # ── 生成人类可读 Markdown 报告 ──────────────────────────
+    md_lines = ["# 统计分析报告\n"]
+    md_lines.append(f"**患者**: {args.patient_id}  **报告数**: {results['n_reports']}  **日期范围**: {results['date_range']}\n")
+
+    # 炎症分期
+    infl = results.get("inflammation_classification", {})
+    labels = infl.get("labels", []) if isinstance(infl, dict) else []
+    dates = infl.get("report_dates", []) if isinstance(infl, dict) else []
+    emoji_map = {"急性期":"🔴","过渡期":"🟡","缓解期":"🟢"}
+    md_lines.append("## 炎症分期\n")
+    for date, cls in zip(dates, labels):
+        emoji = emoji_map.get(cls, "⚪")
+        md_lines.append(f"- {date}: {emoji} {cls}\n")
+
+    # 异常指标
+    md_lines.append("\n## 异常指标\n")
+    for metric, info in results["abnormal_summary"].items():
+        n = info.get("n_abnormal",0)
+        dates = info.get("abnormal_dates",[])
+        ref = info.get("ref_range","?")
+        md_lines.append(f"- **{metric}**: 异常 {n} 次（{', '.join(dates)}），参考区间 {ref}\n")
+
+    # 回归趋势
+    md_lines.append("\n## 指标趋势（线性回归）\n")
+    for metric, reg in results.get("linear_regression",{}).items():
+        slope = reg.get("slope",0)
+        r2 = reg.get("r_squared",0)
+        trend = reg.get("trend","平稳")
+        arrow = "↑" if slope>0 else "↓" if slope<0 else "→"
+        md_lines.append(f"- {metric}: slope={slope:.4f}, R²={r2:.3f}, {arrow} {trend}\n")
+
+    # 强相关对
+    md_lines.append("\n## 强相关性（|r| ≥ 0.9）\n")
+    corr = results.get("correlation_matrix",{})
+    strong = [(p,r) for p,r in corr.items() if isinstance(r,(int,float)) and abs(r)>=0.9]
+    strong.sort(key=lambda x:-abs(x[1]))
+    for pair, r in strong:
+        sign = "正" if r>0 else "负"
+        md_lines.append(f"- {pair}: r={r:.3f}（{sign}相关）\n")
+
+    md_report_path = paths["data_dir"] / "analysis_results_report.md"
+    with open(md_report_path, "w", encoding="utf-8") as f:
+        f.writelines(md_lines)
+    print(f"Markdown 已保存: {md_report_path}")
+
     # ── 画图 ─────────────────────────────────────────────────
     print("\n📊 开始绘图...")
     plot_trend_regression(df, results, paths["fig_trend"])
