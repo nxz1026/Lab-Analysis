@@ -1,203 +1,95 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-飞书云盘上传脚本 — Pipeline 最终步骤
-在「检验AI分析」下创建当天日期文件夹，建立三个子文件夹，上传所有分析结果
-
-飞书云盘结构：
-P1PIfbUOIll6Mrd9acnc81amnzh（父文件夹「检验AI分析」）
-└── {今天日期}/          ← 当天年月日文件夹
-    ├── 原始数据/          ← 检验+影像原始数据
-    ├── 文献参考/          ← 文献检索结果
-    ├── 中间结果/          ← 循证解读
-    └── Final_report.md    ← 最终综合报告（根目录）
-"""
-
-import subprocess
-import json
-import os
-import argparse
+"""飞书云盘上传 - Pipeline最终步骤"""
+import subprocess, json, argparse
 from pathlib import Path
 from datetime import date
 
-# ============ 配置 ============
+WIKI = Path.home() / "wiki"
 TODAY = date.today().strftime("%Y-%m-%d")
-BASE_DIR = Path("/root/wiki")
+PARENT = "P1PIfbUOIll6Mrd9acnc81amnzh"  # 检验AI分析
+SUBFOLDERS = ["原始数据", "文献参考", "中间结果", "统计结果"]
 
 
-def build_paths(patient_id: str):
-    # 实际数据路径：data/{patient_id}（无 patient_ 前缀）
-    data_dir = BASE_DIR / "data" / patient_id
-    return {
-        "data": data_dir,
-    }
+def run(cmd, cwd=None):
+    r = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
+    if r.returncode != 0: print(f"  ❌ {' '.join(cmd)}: {r.stderr[:100]}")
+    return r.stdout.strip()
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="飞书上云 - Pipeline最终步骤")
-    parser.add_argument("--patient-id", required=True, help="病人诊疗卡号")
-    return parser.parse_args()
+def run_json(cmd):
+    out = run(cmd + ["--format", "json"] if "--format" not in cmd else cmd)
+    try: return json.loads(out)
+    except: print(f"  ❌ JSON解析失败: {out[:100]}"); return {}
 
 
-# 四个子文件夹名称（按此顺序创建）
-SUBFOLDER_NAMES = ["原始数据", "文献参考", "中间结果", "统计结果"]
-
-# 父文件夹 token（检验AI分析）
-PARENT_FOLDER_TOKEN = "P1PIfbUOIll6Mrd9acnc81amnzh"
-
-
-def run(cmd: list[str], cwd: str = None) -> str:
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
-    if result.returncode != 0:
-        print(f"  ❌ 命令失败: {' '.join(cmd)}")
-        print(f"     stderr: {result.stderr[:200]}")
-    return result.stdout.strip()
-
-
-def run_json(cmd: list[str]) -> dict:
-    """以 JSON 格式运行 lark-cli 命令，返回解析后的 dict"""
-    # lark-cli 默认输出是 table/json，通过 --format json 强制指定
-    if "--format" not in cmd:
-        cmd = cmd + ["--format", "json"]
-    out = run(cmd)
-    try:
-        return json.loads(out)
-    except json.JSONDecodeError:
-        print(f"  ❌ JSON解析失败: {out[:200]}")
-        return {}
-
-
-def create_folder(name: str, folder_token: str) -> str | None:
-    """创建文件夹，返回 folder_token（已存在也返回 token）"""
-    # 先查列表，看是否已存在
-    data = run_json([
-        "lark-cli", "drive", "files", "list",
-        "--params", json.dumps({"folder_token": folder_token}),
-    ])
+def create_folder(name, parent_token):
+    data = run_json(["lark-cli", "drive", "files", "list", "--params", json.dumps({"folder_token": parent_token})])
     for f in data.get("data", {}).get("files", []):
         if f.get("name") == name:
-            print(f"  ℹ️  文件夹已存在: {name} → token={f['token']}")
+            print(f"  ℹ️  已存在: {name} → {f['token']}")
             return f["token"]
-
-    # 不存在则创建（使用 +create-folder 而非 files create_folder）
-    out = run([
-        "lark-cli", "drive", "+create-folder",
-        "--name", name, "--folder-token", folder_token,
-    ])
+    out = run(["lark-cli", "drive", "+create-folder", "--name", name, "--folder-token", parent_token])
     try:
-        data = json.loads(out)
-        if data.get("ok"):
-            token = data.get("data", {}).get("folder_token")
-            if token:
-                print(f"  ✅ 创建文件夹: {name} → token={token}")
-                return token
-        print(f"  ❌ 创建文件夹失败: {data.get('error', data.get('msg', ''))}")
-    except json.JSONDecodeError:
-        print(f"  ❌ JSON解析失败: {out[:200]}")
+        d = json.loads(out)
+        if d.get("ok") and (token := d.get("data", {}).get("folder_token")):
+            print(f"  ✅ {name} → {token}"); return token
+        print(f"  ❌ 创建失败: {d.get('error', d.get('msg', ''))}")
+    except: print(f"  ❌ JSON解析失败: {out[:100]}")
     return None
 
 
-def lark_upload(local_path: str, folder_token: str, name: str = None) -> str | None:
-    """上传单个文件，返回 file_token"""
-    if not os.path.exists(local_path):
-        print(f"  ⚠️  文件不存在，跳过: {local_path}")
-        return None
-
-    basename = name or os.path.basename(local_path)
-    cmd = [
-        "lark-cli", "drive", "+upload",
-        "--file", f"./{os.path.basename(local_path)}",
-        "--folder-token", folder_token,
-    ]
-    if name:
-        cmd += ["--name", name]
-
-    out = run(cmd, cwd=os.path.dirname(local_path))
+def upload(local, folder_token, name=None):
+    if not Path(local).exists(): print(f"  ⚠️  跳过: {local}"); return
+    basename = name or Path(local).name
+    out = run(["lark-cli", "drive", "+upload", "--file", f"./{Path(local).name}", "--folder-token", folder_token] +
+               (["--name", name] if name else []), cwd=str(Path(local).parent))
     try:
-        data = json.loads(out)
-        if data.get("ok"):
-            token = data["data"]["file_token"]
-            size = data["data"]["size"]
-            print(f"  ✅ {basename} → {size} bytes, token={token}")
-            return token
-        else:
-            print(f"  ❌ 上传失败: {basename} — {data.get('error', {})}")
-    except json.JSONDecodeError:
-        print(f"  ❌ JSON解析失败: {out[:200]}")
-    return None
+        d = json.loads(out)
+        if d.get("ok"):
+            t = d["data"]["file_token"]; s = d["data"]["size"]
+            print(f"  ✅ {basename} → {s} bytes"); return t
+        print(f"  ❌ {basename}: {d.get('error', {})}")
+    except: print(f"  ❌ JSON: {out[:100]}")
 
 
 def main():
-    args = parse_args()
-    patient_id = args.patient_id
-    paths = build_paths(patient_id)
-    data_dir = paths["data"]
+    p = argparse.ArgumentParser(); p.add_argument("--patient-id", required=True); args = p.parse_args()
+    pid = args.patient_id
+    data_dir = WIKI / "data" / pid
 
-    print(f"\n{'='*60}")
-    print(f"📅 当天日期: {TODAY}")
-    print(f"👤 病人ID: {patient_id}")
-    print(f"📂 父文件夹: {PARENT_FOLDER_TOKEN}")
-    print(f"{'='*60}\n")
+    print(f"\n{'='*50}\n📅 {TODAY} | 病人: {pid}\n{'='*50}\n")
 
-    # 动态构建上传清单，文件名加病人ID前缀
-    upload_map = [
-        # --- 原始数据 ---
-        (data_dir / "lab_metrics.csv",                       "原始数据",  None),
-        (data_dir / "lab_metrics.json",                      "原始数据",  None),
-        # --- 文献参考 ---
-        (data_dir / "literature_results.json",               "文献参考",  None),
-        # --- 中间结果 ---
-        (data_dir / "literature_interpretation_report.md",   "中间结果",  None),
-        (data_dir / "mri_report_check_results.json",         "中间结果",  None),
-        # --- 统计结果 ---
-        (data_dir / "analysis_results_report.md",            "统计结果",  None),
-        (data_dir / "fig_01_trend_regression.png",            "统计结果",  None),
-        (data_dir / "fig_02_correlation_heatmap.png",        "统计结果",  None),
-        (data_dir / "fig_03_inflammation_status.png",        "统计结果",  None),
-        (data_dir / "fig_04_abnormal_indicators.png",        "统计结果",  None),
-        # --- 最终报告（当天根目录）---
-        (data_dir / "final_integrated_report.md",             None,        None),
+    # 当天文件夹
+    day_token = create_folder(TODAY, PARENT)
+    if not day_token: print("❌ 当天文件夹创建失败"); return
+    print(f"✅ 当天文件夹: {day_token}\n")
+
+    # 子文件夹
+    sub_tokens = {n: create_folder(n, day_token) for n in SUBFOLDERS}
+    print()
+
+    # 上传文件
+    uploads = [
+        (data_dir / "lab_metrics.csv", "原始数据"),
+        (data_dir / "lab_metrics.json", "原始数据"),
+        (data_dir / "literature_results.json", "文献参考"),
+        (data_dir / "literature_interpretation.json", "中间结果"),
+        (data_dir / "mri_report_check_results.json", "中间结果"),
+        (data_dir / "analysis_results.json", "统计结果"),
+        (data_dir / "fig_01_trend_regression.png", "统计结果"),
+        (data_dir / "fig_02_correlation_heatmap.png", "统计结果"),
+        (data_dir / "fig_03_inflammation_status.png", "统计结果"),
+        (data_dir / "fig_04_abnormal_indicators.png", "统计结果"),
+        (data_dir / "final_integrated_report.md", None),
     ]
-    print(f"① 创建当天文件夹: {TODAY}")
-    day_folder_token = create_folder(TODAY, PARENT_FOLDER_TOKEN)
-    if not day_folder_token:
-        print("  ❌ 当天文件夹创建失败，退出")
-        return
-    print(f"  ✅ 当天文件夹: token={day_folder_token}")
 
-    # Step 2: 创建四个子文件夹
-    subfolders = {}
-    print(f"\n② 创建四个子文件夹")
-    for sf_name in SUBFOLDER_NAMES:
-        token = create_folder(sf_name, day_folder_token)
-        if token:
-            subfolders[sf_name] = token
-            print(f"  ✅ {sf_name} → token={token}")
+    for path, sub in uploads:
+        if sub is None:
+            upload(path, day_token, f"{pid}_{path.name}")
         else:
-            print(f"  ❌ {sf_name} 创建失败")
+            upload(path, sub_tokens.get(sub), f"{pid}_{path.name}")
 
-    # Step 3: 上传所有文件
-    print(f"\n③ 上传所有文件")
-    for local_path, subfolder, rename in upload_map:
-        if not os.path.exists(local_path):
-            print(f"  ⚠️  文件不存在，跳过: {local_path}")
-            continue
-        # 文件名加病人ID前缀
-        orig_name = os.path.basename(local_path)
-        upload_name = f"{patient_id}_{orig_name}"
-        if subfolder is None:
-            # 根目录
-            folder_tok = day_folder_token
-        else:
-            folder_tok = subfolders.get(subfolder)
-            if not folder_tok:
-                print(f"  ⚠️  子文件夹 {subfolder} 未创建成功，跳过: {local_path}")
-                continue
-        lark_upload(local_path, folder_tok, upload_name)
-
-    print(f"\n{'='*60}")
-    print(f"🎉 全部完成！当天文件夹: https://kcnnvmk14o6i.feishu.cn/drive/folder/{day_folder_token}")
-    print(f"{'='*60}\n")
+    print(f"\n{'='*50}\n🎉 完成! https://kcnnvmk14o6i.feishu.cn/drive/folder/{day_token}\n{'='*50}")
 
 
 if __name__ == "__main__":

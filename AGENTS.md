@@ -15,14 +15,14 @@
 
 ```
 /workspace/projects/
-├── run_analysis.py          # Pipeline 统一入口
-├── data_loader.py           # 步骤①：从 PDF/TXT 检验报告提取结构化数据
-├── data_analyzer.py         # 步骤②：统计分析 + 4类图表生成
-├── literature_searcher.py   # 步骤③：PubMed 文献检索
-├── literature_interpreter.py # 步骤④：DeepSeek 循证医学解读
-├── qwen_vl_report_check.py  # 步骤⑤：Qwen3-VL 影像印证分析
-├── gen_final_report.py      # 步骤⑥：三源融合综合报告
-├── upload_to_feishu.py      # 步骤⑦：结果上传飞书云盘
+├── run_analysis.py          # Pipeline 统一入口 (~57行)
+├── data_loader.py           # 步骤①：提取检验数据 (~111行)
+├── data_analyzer.py         # 步骤②：统计分析 + 4类图表 (~200行)
+├── literature_searcher.py   # 步骤③：PubMed 文献检索 (~77行)
+├── literature_interpreter.py # 步骤④：DeepSeek 循证解读 (~87行)
+├── qwen_vl_report_check.py  # 步骤⑤：Qwen-VL 影像分析 (~98行)
+├── gen_final_report.py      # 步骤⑥：三源融合综合报告 (~82行)
+├── upload_to_feishu.py      # 步骤⑦：结果上传飞书云盘 (~96行)
 └── .coze                    # Coze 项目配置
 ```
 
