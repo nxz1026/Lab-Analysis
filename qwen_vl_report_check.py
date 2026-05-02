@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """上腹部MRI报告印证分析 - Qwen-VL"""
-import base64, json, time, argparse, requests
+import base64, json, time, argparse, requests, os
 from pathlib import Path
 from datetime import datetime
 
@@ -94,5 +94,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import os
     main()

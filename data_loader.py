@@ -81,10 +81,13 @@ def load_reports(raw_dir):
 
 def save_csv(reports, path):
     fixed = ["report_id", "report_date", "diagnosis", "department", "physician", "visit_type", "is_inpatient"]
-    cols = fixed + [m for m in ALL_METRICS for m in (m, f"{m}_status")]
+    cols = fixed + [col for m in ALL_METRICS for col in (m, f"{m}_status")]
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
-        w.writeheader(); [w.writerow({**r, **{c: "" for c in cols}} | r) for r in reports]
+        w.writeheader()
+        for r in reports:
+            row = {c: r.get(c, "") for c in cols}
+            w.writerow(row)
     print(f"CSV: {path}")
 
 
@@ -102,7 +105,7 @@ def main():
 
     reports = load_reports(raw)
     print(f"找到 {len(reports)} 份报告")
-    [[print(f"  {r['report_date']} | {r['diagnosis']}")] for r in reports]
+    [print(f"  {r['report_date']} | {r['diagnosis']}") for r in reports]
     save_csv(reports, out / "lab_metrics.csv")
     save_json(reports, out / "lab_metrics.json")
 

@@ -37,10 +37,12 @@ def regression(series):
     mx, my = x.mean(), y.mean()
     num = np.sum((x - mx) * (y - my))
     den = np.sum((x - mx) ** 2)
-    if den == 0: return {}
+    if den == 0: return {"slope": 0, "intercept": my, "r2": 0, "trend": "平稳"}
     slope = num / den
-    r2 = 1 - np.sum((y - (slope * x + (my - slope * mx))) ** 2) / np.sum((y - my) ** 2)
-    return {"slope": round(slope, 4), "r2": round(float(r2), 3), "trend": "上升" if slope > 0.1 else "下降" if slope < -0.1 else "平稳"}
+    intercept = my - slope * mx
+    r2 = 1 - np.sum((y - (slope * x + intercept)) ** 2) / np.sum((y - my) ** 2)
+    return {"slope": round(slope, 4), "intercept": round(intercept, 4), "r2": round(float(r2), 3),
+            "trend": "上升" if slope > 0.1 else "下降" if slope < -0.1 else "平稳"}
 
 
 def stats(series):
