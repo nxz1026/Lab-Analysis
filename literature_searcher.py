@@ -103,80 +103,118 @@ def efetch(pmids: list[str]) -> str:
         return resp.read().decode("utf-8", errors="replace")
 
 
-def parse_papers(raw_text: str) -> list[dict]:
+def parse_papers(raw_text: str, pmids: list[str] = None) -> list[dict]:
     """解析 efetch 原始文本为结构化论文列表
 
     提取字段：pmid, title, abstract, year, journal
+
+    efetch rettype=abstract 实际返回格式（两种）：
+    - 单篇：`1. Journal. YYYY...` 开篇，无 PMID 行
+    - 多篇：`内容\n\nPMID: xxx\n内容\nPMID: yyy\n内容\nPMID: zzz`，
+      即 article content 后紧跟一个空行再接 "PMID: xxx"，中间无换行分隔符
+
+    解析策略：先找到所有 "PMID: N" 的位置，用它来划分文章内容边界，
+    每篇内容 = 前一个 PMID 位置之后 到 当前 PMID 位置之前 的文本。
     """
-    blocks = re.split(r'\n(?=PMID:)', raw_text)
+    pmids = pmids or []
     papers = []
-    for block in blocks:
-        block = block.strip()
-        if not block:
-            continue
-        pmid_m = re.search(r'PMID:\s*(\d+)', block)
-        if not pmid_m:
-            continue
-        pmid = pmid_m.group(1)
-        lines = block.split('\n')
 
-        # 提取年份（格式：2024 Jan; / 2024 Mar 15; / 2024;）
-        year = ""
-        year_m = re.search(r'\b(19|20)\d{2}\b', block)
-        if year_m:
-            year = year_m.group(0)
+    if "\nPMID:" not in raw_text:
+        # 单篇/序号格式：按 "\n(?=\d+\. [A-Z])" 分隔
+        raw_blocks = re.split(r'\n(?=\d+\. [A-Z])', raw_text)
+        for idx, block in enumerate(raw_blocks):
+            block = block.strip()
+            if not block:
+                continue
+            lines = block.split('\n')
+            pmid = pmids[idx] if idx < len(pmids) else ""
+            papers.append(_parse_one_paper(lines, pmid))
+        return papers
 
-        # 提取期刊名（DOI 行之前的第一行通常是期刊缩写）
-        journal = ""
-        doi_idx = -1
-        for i, line in enumerate(lines):
-            if re.match(r'^(doi:|DOI:)', line.strip()):
-                doi_idx = i
-                break
-        if doi_idx > 3:
-            # 取 DOI 行之前、非标题的那一行
-            candidate = lines[doi_idx - 1].strip().rstrip('.').rstrip(';').strip()
-            if 3 < len(candidate) < 100 and not candidate.startswith('Copyright'):
-                journal = candidate
+    # 多篇格式：定位所有 PMID 行，用它们做边界
+    # 找所有 "PMID: NNN" 的行首位置
+    pmid_positions = [m.start() for m in re.finditer(r'^PMID:', raw_text, re.MULTILINE)]
 
-        # 提取标题
-        title = ""
-        for i, line in enumerate(lines):
-            line = line.strip()
-            if (i > 0 and len(line) > 30 and
-                not line.startswith('Author') and
-                not line.startswith('(') and
-                not line.startswith('doi') and
-                not line.startswith('DOI') and
-                not line.startswith('PMID') and
-                not line.startswith('PMCID') and
-                not line.startswith('Conflict') and
-                'Author information' not in line and
-                line[0].isupper()):
-                title = line
-                break
+    if not pmid_positions:
+        return papers
 
-        # 提取摘要
-        abstract_parts = []
-        in_abstract = False
-        for line in lines:
-            ls = line.strip()
-            if re.match(r'^(BACKGROUND:|METHODS:|RESULTS:|CONCLUSIONS:|Abstract |PURPOSE OF REVIEW:|PURPOSE:|SUMMARY:)', ls):
-                in_abstract = True
-                abstract_parts.append(ls)
-            elif in_abstract:
-                if ls == '' and len(abstract_parts) > 2:
-                    break
-                if re.match(r'^(doi:|DOI:|PMID:|PMCID:|Copyright|\(c\))', ls):
-                    break
-                if len(ls) > 10:
-                    abstract_parts.append(ls)
-        abstract = ' '.join(abstract_parts)[:1000]
-        papers.append({
-            "pmid": pmid, "title": title, "abstract": abstract,
-            "year": year, "journal": journal,
-        })
+    for i, pos in enumerate(pmid_positions):
+        # 文章内容区域：上一 PMID 行之后 到 本 PMID 行之前
+        start = pmid_positions[i - 1] + len(raw_text.split('\n')[i - 1]) + 1 \
+            if i > 0 else 0
+        end = pos
+        content = raw_text[start:end].strip()
+        lines = content.split('\n')
+        pmid_m = re.search(r'PMID:\s*(\d+)', raw_text[pos:pos + 30])
+        pmid = pmid_m.group(1) if pmid_m else (pmids[i] if i < len(pmids) else "")
+        papers.append(_parse_one_paper(lines, pmid))
+
     return papers
+
+
+def _parse_one_paper(lines: list[str], pmid: str) -> dict:
+    """从单篇的 lines 列表 + pmid 提取一篇论文的各字段。"""
+    # 年份：找第一个 19xx/20xx
+    year = ""
+    for line in lines[:10]:
+        m = re.search(r'\b(19|20)\d{2}\b', line)
+        if m:
+            year = m.group(0)
+            break
+
+    # 期刊名
+    journal = ""
+    # 单篇序号格式：第一行 "N. Journal. YYYY Mon;..."
+    if lines:
+        first = re.sub(r'^\d+\.\s*', '', lines[0].strip())
+        m_j = re.match(r'^([^.]+\.[A-Za-z\s]+\d{4})', first)
+        if m_j:
+            journal = m_j.group(1).strip().rstrip('.')
+    # 多篇格式：DOI/PMID 行之前的第一行
+    if not journal:
+        for i, line in enumerate(lines[:10]):
+            ls = line.strip()
+            if re.match(r'^(doi:|DOI:|PMID:|pmid:)', ls):
+                cand = lines[i - 1].strip().rstrip('.').rstrip(';').strip()
+                if 3 < len(cand) < 120 and not cand.startswith('Copyright'):
+                    journal = cand
+                    break
+
+    # 标题（摘要段之后第一行超长句）
+    title = ""
+    for i, line in enumerate(lines):
+        ls = line.strip()
+        if (i > 0 and len(ls) > 30
+                and not ls.startswith('Author')
+                and not ls.startswith('(')
+                and not ls.startswith('doi') and not ls.startswith('DOI')
+                and not ls.startswith('PMID') and not ls.startswith('PMCID')
+                and not ls.startswith('Conflict')
+                and 'Author information' not in ls
+                and ls[0].isupper()):
+            title = ls
+            break
+
+    # 摘要
+    abstract_parts = []
+    in_abs = False
+    for line in lines:
+        ls = line.strip()
+        if re.match(r'^(BACKGROUND:|METHODS:|RESULTS:|CONCLUSIONS:|Abstract |'
+                     r'PURPOSE OF REVIEW:|PURPOSE:|SUMMARY:)', ls):
+            in_abs = True
+            abstract_parts.append(ls)
+        elif in_abs:
+            if ls == '' and len(abstract_parts) > 2:
+                break
+            if re.match(r'^(doi:|DOI:|PMID:|PMCID:|Copyright|\(c\))', ls):
+                break
+            if len(ls) > 10:
+                abstract_parts.append(ls)
+    abstract = ' '.join(abstract_parts)[:1000]
+
+    return {"pmid": pmid, "title": title, "abstract": abstract,
+            "year": year, "journal": journal}
 
 
 def search_strategy(strategy_name: str, retmax: int, date_filter: str = "5") -> dict:
@@ -195,7 +233,7 @@ def search_strategy(strategy_name: str, retmax: int, date_filter: str = "5") -> 
     if pmids:
         time.sleep(1.2)
         raw_text = efetch(pmids)
-        papers = parse_papers(raw_text)
+        papers = parse_papers(raw_text, pmids)  # <-- 传入 pmids 用于单篇解析
         for p in papers:
             p["url"] = f"https://pubmed.ncbi.nlm.nih.gov/{p['pmid']}/"
             p["source"] = strategy_name
