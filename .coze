@@ -1,0 +1,11 @@
+[project]
+sub_id = "6f3eda05"
+name = "lab-analysis-pipeline"
+requires = ["python-3.11"]
+project_type = "backend"
+
+[preview]
+preview_enable = "disabled"
+
+[subprojects]
+path = ["."]
