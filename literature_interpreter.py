@@ -134,7 +134,9 @@ def main():
 
     wiki_data = Path.home() / "wiki" / "data"
     if args.patient_id:
-        pdata = wiki_data / args.patient_id
+        import os
+        ts = os.environ.get("ANALYSIS_TS", args.patient_id)
+        pdata = wiki_data / ts
         args.analysis = args.analysis or str(pdata / "analysis_results.json")
         args.lit = args.lit or str(pdata / "literature_results.json")
         args.out = args.out or str(pdata / "literature_interpretation.json")
@@ -142,6 +144,13 @@ def main():
         args.analysis = args.analysis or str(wiki_data / "analysis_results.json")
         args.lit = args.lit or str(wiki_data / "literature_results.json")
         args.out = args.out or str(wiki_data / "literature_interpretation.json")
+
+    # 前置检查
+    import sys
+    for label, path in [("analysis_results", args.analysis), ("literature_results", args.lit)]:
+        if path and not os.path.exists(path):
+            print(f"❌ 前置文件不存在: [{label}] {path}")
+            sys.exit(1)
 
     print("构建 prompt...")
     prompt = build_prompt(args.analysis, args.lit)

@@ -5,7 +5,7 @@ qwen_vl_report_check.py
 上腹部MRI报告印证分析 — 每个部位选1-2张代表性DICOM图
 用法: python qwen_vl_report_check.py --patient-id 513229198801040014
 """
-import base64, json, os, time
+import base64, json, os, sys, time
 from pathlib import Path
 
 DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
@@ -121,8 +121,16 @@ def main():
 
     wiki_root = Path.home() / "wiki"
     imaging_base = wiki_root / "raw" / f"patient_{args.patient_id}" / "imaging"
-    data_dir = wiki_root / "data" / args.patient_id
+    import os
+    ts = os.environ.get("ANALYSIS_TS", args.patient_id)
+    data_dir = wiki_root / "data" / ts
     data_dir.mkdir(exist_ok=True)
+
+    # 前置检查：影像目录存在
+    if not imaging_base.exists():
+        print(f"❌ 影像目录不存在: {imaging_base}")
+        print(f"   预期路径: raw/patient_{{patient_id}}/imaging/seq_01~19/*.dcm")
+        sys.exit(1)
 
     print(f"\n[{datetime.now().isoformat()}] 上腹部MRI报告印证分析")
     print(f"  病人: {args.patient_id}")

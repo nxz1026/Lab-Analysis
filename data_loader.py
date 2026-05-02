@@ -10,6 +10,7 @@ data_loader.py
 import re
 import csv
 import json
+import sys
 import argparse
 from datetime import datetime
 from pathlib import Path
@@ -18,9 +19,12 @@ WIKI_ROOT = Path.home() / "wiki"
 
 
 def build_paths(patient_id: str):
-    """根据 patient_id 构建路径字典。"""
+    """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
+    import os
     raw_papers = WIKI_ROOT / "raw" / f"patient_{patient_id}" / "papers"
-    output_dir = WIKI_ROOT / "data" / patient_id
+    # 支持时间戳目录：ANALYSIS_TS=patient_id/YYYYMMDD_HHMMSS
+    ts = os.environ.get("ANALYSIS_TS", patient_id)
+    output_dir = WIKI_ROOT / "data" / ts
     return {
         "raw_papers": raw_papers,
         "output_dir": output_dir,
@@ -273,11 +277,25 @@ def to_json(reports, output_path):
 
 
 def main():
+    import os
     parser = argparse.ArgumentParser(description="数据加载：读取检验报告，生成结构化数据")
     parser.add_argument("--patient-id", required=True, help="诊疗卡号，如 513229198801040014")
     args = parser.parse_args()
 
     paths = build_paths(args.patient_id)
+
+    # 前置检查：原始数据目录存在
+    if not paths["raw_papers"].exists():
+        print(f"❌ 原始数据目录不存在: {paths['raw_papers']}")
+        print(f"   预期路径: raw/patient_{{patient_id}}/papers/lab_report_*/")
+        print(f"   当前 patient_id: {args.patient_id}")
+        sys.exit(1)
+
+    reports = load_reports(paths["raw_papers"])
+    if not reports:
+        print("❌ 未找到任何报告（lab_report_*/ 目录），退出")
+        sys.exit(1)
+
     print(f"[{datetime.now().isoformat()}] 数据加载开始...")
     print(f"  病人: {args.patient_id}")
     print(f"  原始数据: {paths['raw_papers']}")
@@ -285,12 +303,7 @@ def main():
 
     paths["output_dir"].mkdir(parents=True, exist_ok=True)
 
-    reports = load_reports(paths["raw_papers"])
     print(f"找到 {len(reports)} 份报告")
-
-    if not reports:
-        print("没有报告，退出")
-        return
 
     for r in reports:
         print(f"  {r['report_date']} | {r['diagnosis']}")
