@@ -26,13 +26,28 @@ def load_env_key(key: str) -> str:
 def main():
     args = parse_args()
     patient_id = args.patient_id
+    import os
+    ts = os.environ.get("ANALYSIS_TS", patient_id)
 
     DEEPSEEK_API_KEY = load_env_key("DEEPSEEK_API_KEY")
     if not DEEPSEEK_API_KEY:
         print("❌ 未找到 DEEPSEEK_API_KEY"); return
 
-    output_path = Path.home() / "wiki" / "data" / patient_id / "final_integrated_report.md"
+    data_dir = Path.home() / "wiki" / "data" / ts
+    output_path = data_dir / "final_integrated_report.md"
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # 前置检查：核心输入文件是否存在
+    required = [
+        data_dir / "lab_metrics.json",
+        data_dir / "analysis_results.json",
+        data_dir / "literature_results.json",
+    ]
+    missing = [str(p) for p in required if not p.exists()]
+    if missing:
+        print(f"⚠️  以下前置文件不存在，将使用内置默认数据：")
+        for p in missing:
+            print(f"   - {p}")
 
     USER_PROMPT = f"""你是资深临床医学专家，请为患者聂聃（38岁男性，ID:Y00002207707）生成最终综合临床诊断报告。
 

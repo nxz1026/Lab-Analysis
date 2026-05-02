@@ -9,6 +9,7 @@ data_analyzer.py
 """
 
 import json
+import sys
 import argparse
 import numpy as np
 import pandas as pd
@@ -24,8 +25,10 @@ WIKI_ROOT = Path.home() / "wiki"
 
 
 def build_paths(patient_id: str):
-    """根据 patient_id 构建路径字典。"""
-    data_dir = WIKI_ROOT / "data" / patient_id
+    """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
+    import os
+    ts = os.environ.get("ANALYSIS_TS", patient_id)
+    data_dir = WIKI_ROOT / "data" / ts
     return {
         "data_dir": data_dir,
         "metrics_csv": data_dir / "lab_metrics.csv",
@@ -371,9 +374,9 @@ def run(patient_id: str):
     print(f"  病人: {patient_id}")
 
     if not paths["metrics_csv"].exists():
-        print(f"找不到数据文件: {paths['metrics_csv']}")
-        print("请先运行 data_loader.py --patient-id " + patient_id)
-        return
+        print(f"❌ 找不到前置文件: {paths['metrics_csv']}")
+        print(f"   请先运行 data_loader.py --patient-id {patient_id}")
+        sys.exit(1)
 
     df = pd.read_csv(paths["metrics_csv"])
     df["report_date"] = pd.to_datetime(df["report_date"])

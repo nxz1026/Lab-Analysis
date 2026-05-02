@@ -184,7 +184,9 @@ def main():
     args = parser.parse_args()
 
     if args.patient_id:
-        default_out = Path.home() / "wiki" / "data" / args.patient_id / "literature_results.json"
+        import os
+        ts = os.environ.get("ANALYSIS_TS", args.patient_id)
+        default_out = Path.home() / "wiki" / "data" / ts / "literature_results.json"
         args.out = args.out or str(default_out)
 
     all_topics = list(SEARCH_STRATEGIES.keys())

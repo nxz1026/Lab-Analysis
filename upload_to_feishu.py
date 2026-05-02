@@ -26,8 +26,10 @@ BASE_DIR = Path("/root/wiki")
 
 
 def build_paths(patient_id: str):
-    # 实际数据路径：data/{patient_id}（无 patient_ 前缀）
-    data_dir = BASE_DIR / "data" / patient_id
+    """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
+    import os
+    ts = os.environ.get("ANALYSIS_TS", patient_id)
+    data_dir = BASE_DIR / "data" / ts
     return {
         "data": data_dir,
     }
