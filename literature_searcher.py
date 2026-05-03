@@ -266,7 +266,7 @@ def main():
     if args.patient_id:
         import os
         ts = os.environ.get("ANALYSIS_TS"); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
-        default_out = Path.home() / "wiki" / "data" / ts / "literature_results.json"
+        default_out = Path.home() / "wiki" / "data" / args.patient_id / ts / "literature_results.json"
         args.out = args.out or str(default_out)
 
     all_topics = list(SEARCH_STRATEGIES.keys())
