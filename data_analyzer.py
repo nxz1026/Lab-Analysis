@@ -28,7 +28,7 @@ def build_paths(patient_id: str):
     """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
     import os
     ts = os.environ.get("ANALYSIS_TS", patient_id)
-    data_dir = WIKI_ROOT / "data" / ts
+    data_dir = WIKI_ROOT / "data" / patient_id / ts
     return {
         "data_dir": data_dir,
         "metrics_csv": data_dir / "lab_metrics.csv",

@@ -25,9 +25,26 @@ def parse_args():
     return parser.parse_args()
 
 
-def check_patient_data(patient_id: str) -> bool:
-    """检查病人原始数据目录是否存在且有内容。"""
-    raw_dir = WIKI_ROOT / "raw" / f"patient_{patient_id}"
+def get_deid(original_id: str) -> str:
+    """从映射文件查 de-identified ID。"""
+    import json
+    mapping_file = Path.home() / ".hermes" / "patient_mapping.json"
+    if mapping_file.exists():
+        with open(mapping_file) as f:
+            mapping = json.load(f)
+        # 支持 de-id → original（正向查）和 original → de-id（反向查）
+        for deid, orig in mapping.items():
+            if orig == original_id or deid == original_id:
+                return deid
+    # 找不到则用 encode() 生成（兼容旧数据）
+    sys.path.insert(0, str(SCRIPTS_DIR))
+    from patient_id import encode
+    return encode(original_id)
+
+
+def check_patient_data(deid: str) -> bool:
+    """检查病人原始数据目录是否存在且有内容（de-id 目录名）。"""
+    raw_dir = WIKI_ROOT / "raw" / f"patient_{deid}"
     lab_dir = raw_dir / "lab"
     imaging_dir = raw_dir / "imaging"
     papers_dir = raw_dir / "papers"
@@ -80,29 +97,34 @@ def run_step(name: str, script: Path, extra_args: list[str] = None, env: dict = 
 def main():
     import os
     args = parse_args()
-    patient_id = args.patient_id
+    original_id = args.patient_id
 
-    # 生成时间戳目录名
+    # 从 mapping 文件或 encode() 获取 de-identified ID
+    deid = get_deid(original_id)
+
+    # 生成时间戳目录（de-id 子目录）
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    ts_dir = f"{patient_id}/{ts}"
+    ts_dir = f"{deid}/{ts}"
 
     print(f"[{datetime.now().isoformat()}] Pipeline 启动")
-    print(f"👤 病人ID: {patient_id}")
+    print(f"👤 原始病人ID: {original_id}")
+    print(f"👤 脱敏病人ID: {deid}")
     print(f"📂 输出目录: data/{ts_dir}/")
     print(f"🔖 时间戳: {ts}")
 
-    # 前置检查：病人数据是否存在
+    # 前置检查：病人数据是否存在（用 de-id 查 raw 目录）
     print(f"\n① 前置检查：验证病人数据")
-    if not check_patient_data(patient_id):
-        print(f"\n❌ 病人ID [{patient_id}] 没有找到对应的原始数据，请确认目录结构：")
-        print(f"   /root/wiki/raw/patient_{patient_id}/lab/        ← 检验报告截图")
-        print(f"   /root/wiki/raw/patient_{patient_id}/papers/    ← 结构化报告（lab_report_*/metrics.md）")
-        print(f"   /root/wiki/raw/patient_{patient_id}/imaging/   ← MRI 影像序列（可选）")
+    if not check_patient_data(deid):
+        print(f"\n❌ 病人ID [{deid}] 没有找到对应的原始数据，请确认目录结构：")
+        print(f"   /root/wiki/raw/patient_{deid}/lab/        ← 检验报告截图")
+        print(f"   /root/wiki/raw/patient_{deid}/papers/    ← 结构化报告（lab_report_*/metrics.md）")
+        print(f"   /root/wiki/raw/patient_{deid}/imaging/   ← MRI 影像序列（可选）")
         print(f"\n请确认病人ID，或将数据放入上述目录后重新执行。")
         sys.exit(1)
 
-    pid_arg = ["--patient-id", patient_id]
-    # 通过环境变量传递时间戳，子脚本从环境变量读
+    # 统一使用 de-id 传递给子脚本
+    pid_arg = ["--patient-id", deid]
+    # 通过环境变量传递时间戳（仅时间戳，无 de-id 前缀）
     ts_env = {"ANALYSIS_TS": ts}
 
     # Step 1: 数据加载

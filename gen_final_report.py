@@ -304,7 +304,7 @@ def main():
     args = parse_args()
     patient_id = args.patient_id
     import os
-    ts = os.environ.get("ANALYSIS_TS", patient_id)
+    ts = os.environ.get("ANALYSIS_TS"); data_dir = WIKI_ROOT / "data" / patient_id / ts
 
     DEEPSEEK_API_KEY = load_env_key("DEEPSEEK_API_KEY")
     if not DEEPSEEK_API_KEY:

@@ -26,10 +26,15 @@ BASE_DIR = Path("/root/wiki")
 
 
 def build_paths(patient_id: str):
-    """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
+    """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。
+
+    路径结构：data/{patient_id}/{ANALYSIS_TS}/
+    - patient_id: de-identified ID（如 846552421134373347）
+    - ANALYSIS_TS: 仅时间戳（如 20260503_030142），无 de-id 前缀
+    """
     import os
-    ts = os.environ.get("ANALYSIS_TS", patient_id)
-    data_dir = BASE_DIR / "data" / ts
+    ts = os.environ.get("ANALYSIS_TS", patient_id)  # fallback 为 patient_id
+    data_dir = BASE_DIR / "data" / patient_id / ts
     return {
         "data": data_dir,
     }
@@ -184,9 +189,9 @@ def main():
         if not os.path.exists(local_path):
             print(f"  ⚠️  文件不存在，跳过: {local_path}")
             continue
-        # 文件名加病人ID前缀
+        # 文件名保持原样（不加强制ID前缀）
         orig_name = os.path.basename(local_path)
-        upload_name = f"{patient_id}_{orig_name}"
+        upload_name = orig_name
         if subfolder is None:
             # 根目录
             folder_tok = day_folder_token
