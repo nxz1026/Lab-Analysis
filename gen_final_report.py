@@ -8,6 +8,8 @@ import os
 import sys
 from pathlib import Path
 
+WIKI_ROOT = Path.home() / "wiki"
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="生成最终综合临床报告")

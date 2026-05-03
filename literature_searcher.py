@@ -11,6 +11,9 @@ import urllib.parse
 import time
 import re
 from datetime import datetime
+from pathlib import Path
+
+WIKI_ROOT = Path.home() / "wiki"
 
 # ---------------------------------------------------------------------------
 # 检索策略配置

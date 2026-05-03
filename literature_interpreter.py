@@ -11,6 +11,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+WIKI_ROOT = Path.home() / "wiki"
+
 def load_json(path: str, default=None):
     try:
         with open(path) as f:
