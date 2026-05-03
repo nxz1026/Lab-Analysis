@@ -145,15 +145,16 @@ def main():
             print(f"⚠️  目录不存在: {seq_dir_name}，跳过")
             continue
 
-        # 选中间帧
+        # 选随机帧
         dcm_files = sorted(seq_path.glob("*.dcm"))
         if not dcm_files:
             print(f"⚠️  {seq_dir_name} 无DICOM文件，跳过")
             continue
 
-        mid = len(dcm_files) // 2
-        img_path = dcm_files[mid]
-        print(f"📷 选取: {seq_dir_name}/{img_path.name} ({seq_desc}) 第{mid+1}/{len(dcm_files)}帧")
+        import random
+        idx = random.randint(0, len(dcm_files) - 1)
+        img_path = dcm_files[idx]
+        print(f"📷 选取: {seq_dir_name}/{img_path.name} ({seq_desc}) 第{idx+1}/{len(dcm_files)}帧")
 
         try:
             b64 = load_dicom_image(img_path)
@@ -184,7 +185,27 @@ def main():
         }, f, ensure_ascii=False, indent=2)
 
     print(f"\n💾 结果已保存: {output_path}")
-    print("\n" + "="*60)
+
+    # 生成 Markdown 版
+    md_path = data_dir / "mri_report_check_results.md"
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write(f"# MRI 报告印证分析\n\n")
+        f.write(f"**检查日期**: 2026-04-11  **检查编号**: Y00002207707\n\n")
+        f.write(f"## 纸质报告关键发现\n\n{REPORT_FINDINGS}\n\n---\n\n")
+        for r in results:
+            if r["status"] == "success":
+                f.write(f"## {r['seq_name']} — {r['seq_desc']}\n\n")
+                f.write(f"**帧位置**: {r.get('frame_idx', 'N/A')}\n\n")
+                analysis_text = r.get("analysis", "")
+                if isinstance(analysis_text, list):
+                    analysis_text = analysis_text[0].get("text", "") if analysis_text else ""
+                f.write(analysis_text)
+                f.write("\n\n---\n\n")
+            else:
+                f.write(f"## {r['seq_name']} — ❌ 失败: {r.get('error', '')}\n\n")
+    print(f"📄 Markdown 已保存: {md_path}")
+
+    print(f"\n" + "="*60)
     print("📊 分析摘要")
     print("="*60)
     for r in results:

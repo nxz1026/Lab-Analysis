@@ -147,12 +147,12 @@ def main():
         (data_dir / "lab_metrics.csv",                       "原始数据",  None),
         (data_dir / "lab_metrics.json",                      "原始数据",  None),
         # --- 文献参考 ---
-        (data_dir / "literature_results.json",               "文献参考",  None),
+        (data_dir / "literature_results.md",               "文献参考",  None),
         # --- 中间结果 ---
-        (data_dir / "literature_interpretation_report.md",   "中间结果",  None),
-        (data_dir / "mri_report_check_results.json",         "中间结果",  None),
+        (data_dir / "literature_interpretation.md",   "中间结果",  None),
+        (data_dir / "mri_report_check_results.md",         "中间结果",  None),
         # --- 统计结果 ---
-        (data_dir / "analysis_results_report.md",            "统计结果",  None),
+        (data_dir / "analysis_results_report.md",            "中间结果",  None),
         (data_dir / "fig_01_trend_regression.png",            "统计结果",  None),
         (data_dir / "fig_02_correlation_heatmap.png",        "统计结果",  None),
         (data_dir / "fig_03_inflammation_status.png",        "统计结果",  None),

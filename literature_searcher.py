@@ -299,6 +299,25 @@ def main():
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
+    # 生成 Markdown 版
+    md_path = str(Path(out_path).with_suffix(".md"))
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write(f"# 文献检索结果\n\n")
+        f.write(f"**检索时间**: {results['generated']}  |  **唯一文献数**: {results['total_unique_papers']}\n\n")
+        f.write(f"## 检索策略\n\n")
+        for sr in results["searches"]:
+            f.write(f"- **[{sr['strategy']}]** {sr['total_results']} total → {sr['pmids_returned']} returned\n")
+        f.write(f"\n## 文献列表\n\n")
+        for i, p in enumerate(results["all_papers"], 1):
+            f.write(f"### {i}. {p['title']}\n\n")
+            f.write(f"- **PMID**: {p['pmid']}  |  **Year**: {p.get('year','N/A')}  |  **Journal**: {p.get('journal','N/A')}\n")
+            f.write(f"- **来源**: {p.get('source','N/A')}  |  [PubMed链接]({p.get('url','')})\n")
+            abstract = p.get('abstract','')
+            if abstract:
+                f.write(f"- **摘要**: {abstract[:300]}...\n")
+            f.write("\n")
+    print(f"📄 Markdown 已保存: {md_path}")
+
     print(f"\n✅ 检索完成: {results['total_unique_papers']} 篇唯一文献")
     print(f"   输出: {out_path}")
     for sr in results["searches"]:
