@@ -8,6 +8,8 @@ qwen_vl_report_check.py
 import base64, json, os, sys, time
 from pathlib import Path
 
+WIKI_ROOT = Path.home() / "wiki"
+
 DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
 if not DASHSCOPE_API_KEY:
     env_path = os.path.expanduser("~/.hermes/.env")
