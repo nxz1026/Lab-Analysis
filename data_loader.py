@@ -24,7 +24,7 @@ def build_paths(patient_id: str):
     raw_papers = WIKI_ROOT / "raw" / f"patient_{patient_id}" / "papers"
     # 支持时间戳目录：ANALYSIS_TS=patient_id/YYYYMMDD_HHMMSS
     ts = os.environ.get("ANALYSIS_TS", patient_id)
-    output_dir = WIKI_ROOT / "data" / ts
+    output_dir = WIKI_ROOT / "data" / patient_id / ts
     return {
         "raw_papers": raw_papers,
         "output_dir": output_dir,
