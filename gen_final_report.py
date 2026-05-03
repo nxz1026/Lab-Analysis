@@ -312,7 +312,7 @@ def main():
     if not DEEPSEEK_API_KEY:
         print("❌ 未找到 DEEPSEEK_API_KEY"); return
 
-    data_dir = Path.home() / "wiki" / "data" / ts
+    data_dir = Path.home() / "wiki" / "data" / args.patient_id / ts
     output_path = data_dir / "final_integrated_report.md"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 

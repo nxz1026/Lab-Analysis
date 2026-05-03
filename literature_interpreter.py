@@ -138,7 +138,7 @@ def main():
     if args.patient_id:
         import os
         ts = os.environ.get("ANALYSIS_TS"); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
-        pdata = wiki_data / ts
+        pdata = wiki_data / args.patient_id / ts
         args.analysis = args.analysis or str(pdata / "analysis_results.json")
         args.lit = args.lit or str(pdata / "literature_results.json")
         args.out = args.out or str(pdata / "literature_interpretation.json")
