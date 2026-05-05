@@ -1,0 +1,9 @@
+---
+description: Git push only after explicit user confirmation
+alwaysApply: true
+---
+
+# Git push policy
+
+- Do **not** run `git push` (or any command that updates the remote) unless the user has **explicitly** asked to push in this conversation.
+- Local `git add` / `git commit` is fine when the user wants to save work; **push is always user-confirmed only**.
