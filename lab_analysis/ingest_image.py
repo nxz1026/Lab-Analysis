@@ -21,7 +21,7 @@ import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
-from patient_id import encode
+from lab_analysis.patient_id import encode
 
 WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", "/root/wiki"))
 INGEST_LOG = WIKI_ROOT / ".ingest_log.json"

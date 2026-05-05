@@ -1,4 +1,4 @@
-#!/home/bb/wiki/.venv/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 data_analyzer.py
@@ -463,7 +463,7 @@ def run(patient_id: str):
 
     # ── 生成人类可读 Markdown 报告 ──────────────────────────
     md_lines = ["# 统计分析报告\n"]
-    md_lines.append(f"**患者**: {args.patient_id}  **报告数**: {results['n_reports']}  **日期范围**: {results['date_range']}\n")
+    md_lines.append(f"**患者**: {patient_id}  **报告数**: {results['n_reports']}  **日期范围**: {results['date_range']}\n")
 
     # 炎症分期
     infl = results.get("inflammation_classification", {})
@@ -487,7 +487,7 @@ def run(patient_id: str):
     md_lines.append("\n## 指标趋势（线性回归）\n")
     for metric, reg in results.get("linear_regression",{}).items():
         slope = reg.get("slope",0)
-        r2 = reg.get("r_squared",0)
+        r2 = reg.get("r2", reg.get("r_squared", 0))
         trend = reg.get("trend","平稳")
         arrow = "↑" if slope>0 else "↓" if slope<0 else "→"
         md_lines.append(f"- {metric}: slope={slope:.4f}, R²={r2:.3f}, {arrow} {trend}\n")
@@ -518,7 +518,6 @@ def run(patient_id: str):
 
 
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser(description="统计分析：生成分析结果 + 4类图表")
     parser.add_argument("--patient-id", required=True, help="诊疗卡号，如 513229198801040014")
     args = parser.parse_args()

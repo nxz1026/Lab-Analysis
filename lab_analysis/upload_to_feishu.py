@@ -22,7 +22,7 @@ from datetime import date
 
 # ============ 配置 ============
 TODAY = date.today().strftime("%Y-%m-%d")
-BASE_DIR = Path("/root/wiki")
+BASE_DIR = Path.home() / "wiki"
 
 
 def build_paths(patient_id: str):
