@@ -75,13 +75,13 @@ def main():
     report_date = args.report_date
     report_type = args.report_type
 
-    print(f"🔒 脱敏: {patient_id_raw} → {patient_id_obf}")
-    print(f"📅 日期: {report_date}")
-    print(f"🏥 类型: {report_type}")
-    print(f"📷 来源: {image_path}")
+    print(f"[Ingest] 脱敏: {patient_id_raw} -> {patient_id_obf}")
+    print(f"[Ingest] 日期: {report_date}")
+    print(f"[Ingest] 类型: {report_type}")
+    print(f"[Ingest] 来源: {image_path}")
 
     saved_path = save_image(image_path, patient_id_obf, report_date, report_type)
-    print(f"✅ 已保存: {saved_path}")
+    print(f"[OK] 已保存: {saved_path}")
 
     record = {
         "timestamp": datetime.now().isoformat(),
@@ -94,11 +94,12 @@ def main():
         "confidence": args.confidence,
     }
     append_log(record)
-    print(f"📊 摄入记录已保存，共 {len(load_log())['ingested']} 条")
+    log = load_log()
+    print(f"[OK] 摄入记录已保存，共 {len(log['ingested'])} 条")
 
     # 提示用户是否执行后续流程
     print("\n" + "=" * 50)
-    print("📤 摄入完成，是否执行后续 Pipeline？")
+    print("摄入完成，是否执行后续 Pipeline？")
     print("   回复「执行」开始 7 步分析")
     print("   回复「继续追加」保存更多图片，稍后一起分析")
     print("=" * 50)

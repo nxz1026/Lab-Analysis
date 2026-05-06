@@ -77,22 +77,6 @@ def extract_value(result_str: str):
     return float(m.group(1)) if m else None
 
 
-def load_reports(raw_papers: Path):
-    """扫描所有报告目录，读取 metadata.md 和 metrics.md。"""
-    reports = []
-    if not raw_papers.exists():
-        return reports
-
-    for dir_path in sorted(raw_papers.glob("lab_report_*")):
-        if not dir_path.is_dir():
-            continue
-
-        meta_path = dir_path / "metadata.md"
-        metrics_path = dir_path / "metrics.md"
-
-        if not meta_path.exists():
-            continue
-
 def parse_metadata_table(text: str) -> dict:
     """解析 Markdown 表格格式的 metadata（| 字段 | 值 |）。"""
     row = {}
@@ -107,6 +91,31 @@ def parse_metadata_table(text: str) -> dict:
             if key:
                 row[key] = val
     return row
+
+
+def parse_metrics_simple(text: str) -> dict:
+    """解析 metrics.md 中的简单键值对格式（指标名: 数值）。"""
+    metrics = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        # 匹配 "指标名: 数值" 格式，支持字母、数字、下划线、百分号、连字符、井号
+        m = re.match(r'^([\w%\-#]+)\s*:\s*(.+)$', line)
+        if m:
+            key = m.group(1).strip()
+            val_str = m.group(2).strip()
+            # 处理 <10、>20 等特殊格式，提取其中的数字
+            num_match = re.search(r'([0-9]+\.?\d*)', val_str)
+            if num_match:
+                try:
+                    metrics[key] = float(num_match.group(1))
+                except ValueError:
+                    metrics[key] = val_str
+            else:
+                # 如果没有数字，保留原始字符串
+                metrics[key] = val_str
+    return metrics
 
 
 def parse_metrics_yaml(text: str) -> dict:
@@ -171,15 +180,16 @@ def load_reports(raw_papers: Path):
             "is_inpatient": is_inpatient,
         }
 
-        # 读取 metrics.yaml
+        # 读取 metrics.md（简单键值对格式）
         metrics_data = {}
         if metrics_path.exists():
             metrics_text = metrics_path.read_text(encoding="utf-8")
-            metrics_data = parse_metrics_yaml(metrics_text)
+            metrics_data = parse_metrics_simple(metrics_text)
 
         # 映射 metrics.md 中的字段名到标准名
         METRIC_ALIASES = {
-            "hsCRP": "hs-CRP",
+            # 标准格式（直接使用）
+            "hs-CRP": "hs-CRP",
             "CRP": "CRP",
             "WBC": "WBC",
             "RBC": "RBC",
@@ -187,10 +197,27 @@ def load_reports(raw_papers: Path):
             "HCT": "HCT",
             "PLT": "PLT",
             "PCT": "PCT",
-            "P_LCR": "P-LCR",
+            "P-LCR": "P-LCR",
             "MCV": "MCV",
             "MCH": "MCH",
             "MCHC": "MCHC",
+            "NEUT%": "NEUT%",
+            "LYMPH%": "LYMPH%",
+            "MONO%": "MONO%",
+            "EO%": "EO%",
+            "BASO%": "BASO%",
+            "NEUT#": "NEUT#",
+            "LYMPH#": "LYMPH#",
+            "MONO#": "MONO#",
+            "EO#": "EO#",
+            "BASO#": "BASO#",
+            "RDW-SD": "RDW-SD",
+            "RDW-CV": "RDW-CV",
+            "MPV": "MPV",
+            "PDW": "PDW",
+            # 兼容旧格式/别名
+            "hsCRP": "hs-CRP",
+            "P_LCR": "P-LCR",
             "NEUT_percent": "NEUT%",
             "NEUT_abs": "NEUT#",
             "LYMPH_percent": "LYMPH%",
@@ -203,8 +230,6 @@ def load_reports(raw_papers: Path):
             "BASO_abs": "BASO#",
             "RDW_SD": "RDW-SD",
             "RDW_CV": "RDW-CV",
-            "MPV": "MPV",
-            "PDW": "PDW",
         }
 
         for alias, std_name in METRIC_ALIASES.items():
