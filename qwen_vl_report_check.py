@@ -124,7 +124,7 @@ def main():
     wiki_root = Path.home() / "wiki"
     imaging_base = wiki_root / "raw" / f"patient_{args.patient_id}" / "imaging"
     import os
-    ts = os.environ.get("ANALYSIS_TS"); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
+    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
     data_dir = wiki_root / "data" / args.patient_id / ts
     data_dir.mkdir(exist_ok=True)
 
