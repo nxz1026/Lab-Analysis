@@ -15,6 +15,7 @@
 - [系统架构](#-系统架构)
 - [快速开始](#-快速开始)
 - [详细使用指南](#-详细使用指南)
+- [Vision模块使用说明](#-vision模块使用说明)
 - [数据准备](#-数据准备)
 - [配置说明](#️-配置说明)
 - [输出文件说明](#-输出文件说明)
@@ -89,6 +90,13 @@ graph TB
 - **分级行动计划**: 🔴紧急 / 🟡重要 / 🟢常规
 - **随访计划**: 短/中/长期监测方案
 - **预后评估**: 基于多维度数据的综合判断
+
+### 👁️ Vision智能识别
+- **OCR文字提取**: Qwen-VL多模态模型识别检验报告图片
+- **患者ID验证**: 自动验证身份证号格式（18位/15位）
+- **交互模式**: 识别失败时可手动输入正确信息
+- **批量处理**: 支持一次性处理多张报告图片
+- **自动入库**: 识别后自动生成结构化文件并存入正确目录
 
 ---
 
@@ -269,6 +277,152 @@ python run_analysis.py --patient-id 513229198801040014
 > **提示**: 如果只想测试部分功能，可以添加参数：
 > - `--skip-llm`: 跳过文献检索和循证解读
 > - `--skip-imaging`: 跳过MRI影像分析
+
+---
+
+## 👁️ Vision模块使用说明
+
+Vision模块是Lab-Analysis的智能数据摄入组件，能够从检验报告图片中自动提取患者信息和检验指标。
+
+### 核心功能
+
+#### 1. 患者基本信息识别
+
+从检验报告图片中提取：
+- ✅ 患者ID（身份证号）
+- ✅ 报告日期
+- ✅ 报告类型（门诊/住院）
+- ✅ 科室、医生、诊断等信息
+
+#### 2. 检验指标提取
+
+识别并提取26+项血液检验指标：
+- **血常规**: WBC, RBC, HGB, HCT, PLT等
+- **炎症标志物**: CRP, hs-CRP
+- **红细胞参数**: MCV, MCH, MCHC, RDW-SD, RDW-CV
+- **白细胞分类**: NEUT%, LYMPH%, MONO%, EO%, BASO%及其绝对值
+- **血小板参数**: PCT, MPV, PDW, P-LCR
+
+### 使用方法
+
+#### 方式一：单张图片识别（交互式）
+
+```bash
+python -m lab_analysis.vision_extractor \
+  --image C:\Users\ND\wiki\raw\Origin_data\lab_2026-03-24_outpatient.jpg \
+  --interactive
+```
+
+**执行流程**:
+1. 调用Qwen-VL识别图片
+2. 提取患者ID并验证格式
+3. 如果ID无效，提示用户选择：
+   - 选项1：手动输入正确的身份证号
+   - 选项2：放弃此数据
+4. 生成metadata.md和metrics.md文件
+5. 保存到正确的患者目录
+
+#### 方式二：完整检验指标提取
+
+```bash
+python -m lab_analysis.extract_lab_data \
+  --image C:\Users\ND\wiki\raw\Origin_data\lab_2026-03-24_outpatient.jpg \
+  --patient-id 513229198801040014
+```
+
+此命令会：
+- 识别图片中的所有检验指标
+- 生成完整的metrics.md文件（包含所有指标）
+- 生成metadata.md文件（包含报告元数据）
+
+#### 方式三：批量处理
+
+```bash
+python -m lab_analysis.batch_vision_extract [--interactive]
+```
+
+此脚本会：
+1. 扫描 `C:\Users\ND\wiki\raw\Origin_data\` 下的所有 `lab_*.jpg` 文件
+2. 依次识别每张图片
+3. 验证患者ID格式
+4. 自动入库到正确的患者目录
+5. 生成汇总报告
+
+### 患者ID验证规则
+
+**有效的身份证号格式**：
+- ✅ 18位：17位数字 + 1位数字或X（例如：`513229198801040014`）
+- ✅ 15位：15位数字（旧版身份证）
+- ❌ 其他格式均视为无效
+
+**验证逻辑**：
+```python
+def validate_chinese_id(id_number: str) -> bool:
+    # 18位身份证
+    if len(id_number) == 18:
+        return id_number[:17].isdigit() and (id_number[17].isdigit() or id_number[17] == 'X')
+    # 15位身份证
+    elif len(id_number) == 15:
+        return id_number.isdigit()
+    return False
+```
+
+### 输出文件结构
+
+识别完成后，会在以下位置生成结构化文件：
+
+```
+~/wiki/raw/patient_{脱敏ID}/papers/
+└── lab_report_YYYYMMDD_type/
+    ├── metadata.md          # 报告元数据
+    └── metrics.md           # 检验指标（简单键值对格式）
+```
+
+**metadata.md 示例**:
+```markdown
+| 字段 | 值 |
+|------|-----|
+| 患者ID | 513229198801040014 |
+| 报告日期 | 2026-03-24 |
+| 报告类型 | outpatient |
+| 科室 | 消化内科 |
+| 医生 | 李薇 |
+| 诊断 | 慢性胰腺炎 |
+```
+
+**metrics.md 示例**:
+```text
+WBC: 6.7
+RBC: 4.52
+HGB: 142
+HCT: 43
+PLT: 238
+CRP: 10
+hs-CRP: 2.78
+NEUT%: 59.5
+LYMPH%: 32.1
+MONO%: 6.9
+...
+```
+
+### 常见问题
+
+#### Q1: 识别失败怎么办？
+
+**A**: 使用 `--interactive` 参数启动交互模式，可以手动输入正确信息。
+
+#### Q2: 如何查看识别结果？
+
+**A**: 识别完成后，检查 `~/wiki/raw/patient_{ID}/papers/lab_report_*/` 目录下的文件。
+
+#### Q3: 需要哪些API密钥？
+
+**A**: 需要OpenRouter API密钥（用于Qwen-VL模型）：
+```bash
+export OPENROUTER_API_KEY=sk-or-your-key
+```
+
+获取地址：[https://openrouter.ai/](https://openrouter.ai/)
 
 ---
 
@@ -876,6 +1030,136 @@ env | grep KEY
 2. **缓存机制**: 文献检索结果可缓存，避免重复请求
 3. **DICOM预处理**: 大型DICOM序列可预先转换为NIfTI格式加速读取
 4. **批量API调用**: LLM调用可增加重试机制和速率限制
+
+---
+
+## 📚 实际案例
+
+### 案例一：慢性胰腺炎患者分析
+
+**患者信息**:
+- ID: 513229198801040014
+- 年龄: 38岁男性
+- 诊断: 慢性胰腺炎
+
+**数据时间跨度**: 2026-03-24 ~ 2026-04-14（4次检验报告）
+
+**关键发现**:
+1. **炎症指标波动**:
+   - CRP在04-08达到峰值17.44 mg/L（急性期）
+   - hs-CRP从2.78降至1.82 mg/L（恢复趋势）
+   
+2. **CRP-WBC分离现象**:
+   - 04-08出现CRP升高但WBC下降（3.04）
+   - 提示免疫麻痹或骨髓储备耗竭
+   
+3. **RDW持续升高**:
+   - RDW-SD从48.2升至52.5
+   - 反映慢性炎症和氧化应激负担
+
+**MRI影像印证**:
+- 肝右后叶上段异常信号影（约2.2cm）
+- 胰腺实质萎缩，主胰管扩张（最宽1.0cm）
+- 右侧肾脏囊肿（约1.5cm）
+
+**最终诊断**: 急性胰腺炎（恢复期）可能性大
+
+**行动计划**:
+- 🔴 紧急：完善病史采集，补充增强CT/MRI
+- 🟡 重要：检测血淀粉酶、脂肪酶，筛查病因
+- 🟢 常规：营养支持评估，健康教育
+
+---
+
+### 案例二：使用Vision模块快速入库
+
+**场景**: 有10张新的检验报告图片需要处理
+
+**步骤**:
+
+1. **准备图片**:
+```bash
+# 将所有lab_*.jpg文件放到 Origin_data 目录
+ls C:\Users\ND\wiki\raw\Origin_data\lab_*.jpg
+```
+
+2. **批量识别**:
+```bash
+python -m lab_analysis.batch_vision_extract --interactive
+```
+
+3. **验证结果**:
+```bash
+# 检查生成的结构化文件
+ls ~/wiki/raw/patient_*/papers/lab_report_*/
+```
+
+4. **运行Pipeline**:
+```bash
+python run_full_pipeline.py
+```
+
+**耗时对比**:
+- 手动创建结构化文件：~30分钟/10张
+- Vision自动识别：~5分钟/10张
+- **效率提升**: 6倍
+
+---
+
+## 💡 最佳实践
+
+### 数据管理
+
+1. **定期备份**:
+```bash
+# 每周备份输出数据
+tar -czf backup_$(date +%Y%m%d).tar.gz ~/wiki/data/
+```
+
+2. **清理旧数据**:
+```bash
+# 删除超过30天的输出数据
+find ~/wiki/data/ -type d -mtime +30 -exec rm -rf {} \;
+```
+
+3. **版本控制**:
+   - 只将代码和文档加入Git
+   - 不要提交患者数据和输出结果
+   - 使用`.gitignore`忽略敏感文件
+
+### Pipeline运行
+
+1. **首次运行前**:
+   - ✅ 确认API密钥已配置
+   - ✅ 验证患者数据目录存在
+   - ✅ 检查DICOM文件完整性
+
+2. **运行中监控**:
+   - 观察控制台输出日志
+   - 注意API调用状态
+   - 记录任何错误或警告
+
+3. **运行后验证**:
+   - 检查所有输出文件是否生成
+   - 查看最终报告内容是否完整
+   - 验证图表是否正常显示
+
+### 故障预防
+
+1. **网络问题**:
+   - PubMed API可能限流，适当减少`retmax`参数
+   - LLM API调用增加重试机制
+   - 使用稳定的网络连接
+
+2. **内存问题**:
+   - DICOM文件较大时，关闭其他程序
+   - 必要时增加虚拟内存
+   - 分批处理大型DICOM序列
+
+3. **权限问题**:
+   - Windows下以管理员身份运行PowerShell
+   - Linux/macOS检查文件读写权限
+   - 使用robocopy复制大量文件
 
 ---
 
