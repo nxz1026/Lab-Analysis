@@ -137,7 +137,7 @@ def main():
     wiki_data = Path.home() / "wiki" / "data"
     if args.patient_id:
         import os
-        ts = os.environ.get("ANALYSIS_TS"); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
+        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
         pdata = wiki_data / args.patient_id / ts
         args.analysis = args.analysis or str(pdata / "analysis_results.json")
         args.lit = args.lit or str(pdata / "literature_results.json")
