@@ -10,6 +10,33 @@ from pathlib import Path
 
 WIKI_ROOT = Path.home() / "wiki"
 
+# ============================================================
+# 患者信息脱敏常量（发布前务必确认）
+# ============================================================
+PATIENT_NAME = "张三"
+PATIENT_AGE_SEX = "38岁男性"
+PATIENT_EXAM_ID = "Y00002207707"
+# ============================================================
+# ⚠️ 如需恢复从真实数据读取姓名，解除下方注释并注释掉以上常量
+# ============================================================
+# _name_raw = None
+# def _load_patient_name(lab_path: Path) -> str:
+#     """从 lab_metrics.json 的第一份报告里读取患者姓名。"""
+#     global _name_raw
+#     if _name_raw:
+#         return _name_raw
+#     if lab_path.exists():
+#         try:
+#             d = json.loads(lab_path.read_text())
+#             reports = d.get("reports", [])
+#             if reports:
+#                 _name_raw = reports[0].get("patient_name", "未知")
+#                 return _name_raw
+#         except Exception:
+#             pass
+#     return "未知"
+# ============================================================
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="生成最终综合临床报告")
@@ -241,7 +268,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
     import datetime as dt
     today = dt.date.today().strftime("%Y年%m月%d日")
 
-    prompt = f"""你是资深临床医学专家，请为患者聂聃（38岁男性，ID:Y00002207707）生成最终综合临床诊断报告。
+    prompt = f"""你是资深临床医学专家，请为患者{PATIENT_NAME}（{PATIENT_AGE_SEX}，ID:{PATIENT_EXAM_ID}）生成最终综合临床诊断报告。
 
 【说明】以下数据来自 pipeline 各步骤汇总，请生成结构化报告。
 
@@ -275,7 +302,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 请生成【最终综合临床诊断报告】，结构如下：
 
 # 最终综合临床诊断报告
-**患者**：聂聃 | 男 | 38岁 | 检查编号：Y00002207707
+**患者**：{PATIENT_NAME} | {PATIENT_AGE_SEX} | 检查编号：{PATIENT_EXAM_ID}
 **报告日期**：{today}
 **数据来源**：MRI影像报告（2026-04-11）+ 检验数据（2026-03-24~04-14）
 
@@ -306,7 +333,7 @@ def main():
     args = parse_args()
     patient_id = args.patient_id
     import os
-    ts = os.environ.get("ANALYSIS_TS"); data_dir = WIKI_ROOT / "data" / patient_id / ts
+    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id); data_dir = WIKI_ROOT / "data" / patient_id / ts
 
     DEEPSEEK_API_KEY = load_env_key("DEEPSEEK_API_KEY")
     if not DEEPSEEK_API_KEY:

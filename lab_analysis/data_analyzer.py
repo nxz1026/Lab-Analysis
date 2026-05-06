@@ -27,7 +27,9 @@ WIKI_ROOT = Path.home() / "wiki"
 def build_paths(patient_id: str):
     """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
     import os
-    ts = os.environ.get("ANALYSIS_TS", patient_id)
+    raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
+    # ANALYSIS_TS 可能是纯时间戳（run_analysis.py 传入），也可能是 "deid/ts"（直接传参）
+    ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
     data_dir = WIKI_ROOT / "data" / patient_id / ts
     return {
         "data_dir": data_dir,

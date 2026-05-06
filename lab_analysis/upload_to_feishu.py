@@ -33,7 +33,9 @@ def build_paths(patient_id: str):
     - ANALYSIS_TS: 仅时间戳（如 20260503_030142），无 de-id 前缀
     """
     import os
-    ts = os.environ.get("ANALYSIS_TS", patient_id)  # fallback 为 patient_id
+    raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
+    # ANALYSIS_TS 可能是纯时间戳（run_analysis.py 传入），也可能是 "deid/ts"（直接传参）
+    ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts  # fallback 为 patient_id
     data_dir = BASE_DIR / "data" / patient_id / ts
     return {
         "data": data_dir,
