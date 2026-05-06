@@ -265,7 +265,7 @@ def main():
 
     if args.patient_id:
         import os
-        ts = os.environ.get("ANALYSIS_TS"); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
+        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
         default_out = Path.home() / "wiki" / "data" / args.patient_id / ts / "literature_results.json"
         args.out = args.out or str(default_out)
 
