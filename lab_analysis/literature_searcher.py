@@ -214,7 +214,7 @@ def _parse_one_paper(lines: list[str], pmid: str) -> dict:
                 break
             if len(ls) > 10:
                 abstract_parts.append(ls)
-    abstract = ' '.join(abstract_parts)[:1000]
+    abstract = ' '.join(abstract_parts)
 
     return {"pmid": pmid, "title": title, "abstract": abstract,
             "year": year, "journal": journal}
@@ -317,11 +317,11 @@ def main():
             f.write(f"- **来源**: {p.get('source','N/A')}  |  [PubMed链接]({p.get('url','')})\n")
             abstract = p.get('abstract','')
             if abstract:
-                f.write(f"- **摘要**: {abstract[:300]}...\n")
+                f.write(f"- **摘要**: {abstract}\n")
             f.write("\n")
-    print(f"📄 Markdown 已保存: {md_path}")
-
-    print(f"\n✅ 检索完成: {results['total_unique_papers']} 篇唯一文献")
+    print(f"[OK] Markdown 已保存: {md_path}")
+        
+    print(f"\n[DONE] 检索完成: {results['total_unique_papers']} 篇唯一文献")
     print(f"   输出: {out_path}")
     for sr in results["searches"]:
         print(f"   [{sr['strategy']}] {sr['total_results']} total → {sr['pmids_returned']} returned")

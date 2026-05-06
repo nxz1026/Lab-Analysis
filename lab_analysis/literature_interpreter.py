@@ -91,7 +91,7 @@ def call_deepseek(prompt: str) -> str:
     if not api_key:
         env_path = Path.home() / ".hermes" / ".env"
         if env_path.exists():
-            for line in env_path.read_text().splitlines():
+            for line in env_path.read_text(encoding="utf-8").splitlines():
                 if line.startswith("DEEPSEEK_API_KEY="):
                     api_key = line.split("=", 1)[1].strip()
     if not api_key:
@@ -105,7 +105,7 @@ def call_deepseek(prompt: str) -> str:
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.3,
-        "max_tokens": 1500,
+        "max_tokens": 4096,
     }
     resp = requests.post(
         "https://api.deepseek.com/chat/completions",

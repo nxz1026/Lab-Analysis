@@ -50,7 +50,7 @@ def load_env_key(key: str) -> str:
         return val
     env_path = Path.home() / ".hermes" / ".env"
     if env_path.exists():
-        for line in env_path.read_text().splitlines():
+        for line in env_path.read_text(encoding="utf-8").splitlines():
             if line.startswith(f"{key}="):
                 return line.split("=", 1)[1].strip()
     return ""
@@ -74,7 +74,7 @@ def assess_three_source_consistency(data_dir: Path) -> str:
     lab_summary = "数据暂缺"
     if lab_path.exists():
         try:
-            d = json.loads(lab_path.read_text())
+            d = json.loads(lab_path.read_text(encoding="utf-8"))
             reports = d.get("reports", [])
             if reports:
                 latest = reports[-1]
@@ -101,7 +101,7 @@ def assess_three_source_consistency(data_dir: Path) -> str:
     mri_summary = "影像印证暂缺"
     if mri_path.exists():
         try:
-            mri = json.loads(mri_path.read_text())
+            mri = json.loads(mri_path.read_text(encoding="utf-8"))
             checks = mri.get("results", []) if isinstance(mri, dict) else []
             if checks:
                 confirmed = sum(1 for c in checks if c.get("status") == "success")
@@ -126,7 +126,7 @@ def assess_three_source_consistency(data_dir: Path) -> str:
     lit_summary = "文献证据暂缺"
     if lit_results_path.exists():
         try:
-            lit = json.loads(lit_results_path.read_text())
+            lit = json.loads(lit_results_path.read_text(encoding="utf-8"))
             count = lit.get("total_unique_papers", 0)
             papers = lit.get("all_papers", [])
             year_range = ""
@@ -140,7 +140,7 @@ def assess_three_source_consistency(data_dir: Path) -> str:
 
     if lit_interp_path.exists():
         try:
-            interp = json.loads(lit_interp_path.read_text())
+            interp = json.loads(lit_interp_path.read_text(encoding="utf-8"))
             resp_text = interp.get("response", "") or interp.get("text", "")
             if resp_text and len(resp_text) > 50:
                 signals.append(("文献-循证解读", "SUPPORT",
@@ -198,7 +198,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
     lab_path = data_dir / "lab_metrics.json"
     if lab_path.exists():
         try:
-            d = json.loads(lab_path.read_text())
+            d = json.loads(lab_path.read_text(encoding="utf-8"))
             reports = d.get("reports", [])
             if reports:
                 cols = ["report_date", "hs-CRP", "CRP", "WBC", "NEUT#",
@@ -221,7 +221,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
     lit_path = data_dir / "literature_results.json"
     if lit_path.exists():
         try:
-            lit = json.loads(lit_path.read_text())
+            lit = json.loads(lit_path.read_text(encoding="utf-8"))
             papers = lit.get("all_papers", [])[:6]
             if papers:
                 lit_lines = [
@@ -237,7 +237,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
     interp_path = data_dir / "literature_interpretation.json"
     if interp_path.exists():
         try:
-            d = json.loads(interp_path.read_text())
+            d = json.loads(interp_path.read_text(encoding="utf-8"))
             t = d.get("response", "") or d.get("text", "")
             if t:
                 interp_data = t[:800] + "..." if len(t) > 800 else t
@@ -249,7 +249,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
     mri_path = data_dir / "mri_report_check_results.json"
     if mri_path.exists():
         try:
-            mri = json.loads(mri_path.read_text())
+            mri = json.loads(mri_path.read_text(encoding="utf-8"))
             checks = mri.get("results", []) if isinstance(mri, dict) else []
             if checks:
                 mri_lines = [
