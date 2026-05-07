@@ -48,9 +48,17 @@ def get_api_key():
 
 
 def encode_image_to_base64(image_path: Path) -> str:
-    """将图片编码为 base64"""
-    with open(image_path, "rb") as f:
-        return base64.b64encode(f.read()).decode("utf-8")
+    """将图片编码为 base64（自动转为RGB并压缩）"""
+    from PIL import Image
+    from io import BytesIO
+    img = Image.open(image_path).convert("RGB")
+    # 压缩到宽2000以内，减少base64大小
+    if max(img.size) > 2000:
+        ratio = 2000 / max(img.size)
+        img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
+    buf = BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
 def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> dict:
@@ -116,9 +124,7 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
                             {"type": "text", "text": prompt}
                         ]
                     }
-                ],
-                "max_tokens": 2000,
-                "temperature": 0.1  # 降低温度以提高稳定性
+                ]
             }
             
             # 使用智谱AI API

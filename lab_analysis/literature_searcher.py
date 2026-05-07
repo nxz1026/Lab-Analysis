@@ -266,9 +266,8 @@ def main():
 
     if args.patient_id:
         import os
-        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
-        default_out = WIKI_ROOT / "data" / args.patient_id / ts / "literature_results.json"
-        args.out = args.out or str(default_out)
+        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); lit_dir = WIKI_ROOT / "data" / args.patient_id / ts / "03_literature"
+        args.out = args.out or str(lit_dir / "literature_results.json")
 
     all_topics = list(SEARCH_STRATEGIES.keys())
     topics = all_topics if args.topic == "all" else [args.topic]
@@ -300,6 +299,7 @@ def main():
     results["total_unique_papers"] = len(unique)
 
     out_path = args.out
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
