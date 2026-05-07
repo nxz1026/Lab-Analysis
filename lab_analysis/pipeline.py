@@ -544,9 +544,9 @@ def main():
     if rc != 0:
         print("[!] gen_final_report 失败（非致命，继续）")
 
-    rc = run_step("⑨ 飞书上云 (upload_to_feishu)", "upload_to_feishu", pid_arg, ts_env)
+    rc = run_step("⑨ 本地文件组织 (organize_local_files)", "organize_local_files", pid_arg, ts_env)
     if rc != 0:
-        print("[!] upload_to_feishu 失败（非致命，完成）")
+        print("[!] organize_local_files 失败（非致命，完成）")
 
     data_dir = WIKI_ROOT / "data" / ts_dir
     print(f"\n[{datetime.now().isoformat()}] Pipeline 完成")
