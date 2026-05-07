@@ -90,7 +90,8 @@ def build_prompt(analysis_path: str, lit_path: str) -> str:
 def call_deepseek(prompt: str) -> str:
     api_key = os.environ.get("DEEPSEEK_API_KEY", "")
     if not api_key:
-        env_path = Path.home() / ".hermes" / ".env"
+        # 从项目根目录的 .env 文件加载
+        env_path = Path(__file__).parent.parent / ".env"
         if env_path.exists():
             for line in env_path.read_text(encoding="utf-8").splitlines():
                 if line.startswith("DEEPSEEK_API_KEY="):

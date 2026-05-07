@@ -46,7 +46,7 @@ def repo_root() -> Path:
 
 def get_deid(original_id: str) -> str:
     """从映射文件查 de-identified ID；若无映射则用 encode()。"""
-    mapping_file = Path.home() / ".hermes" / "patient_mapping.json"
+    mapping_file = WIKI_ROOT / ".hermes" / "patient_mapping.json"
     if mapping_file.exists():
         with open(mapping_file, encoding="utf-8") as f:
             mapping = json.load(f)
