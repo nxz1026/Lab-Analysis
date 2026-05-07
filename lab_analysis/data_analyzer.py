@@ -40,6 +40,9 @@ def build_paths(patient_id: str):
         "fig_corr":     data_dir / "fig_02_correlation_heatmap.png",
         "fig_infl":     data_dir / "fig_03_inflammation_status.png",
         "fig_abnorm":   data_dir / "fig_04_abnormal_indicators.png",
+        "fig_ma":       data_dir / "fig_05_moving_average.png",          # 新增
+        "fig_cv":       data_dir / "fig_06_cv_stability.png",            # 新增
+        "fig_zscore":   data_dir / "fig_07_zscore_distribution.png",    # 新增
     }
 
 # 数值型指标
@@ -283,6 +286,193 @@ def plot_abnormal_indicators(df: pd.DataFrame, results: dict, output_path: Path)
     _save(fig, output_path)
 
 
+def plot_moving_average(df: pd.DataFrame, results: dict, output_path: Path):
+    """⑤ 移动平均趋势图：原始值 vs 平滑趋势"""
+    _setup_chinese()
+    ma_data = results.get("moving_average", {})
+    
+    if not ma_data:
+        print("  [WARNING] 无移动平均数据，跳过")
+        return
+    
+    # 选择前4个关键指标
+    key_metrics = ["hs-CRP", "CRP", "WBC", "NEUT#"]
+    metrics_to_plot = [m for m in key_metrics if m in ma_data]
+    
+    if not metrics_to_plot:
+        print("  [WARNING] 无可用指标绘制移动平均图")
+        return
+    
+    n = len(metrics_to_plot)
+    cols = 2
+    rows = (n + cols - 1) // cols
+    
+    fig, axes = plt.subplots(rows, cols, figsize=(6 * cols, 4 * rows), facecolor="white")
+    axes = axes.flatten() if n > 1 else [axes]
+    
+    dates = pd.to_datetime(df["report_date"])
+    date_labels = dates.dt.strftime("%m-%d").tolist()
+    
+    for i, metric in enumerate(metrics_to_plot):
+        ax = axes[i]
+        ma_info = ma_data[metric]
+        
+        # 原始数据
+        original = df[metric].dropna()
+        valid_dates = dates[df[metric].notna()]
+        x_idx = np.arange(len(original))
+        
+        ax.plot(x_idx, original.values, 'o-', color='#3498db', linewidth=2, 
+                markersize=6, label='原始值', alpha=0.7)
+        
+        # 移动平均
+        ma_values = [v for v in ma_info['moving_avg'] if v is not None]
+        if len(ma_values) == len(x_idx):
+            ax.plot(x_idx, ma_values, 's--', color='#e74c3c', linewidth=2.5, 
+                    markersize=5, label=f'移动平均(窗口={ma_info["window"]})')
+        
+        # 填充滚动标准差区域
+        std_values = [v for v in ma_info['rolling_std'] if v is not None]
+        if len(std_values) == len(ma_values):
+            ma_array = np.array(ma_values)
+            std_array = np.array(std_values)
+            ax.fill_between(x_idx, ma_array - std_array, ma_array + std_array, 
+                           alpha=0.15, color='#e74c3c', label='±1标准差')
+        
+        ax.set_xticks(x_idx)
+        ax.set_xticklabels(date_labels[:len(x_idx)], fontsize=9)
+        ax.set_title(f"{metric}\n趋势: {ma_info['trend']}", fontsize=11, fontweight="bold")
+        ax.grid(True, alpha=0.3)
+        ax.legend(fontsize=8, loc='best')
+    
+    # 隐藏多余的子图
+    for j in range(i + 1, len(axes)):
+        axes[j].axis('off')
+    
+    fig.suptitle("移动平均趋势分析", fontsize=14, fontweight="bold", y=1.01)
+    plt.tight_layout()
+    _save(fig, output_path)
+
+
+def plot_cv_stability_heatmap(df: pd.DataFrame, results: dict, output_path: Path):
+    """⑥ CV稳定性热力图：直观显示各指标稳定性等级"""
+    _setup_chinese()
+    cv_data = results.get("cv_stability", {})
+    
+    if not cv_data:
+        print("  [WARNING] 无CV数据，跳过")
+        return
+    
+    # 准备数据
+    metrics = sorted(cv_data.keys())
+    cv_values = [cv_data[m]['cv'] for m in metrics]
+    risk_levels = [cv_data[m]['risk_level'] for m in metrics]
+    
+    # 颜色映射
+    color_map = {'低': '#27ae60', '中': '#f39c12', '高': '#e74c3c'}
+    colors = [color_map.get(level, '#95a5a6') for level in risk_levels]
+    
+    # 创建热力图
+    fig, ax = plt.subplots(figsize=(10, len(metrics) * 0.6 + 2), facecolor="white")
+    
+    # 绘制水平条形图
+    y_pos = np.arange(len(metrics))
+    bars = ax.barh(y_pos, cv_values, color=colors, height=0.6, edgecolor='white', linewidth=1.5)
+    
+    # 添加数值标签
+    for i, (bar, cv_val, risk) in enumerate(zip(bars, cv_values, risk_levels)):
+        ax.text(cv_val + max(cv_values) * 0.02, i, f"CV={cv_val:.4f}", 
+                va='center', fontsize=9, fontweight='bold')
+        ax.text(max(cv_values) * 0.5, i, risk, 
+                va='center', ha='center', fontsize=10, color='white', fontweight='bold')
+    
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(metrics, fontsize=10)
+    ax.set_xlabel('变异系数 (CV)', fontsize=11, fontweight='bold')
+    ax.set_title('指标稳定性分析（变异系数CV）', fontsize=13, fontweight='bold', pad=12)
+    ax.grid(True, axis='x', alpha=0.3)
+    ax.set_xlim(0, max(cv_values) * 1.3)
+    
+    # 添加图例
+    legend_patches = [
+        mpatches.Patch(color='#27ae60', label='稳定 (CV<0.1)'),
+        mpatches.Patch(color='#f39c12', label='中等变异 (0.1≤CV<0.2)'),
+        mpatches.Patch(color='#e74c3c', label='高变异 (CV≥0.2)'),
+    ]
+    ax.legend(handles=legend_patches, loc='lower right', fontsize=9)
+    
+    plt.tight_layout()
+    _save(fig, output_path)
+
+
+def plot_zscore_distribution(df: pd.DataFrame, results: dict, output_path: Path):
+    """⑦ Z-score分布图：Box plot + 异常值标记"""
+    _setup_chinese()
+    zscore_data = results.get("zscore_outliers", {})
+    
+    if not zscore_data:
+        print("  [WARNING] 无Z-score数据，跳过")
+        return
+    
+    # 选择有关键指标的Z-scores
+    key_metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD"]
+    metrics_with_data = [m for m in key_metrics if m in zscore_data]
+    
+    if not metrics_with_data:
+        print("  [WARNING] 无可用指标绘制Z-score图")
+        return
+    
+    # 准备数据
+    zscore_lists = []
+    labels = []
+    outlier_info = []
+    
+    for metric in metrics_with_data:
+        zscores = zscore_data[metric]['z_scores']
+        valid_zscores = [z for z in zscores if z is not None]
+        if valid_zscores:
+            zscore_lists.append(valid_zscores)
+            labels.append(metric)
+            outlier_info.append(zscore_data[metric])
+    
+    if not zscore_lists:
+        print("  [WARNING] 无有效Z-score数据")
+        return
+    
+    # 创建箱线图
+    fig, ax = plt.subplots(figsize=(len(labels) * 1.5 + 2, 6), facecolor="white")
+    
+    bp = ax.boxplot(zscore_lists, labels=labels, patch_artist=True, 
+                    widths=0.6, showfliers=True)
+    
+    # 自定义颜色
+    colors_box = ['#3498db' if all(abs(z) < 2 for z in zs) else '#e74c3c' 
+                  for zs in zscore_lists]
+    for patch, color in zip(bp['boxes'], colors_box):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.6)
+    
+    # 添加阈值线
+    ax.axhline(y=2, color='#e74c3c', linestyle='--', linewidth=1.5, alpha=0.7, label='|Z|=2 (轻度异常)')
+    ax.axhline(y=-2, color='#e74c3c', linestyle='--', linewidth=1.5, alpha=0.7)
+    ax.axhline(y=3, color='#c0392b', linestyle=':', linewidth=2, alpha=0.7, label='|Z|=3 (严重异常)')
+    ax.axhline(y=-3, color='#c0392b', linestyle=':', linewidth=2, alpha=0.7)
+    
+    # 填充正常区域
+    ax.axhspan(-2, 2, alpha=0.1, color='green', label='正常范围 (|Z|<2)')
+    
+    ax.set_ylabel('Z-score', fontsize=11, fontweight='bold')
+    ax.set_title('Z-score异常检测分布', fontsize=13, fontweight='bold', pad=12)
+    ax.grid(True, axis='y', alpha=0.3)
+    ax.legend(fontsize=9, loc='upper right')
+    
+    # 旋转x轴标签
+    plt.xticks(rotation=45, ha='right')
+    
+    plt.tight_layout()
+    _save(fig, output_path)
+
+
 # ────────────────────────────────────────────────────────────────
 # 核心分析函数
 # ────────────────────────────────────────────────────────────────
@@ -369,6 +559,182 @@ def descriptive_stats(series: pd.Series) -> dict:
         "max": round(float(valid.max()), 3),
         "cv": cv,
     }
+
+
+def moving_average_analysis(df: pd.DataFrame, window: int = 2) -> dict:
+    """
+    移动平均分析：计算滚动平均值和标准差，平滑短期波动
+    
+    Args:
+        df: 数据框
+        window: 滚动窗口大小（默认2次就诊）
+    
+    Returns:
+        每个指标的移动平均结果
+    """
+    results = {}
+    key_metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]
+    
+    for metric in key_metrics:
+        if metric not in df.columns:
+            continue
+        
+        series = df[metric].dropna()
+        if len(series) < window:
+            continue
+        
+        # 计算滚动平均值和标准差
+        ma = series.rolling(window=window, min_periods=1).mean()
+        std = series.rolling(window=window, min_periods=1).std().fillna(0)
+        
+        # 计算移动平均的趋势
+        if len(ma) >= 2:
+            ma_values = ma.values
+            trend = "上升" if ma_values[-1] > ma_values[0] * 1.05 else \
+                    "下降" if ma_values[-1] < ma_values[0] * 0.95 else "平稳"
+        else:
+            trend = "数据不足"
+        
+        results[metric] = {
+            "moving_avg": [round(v, 3) if pd.notna(v) else None for v in ma],
+            "rolling_std": [round(v, 3) if pd.notna(v) else None for v in std],
+            "trend": trend,
+            "window": window,
+        }
+    
+    return results
+
+
+def cv_stability_analysis(df: pd.DataFrame) -> dict:
+    """
+    变异系数（CV）分析：评估指标稳定性和生物学变异
+    
+    CV = 标准差 / 均值
+    - CV < 0.1: 稳定
+    - 0.1 <= CV < 0.2: 中等变异
+    - CV >= 0.2: 高变异（需关注）
+    
+    Args:
+        df: 数据框
+    
+    Returns:
+        每个指标的CV分析结果
+    """
+    results = {}
+    
+    for metric in NUMERIC_METRICS:
+        if metric not in df.columns:
+            continue
+        
+        series = df[metric].dropna().astype(float)
+        if len(series) < 3:  # 至少需要3个数据点
+            continue
+        
+        mean = series.mean()
+        std = series.std(ddof=1)
+        
+        if mean == 0:
+            continue
+        
+        cv = std / mean
+        
+        # 稳定性分类
+        if cv < 0.1:
+            stability = "稳定"
+            risk_level = "低"
+        elif cv < 0.2:
+            stability = "中等变异"
+            risk_level = "中"
+        else:
+            stability = "高变异"
+            risk_level = "高"
+        
+        # 计算滑动CV（窗口=3）
+        rolling_cv = series.rolling(window=3, min_periods=2).apply(
+            lambda x: x.std() / x.mean() if x.mean() != 0 and len(x) >= 2 else np.nan
+        )
+        
+        results[metric] = {
+            "cv": round(cv, 4),
+            "mean": round(mean, 3),
+            "std": round(std, 3),
+            "stability": stability,
+            "risk_level": risk_level,
+            "n_points": len(series),
+            "rolling_cv": [round(v, 4) if pd.notna(v) else None for v in rolling_cv],
+        }
+    
+    return results
+
+
+def zscore_outlier_detection(df: pd.DataFrame, threshold: float = 2.0) -> dict:
+    """
+    Z-score异常检测：基于标准化分数的异常值识别
+    
+    Z = (x - μ) / σ
+    - |Z| > 2: 轻度异常
+    - |Z| > 3: 严重异常
+    
+    Args:
+        df: 数据框
+        threshold: Z-score阈值（默认2.0）
+    
+    Returns:
+        每个指标的Z-score分析结果
+    """
+    results = {}
+    
+    for metric in NUMERIC_METRICS:
+        if metric not in df.columns:
+            continue
+        
+        series = df[metric].dropna().astype(float)
+        if len(series) < 3:
+            continue
+        
+        mean = series.mean()
+        std = series.std(ddof=1)
+        
+        if std == 0:
+            continue
+        
+        # 计算Z-scores
+        zscores = (series - mean) / std
+        
+        # 识别异常值
+        outliers_mild = zscores[zscores.abs() > threshold]
+        outliers_severe = zscores[zscores.abs() > 3.0]
+        
+        # 获取异常值的日期
+        outlier_dates_mild = df.loc[outliers_mild.index, "report_date"].dt.strftime("%Y-%m-%d").tolist()
+        outlier_dates_severe = df.loc[outliers_severe.index, "report_date"].dt.strftime("%Y-%m-%d").tolist()
+        
+        # 最大偏离程度
+        max_deviation_idx = zscores.abs().idxmax()
+        max_deviation_value = series[max_deviation_idx]
+        max_zscore = zscores[max_deviation_idx]
+        
+        results[metric] = {
+            "z_scores": [round(v, 3) if pd.notna(v) else None for v in zscores],
+            "outliers_mild": {
+                "count": len(outliers_mild),
+                "dates": outlier_dates_mild,
+                "values": [round(series[idx], 3) for idx in outliers_mild.index],
+            },
+            "outliers_severe": {
+                "count": len(outliers_severe),
+                "dates": outlier_dates_severe,
+                "values": [round(series[idx], 3) for idx in outliers_severe.index],
+            },
+            "max_deviation": {
+                "date": df.loc[max_deviation_idx, "report_date"].strftime("%Y-%m-%d"),
+                "value": round(max_deviation_value, 3),
+                "z_score": round(max_zscore, 3),
+            },
+            "threshold": threshold,
+        }
+    
+    return results
 
 
 def run(patient_id: str):
@@ -458,7 +824,33 @@ def run(patient_id: str):
     results["abnormal_summary"] = abnormal_summary
     print(f"异常指标: {list(abnormal_summary.keys())}")
 
-    # ── 保存 JSON ────────────────────────────────────────────
+    # ── 6. 移动平均分析 ──────────────────────────────────────
+    ma_results = moving_average_analysis(df, window=2)
+    results["moving_average"] = ma_results
+    print(f"\n移动平均分析完成: {len(ma_results)} 个指标")
+    for metric, ma_data in list(ma_results.items())[:3]:  # 只显示前3个
+        print(f"  {metric}: 趋势={ma_data['trend']}, 窗口={ma_data['window']}")
+
+    # ── 7. 变异系数（CV）稳定性分析 ───────────────────────────
+    cv_results = cv_stability_analysis(df)
+    results["cv_stability"] = cv_results
+    print(f"\nCV稳定性分析完成: {len(cv_results)} 个指标")
+    high_cv = [(m, d) for m, d in cv_results.items() if d['risk_level'] == '高']
+    if high_cv:
+        print(f"  ⚠️  高变异指标: {', '.join([m for m, _ in high_cv])}")
+    else:
+        print(f"  ✅ 所有指标稳定性良好")
+
+    # ── 8. Z-score异常检测 ───────────────────────────────────
+    zscore_results = zscore_outlier_detection(df, threshold=2.0)
+    results["zscore_outliers"] = zscore_results
+    print(f"\nZ-score异常检测完成: {len(zscore_results)} 个指标")
+    total_outliers = sum(d['outliers_mild']['count'] for d in zscore_results.values())
+    severe_outliers = sum(d['outliers_severe']['count'] for d in zscore_results.values())
+    if severe_outliers > 0:
+        print(f"  🚨 发现 {severe_outliers} 个严重异常值 (|Z|>3)")
+    if total_outliers > 0:
+        print(f"  ⚠️  发现 {total_outliers} 个轻度异常值 (|Z|>2)")
     paths["data_dir"].mkdir(parents=True, exist_ok=True)
     with open(paths["output_json"], "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
@@ -504,6 +896,76 @@ def run(patient_id: str):
         sign = "正" if r>0 else "负"
         md_lines.append(f"- {pair}: r={r:.3f}（{sign}相关）\n")
 
+    # 移动平均趋势
+    md_lines.append("\n## 移动平均趋势分析\n")
+    ma_data = results.get("moving_average", {})
+    for metric, ma_info in ma_data.items():
+        trend = ma_info.get("trend", "?")
+        window = ma_info.get("window", 2)
+        arrow = "↑" if trend == "上升" else "↓" if trend == "下降" else "→"
+        md_lines.append(f"- {metric}: {arrow} {trend}（窗口={window}次就诊）\n")
+
+    # CV稳定性分析
+    md_lines.append("\n## 指标稳定性分析（变异系数CV）\n")
+    cv_data = results.get("cv_stability", {})
+    high_risk = [(m, d) for m, d in cv_data.items() if d.get('risk_level') == '高']
+    medium_risk = [(m, d) for m, d in cv_data.items() if d.get('risk_level') == '中']
+    
+    if high_risk:
+        md_lines.append("### ⚠️  高变异指标（需关注）\n")
+        for metric, info in high_risk:
+            cv = info.get('cv', 0)
+            md_lines.append(f"- **{metric}**: CV={cv:.4f}（波动较大）\n")
+    
+    if medium_risk:
+        md_lines.append("\n### 🟡 中等变异指标\n")
+        for metric, info in medium_risk:
+            cv = info.get('cv', 0)
+            md_lines.append(f"- {metric}: CV={cv:.4f}\n")
+    
+    stable = [(m, d) for m, d in cv_data.items() if d.get('risk_level') == '低']
+    if stable:
+        md_lines.append(f"\n### ✅ 稳定指标（{len(stable)}个）\n")
+        metrics_list = ", ".join([m for m, _ in stable[:5]])
+        if len(stable) > 5:
+            metrics_list += f" 等{len(stable)}个"
+        md_lines.append(f"- {metrics_list}\n")
+
+    # Z-score异常检测
+    md_lines.append("\n## Z-score异常检测结果\n")
+    zscore_data = results.get("zscore_outliers", {})
+    severe_outliers = []
+    mild_outliers = []
+    
+    for metric, info in zscore_data.items():
+        severe = info.get('outliers_severe', {})
+        mild = info.get('outliers_mild', {})
+        
+        if severe.get('count', 0) > 0:
+            severe_outliers.append((metric, severe))
+        elif mild.get('count', 0) > 0:
+            mild_outliers.append((metric, mild))
+    
+    if severe_outliers:
+        md_lines.append("### 🚨 严重异常值（|Z| > 3）\n")
+        for metric, info in severe_outliers:
+            dates = ', '.join(info.get('dates', []))
+            values = ', '.join([str(v) for v in info.get('values', [])])
+            max_dev = info.get('max_deviation', {})
+            md_lines.append(f"- **{metric}**: {info['count']}次异常\n")
+            md_lines.append(f"  - 日期: {dates}\n")
+            md_lines.append(f"  - 数值: {values}\n")
+            md_lines.append(f"  - 最大偏离: Z={max_dev.get('z_score', 0):.2f} ({max_dev.get('date', '')})\n")
+    
+    if mild_outliers:
+        md_lines.append("\n### ⚠️  轻度异常值（|Z| > 2）\n")
+        for metric, info in mild_outliers:
+            dates = ', '.join(info.get('dates', []))
+            md_lines.append(f"- {metric}: {info['count']}次异常（{dates}）\n")
+    
+    if not severe_outliers and not mild_outliers:
+        md_lines.append("- ✅ 未发现统计学异常值\n")
+
     md_report_path = paths["data_dir"] / "analysis_results_report.md"
     with open(md_report_path, "w", encoding="utf-8") as f:
         f.writelines(md_lines)
@@ -515,6 +977,12 @@ def run(patient_id: str):
     plot_correlation_heatmap(df, paths["fig_corr"])
     plot_inflammation_status(df, results, paths["fig_infl"])
     plot_abnormal_indicators(df, results, paths["fig_abnorm"])
+    
+    # 新增高级分析图表
+    print("\n[ADVANCED CHARTS] 绘制高级分析图表...")
+    plot_moving_average(df, results, paths["fig_ma"])
+    plot_cv_stability_heatmap(df, results, paths["fig_cv"])
+    plot_zscore_distribution(df, results, paths["fig_zscore"])
 
     print(f"[{datetime.now().isoformat()}] 数据分析完成")
     return results
