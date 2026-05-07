@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TODAY = date.today().strftime("%Y-%m-%d")
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", str(Path.home() / "wiki")))
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", str(Path(__file__).parent.parent)))
 LOCAL_UPLOAD_ROOT = WIKI_ROOT / "local_upload"  # 本地上传根目录
 
 

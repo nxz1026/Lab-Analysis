@@ -12,8 +12,9 @@ WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
 if not DASHSCOPE_API_KEY:
-    env_path = os.path.expanduser("~/.hermes/.env")
-    if os.path.exists(env_path):
+    # 从项目根目录的 .env 文件加载
+    env_path = Path(__file__).parent.parent / ".env"
+    if env_path.exists():
         for line in open(env_path, encoding='utf-8'):
             if line.startswith("DASHSCOPE_API_KEY=") and not line.startswith("#"):
                 DASHSCOPE_API_KEY = line.strip().split("=", 1)[1].strip().strip("'\"")

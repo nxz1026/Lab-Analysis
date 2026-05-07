@@ -48,7 +48,8 @@ def load_env_key(key: str) -> str:
     val = os.environ.get(key, "")
     if val:
         return val
-    env_path = Path.home() / ".hermes" / ".env"
+    # 从项目根目录的 .env 文件加载
+    env_path = Path(__file__).parent.parent / ".env"
     if env_path.exists():
         for line in env_path.read_text(encoding="utf-8").splitlines():
             if line.startswith(f"{key}="):
