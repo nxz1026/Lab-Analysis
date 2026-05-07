@@ -103,6 +103,8 @@ python -m lab_analysis.pipeline --patient-id YOUR_PATIENT_ID --skip-ingest
 
 > ⚠️ **首次运行**会提示输入患者身份证号（18位），系统会自动脱敏处理。
 
+> ⚠️ **patient-id 参数说明**：应传入原始身份证号（18位），系统自动 hex-encode 为脱敏ID后再写入数据目录。传入已脱敏ID会导致路径不匹配。
+
 ---
 
 ## 📂 项目结构
@@ -112,14 +114,14 @@ Lab-Analysis/
 ├── .env                          # 环境变量配置
 ├── pyproject.toml                # 包管理配置
 ├── requirements.txt              # Python依赖
-├── run_analysis.py               # 快捷启动脚本
 └── lab_analysis/                 # 核心模块
     ├── pipeline.py               # Pipeline编排器
     ├── ingest_data.py            # 统一数据摄入
+    ├── patient_id.py             # 患者ID脱敏（hex encode）
     ├── extract_lab_data.py       # 检验指标提取（Vision）
     ├── vision_extractor.py       # Vision图片识别
     ├── data_loader.py            # 数据加载器
-    ├── data_analyzer.py          # 统计分析引擎
+    ├── data_analyzer.py          # 统计分析引擎（7张图）
     ├── literature_searcher.py    # PubMed文献检索
     ├── literature_interpreter.py # LLM循证解读
     ├── qwen_vl_report_check.py   # MRI影像分析
@@ -155,7 +157,7 @@ Lab-Analysis/
 
 ### Step ③：统计分析
 
-自动执行4项分析并生成图表：
+自动执行4项分析并生成图表（7张）：
 
 1. **趋势回归分析** → `fig_01_trend_regression.png`
    - WBC、CRP、hs-CRP等关键指标趋势
@@ -169,9 +171,18 @@ Lab-Analysis/
    - CRP-WBC分离现象检测
    - 炎症分期（急性/慢性/恢复期）
 
-4. **异常指标图** → `fig_04_abnormal_metrics.png`
+4. **异常指标图** → `fig_04_abnormal_indicators.png`
    - 超出参考范围的指标高亮
    - 异常程度可视化
+
+5. **移动平均图** → `fig_05_moving_average.png`
+   - 关键指标2期移动平均趋势
+
+6. **CV稳定性图** → `fig_06_cv_stability.png`
+   - 各指标变异系数对比，高变异指标预警
+
+7. **Z-score分布图** → `fig_07_zscore_distribution.png`
+   - 各指标Z-score标准化分布箱线图
 
 ### Step ④：文献检索
 
@@ -241,15 +252,28 @@ Lab-Analysis/
 
 所有输出保存在 `{WIKI_ROOT}/data/{脱敏ID}/{时间戳}/`：
 
-| 文件 | 说明 |
-|------|------|
-| `lab_metrics.csv/json` | 标准化检验数据 |
-| `analysis_results.json` | 统计分析结果（趋势、相关性、炎症分期） |
-| `fig_01~04_*.png` | 4张可视化图表 |
-| `literature_results.json/md` | PubMed检索结果 |
-| `literature_interpretation.json/md` | 循证医学解读 |
-| `mri_report_check_results.json/md` | MRI影像印证报告 |
-| `final_integrated_report.md` | **三源融合综合报告** |
+```
+{时间戳}/
+├── 02_analyzed/               # 检验分析结果
+│   ├── lab_metrics.csv/json    # 标准化检验数据
+│   ├── analysis_results.json   # 统计分析结果（趋势、相关性、炎症分期）
+│   ├── analysis_results_report.md  # 分析报告摘要
+│   └── figures/                # 可视化图表（7张）
+│       ├── fig_01_trend_regression.png
+│       ├── fig_02_correlation_heatmap.png
+│       ├── fig_03_inflammation_status.png
+│       ├── fig_04_abnormal_indicators.png
+│       ├── fig_05_moving_average.png
+│       ├── fig_06_cv_stability.png
+│       └── fig_07_zscore_distribution.png
+├── 03_literature/              # 文献研究结果
+│   ├── literature_results.json/md   # PubMed检索结果
+│   ├── literature_interpretation.json/md  # 循证医学解读
+│   └── mri_report_check_results.json/md   # MRI影像印证报告
+└── 04_reports/                 # 综合报告
+    ├── analysis_results_report.md   # 统计分析报告
+    └── final_integrated_report.md   # 三源融合综合报告
+```
 
 ---
 
@@ -320,18 +344,19 @@ python -m lab_analysis.pipeline \
 {WIKI_ROOT}/
 ├── raw/
 │   ├── Origin_data/          # 原始文件（用户放置）
-│   └── patient_{ID}/         # 结构化数据（自动生成）
-│       ├── papers/           # 检验报告
+│   └── patient_{hex(ID)}/     # 结构化数据（自动生成）
+│       ├── lab/               # 检验报告原始图片
+│       ├── papers/            # Vision提取的结构化报告
 │       │   └── lab_report_YYYYMMDD_type/
 │       │       ├── metadata.md
 │       │       └── metrics.md
-│       └── imaging/          # 医学影像
+│       └── imaging/           # 医学影像（DICOM序列）
 │           └── seq_XX/*.dcm
-└── data/                     # 分析输出
-    └── {脱敏ID}/{时间戳}/
-        ├── *.csv/json        # 数据文件
-        ├── *.png             # 图表
-        └── *.md              # 报告
+└── data/
+    └── {hex(ID)}/{时间戳}/    # 完整pipeline输出
+        ├── 02_analyzed/       # 检验分析结果
+        ├── 03_literature/     # 文献研究结果
+        └── 04_reports/        # 综合报告
 ```
 
 ---
