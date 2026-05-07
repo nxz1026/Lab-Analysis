@@ -12,8 +12,9 @@ import time
 import re
 from datetime import datetime
 from pathlib import Path
+import os
 
-WIKI_ROOT = Path.home() / "wiki"
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 # ---------------------------------------------------------------------------
 # 检索策略配置
@@ -214,7 +215,7 @@ def _parse_one_paper(lines: list[str], pmid: str) -> dict:
                 break
             if len(ls) > 10:
                 abstract_parts.append(ls)
-    abstract = ' '.join(abstract_parts)[:1000]
+    abstract = ' '.join(abstract_parts)
 
     return {"pmid": pmid, "title": title, "abstract": abstract,
             "year": year, "journal": journal}
@@ -266,7 +267,7 @@ def main():
     if args.patient_id:
         import os
         raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
-        default_out = Path.home() / "wiki" / "data" / args.patient_id / ts / "literature_results.json"
+        default_out = WIKI_ROOT / "data" / args.patient_id / ts / "literature_results.json"
         args.out = args.out or str(default_out)
 
     all_topics = list(SEARCH_STRATEGIES.keys())
@@ -317,11 +318,11 @@ def main():
             f.write(f"- **来源**: {p.get('source','N/A')}  |  [PubMed链接]({p.get('url','')})\n")
             abstract = p.get('abstract','')
             if abstract:
-                f.write(f"- **摘要**: {abstract[:300]}...\n")
+                f.write(f"- **摘要**: {abstract}\n")
             f.write("\n")
-    print(f"📄 Markdown 已保存: {md_path}")
-
-    print(f"\n✅ 检索完成: {results['total_unique_papers']} 篇唯一文献")
+    print(f"[OK] Markdown 已保存: {md_path}")
+        
+    print(f"\n[DONE] 检索完成: {results['total_unique_papers']} 篇唯一文献")
     print(f"   输出: {out_path}")
     for sr in results["searches"]:
         print(f"   [{sr['strategy']}] {sr['total_results']} total → {sr['pmids_returned']} returned")

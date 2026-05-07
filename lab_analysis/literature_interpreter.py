@@ -9,9 +9,10 @@ import os
 import sys
 import time
 from datetime import datetime
+import os
 from pathlib import Path
 
-WIKI_ROOT = Path.home() / "wiki"
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 def load_json(path: str, default=None):
     try:
@@ -91,7 +92,7 @@ def call_deepseek(prompt: str) -> str:
     if not api_key:
         env_path = Path.home() / ".hermes" / ".env"
         if env_path.exists():
-            for line in env_path.read_text().splitlines():
+            for line in env_path.read_text(encoding="utf-8").splitlines():
                 if line.startswith("DEEPSEEK_API_KEY="):
                     api_key = line.split("=", 1)[1].strip()
     if not api_key:
@@ -105,7 +106,7 @@ def call_deepseek(prompt: str) -> str:
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.3,
-        "max_tokens": 1500,
+        "max_tokens": 4096,
     }
     resp = requests.post(
         "https://api.deepseek.com/chat/completions",
@@ -134,7 +135,7 @@ def main():
     parser.add_argument("--patient-id", default=None, help="诊疗卡号，设置后自动推导路径")
     args = parser.parse_args()
 
-    wiki_data = Path.home() / "wiki" / "data"
+    wiki_data = WIKI_ROOT / "data"
     if args.patient_id:
         import os
         raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
