@@ -124,8 +124,8 @@ def main():
     # 使用 WIKI_ROOT 而不是硬编码路径
     imaging_base = WIKI_ROOT / "raw" / f"patient_{args.patient_id}" / "imaging"
     import os
-    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
-    data_dir.mkdir(exist_ok=True)
+    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); lit_dir = WIKI_ROOT / "data" / args.patient_id / ts / "03_literature"
+    lit_dir.mkdir(parents=True, exist_ok=True)
 
     # 前置检查：影像目录存在
     if not imaging_base.exists():
@@ -176,7 +176,7 @@ def main():
         time.sleep(1)
 
     # 保存
-    output_path = data_dir / "mri_report_check_results.json"
+    output_path = lit_dir / "mri_report_check_results.json"
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump({
             "test_date": datetime.now().isoformat(),
@@ -188,7 +188,7 @@ def main():
     print(f"\n💾 结果已保存: {output_path}")
 
     # 生成 Markdown 版
-    md_path = data_dir / "mri_report_check_results.md"
+    md_path = lit_dir / "mri_report_check_results.md"
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(f"# MRI 报告印证分析\n\n")
         f.write(f"**检查日期**: 2026-04-11  **检查编号**: Y00002207707\n\n")

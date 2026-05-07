@@ -135,14 +135,14 @@ def main():
     parser.add_argument("--patient-id", default=None, help="诊疗卡号，设置后自动推导路径")
     args = parser.parse_args()
 
+    import os
     wiki_data = WIKI_ROOT / "data"
     if args.patient_id:
-        import os
-        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
-        pdata = wiki_data / args.patient_id / ts
-        args.analysis = args.analysis or str(pdata / "analysis_results.json")
-        args.lit = args.lit or str(pdata / "literature_results.json")
-        args.out = args.out or str(pdata / "literature_interpretation.json")
+        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id)
+        lit_dir = wiki_data / args.patient_id / ts / "03_literature"
+        args.analysis = args.analysis or str(lit_dir.parent / "02_analyzed" / "analysis_results.json")
+        args.lit = args.lit or str(lit_dir / "literature_results.json")
+        args.out = args.out or str(lit_dir / "literature_interpretation.json")
     else:
         args.analysis = args.analysis or str(wiki_data / "analysis_results.json")
         args.lit = args.lit or str(wiki_data / "literature_results.json")
@@ -168,6 +168,7 @@ def main():
         "response": response,
     }
 
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 

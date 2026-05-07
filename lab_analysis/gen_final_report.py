@@ -70,7 +70,7 @@ def assess_three_source_consistency(data_dir: Path) -> str:
     signals = []   # (label, status, detail)
 
     # ── 源1：检验数据 ───────────────────────────────────────────
-    lab_path = data_dir / "lab_metrics.json"
+    lab_path = data_dir / "02_analyzed" / "lab_metrics.json"
     lab_summary = "数据暂缺"
     if lab_path.exists():
         try:
@@ -97,7 +97,7 @@ def assess_three_source_consistency(data_dir: Path) -> str:
             lab_summary = "数据解析失败"
 
     # ── 源2：影像印证 ──────────────────────────────────────────
-    mri_path = data_dir / "mri_report_check_results.json"
+    mri_path = data_dir / "03_literature" / "mri_report_check_results.json"
     mri_summary = "影像印证暂缺"
     if mri_path.exists():
         try:
@@ -121,8 +121,8 @@ def assess_three_source_consistency(data_dir: Path) -> str:
             mri_summary = "影像数据解析失败"
 
     # ── 源3：文献证据 ───────────────────────────────────────────
-    lit_results_path = data_dir / "literature_results.json"
-    lit_interp_path = data_dir / "literature_interpretation.json"
+    lit_results_path = data_dir / "03_literature" / "literature_results.json"
+    lit_interp_path = data_dir / "03_literature" / "literature_interpretation.json"
     lit_summary = "文献证据暂缺"
     if lit_results_path.exists():
         try:
@@ -195,7 +195,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
     """构建完整的 USER_PROMPT，包含三源数据和质控段落。"""
     # 读检验数据
     lab_data = ""
-    lab_path = data_dir / "lab_metrics.json"
+    lab_path = data_dir / "02_analyzed" / "lab_metrics.json"
     if lab_path.exists():
         try:
             d = json.loads(lab_path.read_text(encoding="utf-8"))
@@ -218,7 +218,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 
     # 读文献列表
     lit_data = ""
-    lit_path = data_dir / "literature_results.json"
+    lit_path = data_dir / "03_literature" / "literature_results.json"
     if lit_path.exists():
         try:
             lit = json.loads(lit_path.read_text(encoding="utf-8"))
@@ -234,7 +234,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 
     # 读循证解读
     interp_data = ""
-    interp_path = data_dir / "literature_interpretation.json"
+    interp_path = data_dir / "03_literature" / "literature_interpretation.json"
     if interp_path.exists():
         try:
             d = json.loads(interp_path.read_text(encoding="utf-8"))
@@ -246,7 +246,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 
     # 读MRI印证
     mri_data = ""
-    mri_path = data_dir / "mri_report_check_results.json"
+    mri_path = data_dir / "03_literature" / "mri_report_check_results.json"
     if mri_path.exists():
         try:
             mri = json.loads(mri_path.read_text(encoding="utf-8"))
@@ -274,7 +274,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 
 【请依次阅读以下数据文件，未找到的文件请注明"数据暂缺"】：
 1. 检验指标时序数据：{str(lab_path)}
-2. 统计分析结果：{str(data_dir / "analysis_results.json")}
+2. 统计分析结果：{str(data_dir / "02_analyzed" / "analysis_results.json")}
 3. 文献检索结果：{str(lit_path)}
 4. 循证医学解读：{str(interp_path)}
 5. MRI影像AI分析（如有）：{str(mri_path)}
@@ -333,21 +333,22 @@ def main():
     args = parse_args()
     patient_id = args.patient_id
     import os
-    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id); data_dir = WIKI_ROOT / "data" / patient_id / ts
+    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id)
+    data_dir = WIKI_ROOT / "data" / patient_id / ts
 
     DEEPSEEK_API_KEY = load_env_key("DEEPSEEK_API_KEY")
     if not DEEPSEEK_API_KEY:
         print("❌ 未找到 DEEPSEEK_API_KEY"); return
 
-    data_dir = WIKI_ROOT / "data" / args.patient_id / ts
-    output_path = data_dir / "final_integrated_report.md"
+    reports_dir = data_dir / "04_reports"
+    output_path = reports_dir / "final_integrated_report.md"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # 前置检查：核心输入文件是否存在（警告但不阻断）
     required = [
-        data_dir / "lab_metrics.json",
-        data_dir / "analysis_results.json",
-        data_dir / "literature_results.json",
+        data_dir / "02_analyzed" / "lab_metrics.json",
+        data_dir / "02_analyzed" / "analysis_results.json",
+        data_dir / "03_literature" / "literature_results.json",
     ]
     missing = [str(p) for p in required if not p.exists()]
     if missing:

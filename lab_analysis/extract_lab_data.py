@@ -109,9 +109,16 @@ def get_api_key():
 
 
 def encode_image_to_base64(image_path: Path) -> str:
-    """将图片编码为 base64"""
-    with open(image_path, "rb") as f:
-        return base64.b64encode(f.read()).decode("utf-8")
+    """将图片编码为 base64（自动转为RGB并压缩）"""
+    from PIL import Image
+    from io import BytesIO
+    img = Image.open(image_path).convert("RGB")
+    if max(img.size) > 2000:
+        ratio = 2000 / max(img.size)
+        img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
+    buf = BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
 def extract_lab_metrics(image_path: Path) -> dict:
@@ -223,9 +230,7 @@ def extract_lab_metrics(image_path: Path) -> dict:
                             {"type": "text", "text": prompt}
                         ]
                     }
-                ],
-                "max_tokens": 8000,
-                "temperature": 0.1  # 降低温度以提高稳定性
+                ]
             }
             
             resp = requests.post(

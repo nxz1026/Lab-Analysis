@@ -28,11 +28,13 @@ def build_paths(patient_id: str):
     # ANALYSIS_TS 可能是纯时间戳（run_analysis.py 传入），也可能是 "deid/ts"（直接传参）
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
     output_dir = WIKI_ROOT / "data" / patient_id / ts
+    analyzed_dir = output_dir / "02_analyzed"
     return {
         "raw_papers": raw_papers,
         "output_dir": output_dir,
-        "csv": output_dir / "lab_metrics.csv",
-        "json": output_dir / "lab_metrics.json",
+        "analyzed_dir": analyzed_dir,
+        "csv": analyzed_dir / "lab_metrics.csv",
+        "json": analyzed_dir / "lab_metrics.json",
     }
 
 
@@ -329,7 +331,7 @@ def main():
     print(f"  原始数据: {paths['raw_papers']}")
     print(f"  输出目录: {paths['output_dir']}")
 
-    paths["output_dir"].mkdir(parents=True, exist_ok=True)
+    paths["analyzed_dir"].mkdir(parents=True, exist_ok=True)
 
     print(f"找到 {len(reports)} 份报告")
 
