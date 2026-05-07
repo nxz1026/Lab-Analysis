@@ -23,9 +23,13 @@ from pathlib import Path
 from datetime import date
 
 # ============ 配置 ============
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 TODAY = date.today().strftime("%Y-%m-%d")
-BASE_DIR = Path.home() / "wiki"
-LOCAL_UPLOAD_ROOT = BASE_DIR / "local_upload"  # 本地上传根目录
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", str(Path.home() / "wiki")))
+LOCAL_UPLOAD_ROOT = WIKI_ROOT / "local_upload"  # 本地上传根目录
 
 
 def build_paths(patient_id: str):
@@ -35,13 +39,15 @@ def build_paths(patient_id: str):
     - patient_id: de-identified ID（如 846552421134373347）
     - ANALYSIS_TS: 仅时间戳（如 20260503_030142），无 de-id 前缀
     """
-    import os
     raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
     # ANALYSIS_TS 可能是纯时间戳（run_analysis.py 传入），也可能是 "deid/ts"（直接传参）
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts  # fallback 为 patient_id
-    data_dir = BASE_DIR / "data" / patient_id / ts
+    data_dir = WIKI_ROOT / "data" / patient_id / ts
     return {
         "data": data_dir,
+        "analyzed": data_dir / "02_analyzed",
+        "literature": data_dir / "03_literature",
+        "reports": data_dir / "04_reports",
     }
 
 
@@ -89,7 +95,9 @@ def main():
     args = parse_args()
     patient_id = args.patient_id
     paths = build_paths(patient_id)
-    data_dir = paths["data"]
+    analyzed_dir = paths["analyzed"]
+    literature_dir = paths["literature"]
+    reports_dir = paths["reports"]
 
     print(f"\n{'='*60}")
     print(f"📅 当天日期: {TODAY}")
@@ -97,24 +105,27 @@ def main():
     print(f"📂 本地上传根目录: {LOCAL_UPLOAD_ROOT}")
     print(f"{'='*60}\n")
 
-    # 动态构建文件清单，文件名加病人ID前缀
+    # 动态构建文件清单（适配新目录结构），文件名加病人ID前缀
     upload_map = [
         # --- 原始数据 ---
-        (data_dir / "lab_metrics.csv",                       "原始数据",  None),
-        (data_dir / "lab_metrics.json",                      "原始数据",  None),
+        (analyzed_dir / "lab_metrics.csv",                       "原始数据",  None),
+        (analyzed_dir / "lab_metrics.json",                      "原始数据",  None),
         # --- 文献参考 ---
-        (data_dir / "literature_results.md",               "文献参考",  None),
+        (literature_dir / "literature_results.md",               "文献参考",  None),
         # --- 中间结果 ---
-        (data_dir / "literature_interpretation.md",   "中间结果",  None),
-        (data_dir / "mri_report_check_results.md",         "中间结果",  None),
-        # --- 统计结果 ---
-        (data_dir / "analysis_results_report.md",            "中间结果",  None),
-        (data_dir / "fig_01_trend_regression.png",            "统计结果",  None),
-        (data_dir / "fig_02_correlation_heatmap.png",        "统计结果",  None),
-        (data_dir / "fig_03_inflammation_status.png",        "统计结果",  None),
-        (data_dir / "fig_04_abnormal_indicators.png",        "统计结果",  None),
+        (literature_dir / "literature_interpretation.md",        "中间结果",  None),
+        (literature_dir / "mri_report_check_results.md",         "中间结果",  None),
+        (reports_dir / "analysis_results_report.md",             "中间结果",  None),
+        # --- 统计结果（7张图表）---
+        (analyzed_dir / "figures" / "fig_01_trend_regression.png",      "统计结果",  None),
+        (analyzed_dir / "figures" / "fig_02_correlation_heatmap.png",   "统计结果",  None),
+        (analyzed_dir / "figures" / "fig_03_inflammation_status.png",   "统计结果",  None),
+        (analyzed_dir / "figures" / "fig_04_abnormal_indicators.png",   "统计结果",  None),
+        (analyzed_dir / "figures" / "fig_05_moving_average.png",        "统计结果",  None),
+        (analyzed_dir / "figures" / "fig_06_cv_stability.png",          "统计结果",  None),
+        (analyzed_dir / "figures" / "fig_07_zscore_distribution.png",   "统计结果",  None),
         # --- 最终报告（当天根目录）---
-        (data_dir / "final_integrated_report.md",             None,        None),
+        (reports_dir / "final_integrated_report.md",             None,        None),
     ]
     
     # Step 1: 创建当天日期文件夹
