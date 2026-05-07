@@ -4,7 +4,7 @@
 data_loader.py
 读取指定病人的 lab_report_*/metrics.md，提取数值写入 data/{patient_id}/lab_metrics.csv + lab_metrics.json
 
-用法：python data_loader.py --patient-id 513229198801040014
+用法：python data_loader.py --patient-id YOUR_PATIENT_ID
 """
 
 import re
@@ -14,8 +14,9 @@ import sys
 import argparse
 from datetime import datetime
 from pathlib import Path
+import os
 
-WIKI_ROOT = Path.home() / "wiki"
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 
 def build_paths(patient_id: str):
@@ -306,7 +307,7 @@ def to_json(reports, output_path):
 def main():
     import os
     parser = argparse.ArgumentParser(description="数据加载：读取检验报告，生成结构化数据")
-    parser.add_argument("--patient-id", required=True, help="诊疗卡号，如 513229198801040014")
+    parser.add_argument("--patient-id", required=True, help="诊疗卡号，如 YOUR_PATIENT_ID")
     args = parser.parse_args()
 
     paths = build_paths(args.patient_id)

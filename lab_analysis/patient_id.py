@@ -31,7 +31,7 @@ def decode(obfuscated_id: str) -> str:
 
 if __name__ == "__main__":
     # 示例
-    raw = "513229198801040014"
+    raw = "YOUR_PATIENT_ID"
     obf = encode(raw)
     restored = decode(obf)
     print(f"原始:  {raw}")

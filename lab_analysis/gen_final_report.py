@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 
-WIKI_ROOT = Path.home() / "wiki"
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 # ============================================================
 # 患者信息脱敏常量（发布前务必确认）
@@ -339,7 +339,7 @@ def main():
     if not DEEPSEEK_API_KEY:
         print("❌ 未找到 DEEPSEEK_API_KEY"); return
 
-    data_dir = Path.home() / "wiki" / "data" / args.patient_id / ts
+    data_dir = WIKI_ROOT / "data" / args.patient_id / ts
     output_path = data_dir / "final_integrated_report.md"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 

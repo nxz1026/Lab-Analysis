@@ -3,12 +3,12 @@
 """
 qwen_vl_report_check.py
 上腹部MRI报告印证分析 — 每个部位选1-2张代表性DICOM图
-用法: python qwen_vl_report_check.py --patient-id 513229198801040014
+用法: python qwen_vl_report_check.py --patient-id YOUR_PATIENT_ID
 """
 import base64, json, os, sys, time
 from pathlib import Path
 
-WIKI_ROOT = Path.home() / "wiki"
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
 if not DASHSCOPE_API_KEY:
@@ -50,7 +50,7 @@ PROMPT_TEMPLATE = """你是一位资深放射科医生。请仔细分析这张�
 - 序列: {seq_name}
 - 扫描部位: 上腹部（肝胆胰脾）+ 胰胆管薄层
 - 检查日期: 2024-02-22
-- 患者: 聂聃，男，38岁，检查编号SYNTH-EXAM-0002
+- 患者: [脱敏]，男，38岁，检查编号SYNTH-EXAM-0002
 - 临床指征: 胰管支架置入后复查，腹痛待查
 
 请完成以下分析：
@@ -121,11 +121,10 @@ def main():
     parser.add_argument("--patient-id", required=True)
     args = parser.parse_args()
 
-    wiki_root = Path.home() / "wiki"
-    imaging_base = wiki_root / "raw" / f"patient_{args.patient_id}" / "imaging"
+    # 使用 WIKI_ROOT 而不是硬编码路径
+    imaging_base = WIKI_ROOT / "raw" / f"patient_{args.patient_id}" / "imaging"
     import os
     raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
-    data_dir = wiki_root / "data" / args.patient_id / ts
     data_dir.mkdir(exist_ok=True)
 
     # 前置检查：影像目录存在

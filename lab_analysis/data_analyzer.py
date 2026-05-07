@@ -4,7 +4,7 @@
 data_analyzer.py
 对指定病人的 lab_metrics.csv 进行统计分析和建模，输出 analysis_results.json + 4张图。
 
-用法：python data_analyzer.py --patient-id 513229198801040014
+用法：python data_analyzer.py --patient-id YOUR_PATIENT_ID
 依赖：~/wiki/.venv/bin/python (pandas, numpy, scipy, scikit-learn)
 """
 
@@ -20,8 +20,9 @@ import matplotlib.patches as mpatches
 from matplotlib.colors import LinearSegmentedColormap
 from pathlib import Path
 from datetime import datetime
+import os
 
-WIKI_ROOT = Path.home() / "wiki"
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 
 def build_paths(patient_id: str):
@@ -521,6 +522,6 @@ def run(patient_id: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="统计分析：生成分析结果 + 4类图表")
-    parser.add_argument("--patient-id", required=True, help="诊疗卡号，如 513229198801040014")
+    parser.add_argument("--patient-id", required=True, help="诊疗卡号，如 YOUR_PATIENT_ID")
     args = parser.parse_args()
     run(args.patient_id)
