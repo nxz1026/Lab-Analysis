@@ -12,8 +12,9 @@ import time
 import re
 from datetime import datetime
 from pathlib import Path
+import os
 
-WIKI_ROOT = Path.home() / "wiki"
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 # ---------------------------------------------------------------------------
 # 检索策略配置
@@ -266,7 +267,7 @@ def main():
     if args.patient_id:
         import os
         raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); data_dir = WIKI_ROOT / "data" / args.patient_id / ts
-        default_out = Path.home() / "wiki" / "data" / args.patient_id / ts / "literature_results.json"
+        default_out = WIKI_ROOT / "data" / args.patient_id / ts / "literature_results.json"
         args.out = args.out or str(default_out)
 
     all_topics = list(SEARCH_STRATEGIES.keys())

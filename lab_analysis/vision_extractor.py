@@ -38,22 +38,11 @@ def validate_chinese_id(id_number: str) -> bool:
 
 
 def get_api_key():
-    """从环境变量或配置文件获取 API Key"""
-    # 尝试从环境变量获取
-    api_key = os.environ.get("OPENROUTER_API_KEY")
+    """从环境变量获取 API Key"""
+    api_key = os.environ.get("ZHIPU_API_KEY")
     
     if not api_key:
-        # 尝试从 .env 文件读取
-        env_file = Path.home() / ".hermes" / ".env"
-        if env_file.exists():
-            content = env_file.read_text(encoding="utf-8")
-            for line in content.splitlines():
-                if line.startswith("OPENROUTER_API_KEY="):
-                    api_key = line.split("=", 1)[1].strip()
-                    break
-    
-    if not api_key:
-        raise ValueError("未找到 OPENROUTER_API_KEY，请配置在 ~/.hermes/.env 或环境变量中")
+        raise ValueError("未找到 ZHIPU_API_KEY，请配置在 .env 文件或环境变量中")
     
     return api_key
 
@@ -91,7 +80,7 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
 
 请以JSON格式返回，例如：
 {
-  "patient_id": "513229198801040014",
+  "patient_id": "YOUR_PATIENT_ID",
   "report_date": "2026-03-24",
   "report_type": "outpatient",
   "confidence": 0.95
@@ -100,21 +89,22 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
 如果某个字段无法确定，请用 null 表示。
 只返回JSON，不要其他文字。"""
 
-    # 优先使用免费模型，如果失败则切换到付费模型
-    if use_free_model:
-        # OpenRouter 免费模型列表（按优先级）
-        models_to_try = [
-            "qwen/qwen-2.5-vl-72b-instruct",  # 免费且性能较好
-            "qwen/qwen-vl-plus",               # 付费但更稳定
-        ]
-    else:
-        models_to_try = ["qwen/qwen-vl-plus"]
+    # 使用智谱AI GLM-4V-Flash模型
+    model_name = "glm-4v-flash"
     
+    max_retries = 3
+    retry_count = 0
     last_error = None
     
-    for model_name in models_to_try:
+    while retry_count < max_retries:
         try:
-            print(f"[Vision] 尝试使用模型: {model_name}")
+            if retry_count > 0:
+                wait_time = 2 ** retry_count  # 指数退避: 2s, 4s, 8s
+                print(f"[Vision] 等待 {wait_time} 秒后重试...")
+                import time
+                time.sleep(wait_time)
+            
+            print(f"[Vision] 尝试使用模型: {model_name} (智谱AI) [尝试 {retry_count + 1}/{max_retries}]")
             
             payload = {
                 "model": model_name,
@@ -127,19 +117,18 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
                         ]
                     }
                 ],
-                "max_tokens": 2000
+                "max_tokens": 2000,
+                "temperature": 0.1  # 降低温度以提高稳定性
             }
             
-            # 使用 OpenRouter API
-            api_url = "https://openrouter.ai/api/v1/chat/completions"
+            # 使用智谱AI API
+            api_url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
             
             resp = requests.post(
                 api_url,
                 headers={
                     "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://github.com/nxz1026/Lab-Analysis",  # OpenRouter 要求
-                    "X-Title": "Lab-Analysis Pipeline"
+                    "Content-Type": "application/json"
                 },
                 json=payload,
                 timeout=120
@@ -147,7 +136,7 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
             resp.raise_for_status()
             
             data = resp.json()
-            # OpenAI 兼容模式返回格式
+            # 智谱AI返回格式与OpenAI兼容
             content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
             
             print(f"[Vision] [OK] 模型 {model_name} 调用成功")
@@ -167,24 +156,35 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
                 result['model_used'] = model_name  # 记录使用的模型
                 return result
             except json.JSONDecodeError as e:
-                print(f"[WARNING] JSON解析失败: {e}")
-                print(f"原始响应: {content}")
-                last_error = "JSON解析失败"
-                continue  # 尝试下一个模型
+                print(f"[ERROR] JSON解析失败: {e}")
+                print(f"原始响应: {content[:500]}")
+                last_error = f"JSON解析失败: {e}"
+                retry_count += 1
+                continue
         
         except Exception as e:
-            print(f"[WARNING] 模型 {model_name} 调用失败: {e}")
-            last_error = str(e)
-            continue  # 尝试下一个模型
+            error_msg = str(e)
+            print(f"[ERROR] 模型调用失败: {error_msg}")
+            last_error = error_msg
+            
+            # 如果是429错误，等待更长时间
+            if "429" in error_msg:
+                print(f"[WARNING] 遇到速率限制，将增加等待时间")
+            
+            retry_count += 1
+            if retry_count < max_retries:
+                continue
+            else:
+                break
     
-    # 所有模型都失败了
-    print(f"❌ 所有模型都调用失败")
+    # 所有重试都失败
+    print(f"[ERROR] 所有 {max_retries} 次尝试均失败。最后错误: {last_error}")
     return {
         "patient_id": None,
         "report_date": None,
         "report_type": None,
         "confidence": 0.0,
-        "error": f"所有模型调用失败: {last_error}"
+        "error": f"模型调用失败: {last_error}"
     }
 
 

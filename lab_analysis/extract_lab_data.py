@@ -4,7 +4,7 @@
 extract_lab_data.py — 从检验报告图片中提取完整检验指标并生成结构化文件
 
 用法：
-  python extract_lab_data.py --image /path/to/lab_report.jpg --patient-id 513229198801040014
+  python extract_lab_data.py --image /path/to/lab_report.jpg --patient-id YOUR_PATIENT_ID
 
 功能：
   1. 使用 Qwen-VL 从检验报告图片中提取所有检验指标
@@ -97,14 +97,14 @@ def validate_patient_id(patient_id: str, extracted_id: str = None, interactive: 
             return None
 
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.home() / "wiki"))
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 
 def get_api_key():
     """从环境变量获取 API Key"""
-    api_key = os.environ.get("OPENROUTER_API_KEY")
+    api_key = os.environ.get("ZHIPU_API_KEY")
     if not api_key:
-        raise ValueError("未找到 OPENROUTER_API_KEY，请设置环境变量")
+        raise ValueError("未找到 ZHIPU_API_KEY，请设置环境变量")
     return api_key
 
 
@@ -174,7 +174,7 @@ def extract_lab_metrics(image_path: Path) -> dict:
 ## 输出格式（严格的JSON）：
 
 {
-  "patient_id": "513229198801040014",
+  "patient_id": "YOUR_PATIENT_ID",
   "report_date": "2026-03-24",
   "report_type": "outpatient",
   "department": "门诊检验科",
@@ -195,17 +195,23 @@ def extract_lab_metrics(image_path: Path) -> dict:
 5. 仔细识别所有指标，不要遗漏
 """
 
-    # 模型列表：优先免费，失败后切换到付费
-    models_to_try = [
-        ("qwen/qwen-2.5-vl-72b-instruct", "免费"),  # OpenRouter 免费模型
-        ("qwen/qwen-vl-plus", "付费"),               # DashScope 付费模型（更稳定）
-    ]
+    # 使用智谱AI GLM-4V-Flash模型
+    model_name = "glm-4v-flash"
+    model_type = "智谱AI"
     
+    max_retries = 3
+    retry_count = 0
     last_error = None
     
-    for model_name, model_type in models_to_try:
+    while retry_count < max_retries:
         try:
-            print(f"[Vision] 尝试使用模型: {model_name} ({model_type})")
+            if retry_count > 0:
+                wait_time = 2 ** retry_count  # 指数退避: 2s, 4s, 8s
+                print(f"[Vision] 等待 {wait_time} 秒后重试...")
+                import time
+                time.sleep(wait_time)
+            
+            print(f"[Vision] 尝试使用模型: {model_name} ({model_type}) [尝试 {retry_count + 1}/{max_retries}]")
             
             payload = {
                 "model": model_name,
@@ -218,16 +224,15 @@ def extract_lab_metrics(image_path: Path) -> dict:
                         ]
                     }
                 ],
-                "max_tokens": 8000
+                "max_tokens": 8000,
+                "temperature": 0.1  # 降低温度以提高稳定性
             }
             
             resp = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
+                "https://open.bigmodel.cn/api/paas/v4/chat/completions",
                 headers={
                     "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://github.com/nxz1026/Lab-Analysis",
-                    "X-Title": "Lab-Analysis Pipeline"
+                    "Content-Type": "application/json"
                 },
                 json=payload,
                 timeout=180
@@ -253,19 +258,31 @@ def extract_lab_metrics(image_path: Path) -> dict:
                 print(f"[OK] 成功提取 {len(result.get('metrics', {}))} 个检验指标 (使用 {model_type} 模型)")
                 return result
             except json.JSONDecodeError as e:
-                print(f"[WARNING] JSON解析失败: {e}")
-                print(f"[INFO] 将尝试下一个模型...")
+                print(f"[ERROR] JSON解析失败: {e}")
+                print(f"[INFO] 原始响应: {content[:500]}")
                 last_error = f"JSON解析失败: {e}"
+                retry_count += 1
                 continue
                 
         except Exception as e:
-            print(f"[WARNING] 模型 {model_name} 调用失败: {e}")
-            print(f"[INFO] 将尝试下一个模型...")
-            last_error = str(e)
-            continue
+            error_msg = str(e)
+            print(f"[ERROR] 模型调用失败: {error_msg}")
+            last_error = error_msg
+            
+            # 如果是429错误，等待更长时间
+            if "429" in error_msg:
+                print(f"[WARNING] 遇到速率限制，将增加等待时间")
+            
+            retry_count += 1
+            if retry_count < max_retries:
+                continue
+            else:
+                break
     
-    # 所有模型都失败
-    print(f"[ERROR] 所有模型调用均失败。最后错误: {last_error}")
+    # 所有重试都失败
+    print(f"[ERROR] 所有 {max_retries} 次尝试均失败。最后错误: {last_error}")
+    import traceback
+    traceback.print_exc()
     return None
 
 
@@ -349,6 +366,80 @@ def save_structured_report(data: dict, patient_id: str) -> str:
                     break
     
     return str(report_dir.relative_to(WIKI_ROOT))
+
+
+def main_with_args(args) -> bool:
+    """
+    使用给定的参数执行提取流程（可被其他模块调用）
+    
+    Args:
+        args: argparse.Namespace 对象，包含 image, patient_id, no_interactive
+    
+    Returns:
+        是否成功
+    """
+    interactive = not args.no_interactive
+    image_path = Path(args.image)
+    patient_id = args.patient_id
+    
+    if not image_path.exists():
+        print(f"[ERROR] 文件不存在: {image_path}")
+        return False
+    
+    print("=" * 60)
+    print("检验报告数据结构化提取工具")
+    print("=" * 60)
+    print(f"图片路径: {image_path.name}")
+    print(f"患者ID: {patient_id if patient_id else '(未提供，将使用AI提取)'}")
+    print(f"交互模式: {'是' if interactive else '否（无效ID将直接放弃）'}")
+    print(f"工作区: {WIKI_ROOT}")
+    print("=" * 60)
+    
+    try:
+        # 步骤1：使用Qwen-VL提取数据
+        print("\n[步骤1] 调用 Qwen-VL 提取检验指标...")
+        data = extract_lab_metrics(image_path)
+        
+        if not data:
+            print("[ERROR] 数据提取失败")
+            return False
+        
+        # 步骤2：验证患者ID（使用AI提取的ID作为备选）
+        print("\n[步骤2] 验证患者ID...")
+        extracted_id = data.get('patient_id')
+        validated_id = validate_patient_id(patient_id, extracted_id, interactive)
+        if not validated_id:
+            print("[ERROR] 患者ID验证失败，终止处理")
+            return False
+        patient_id = validated_id
+        print(f"[OK] 患者ID验证通过: {patient_id}")
+        
+        # 步骤3：生成结构化文件
+        print("\n[步骤3] 生成结构化报告文件...")
+        saved_dir = save_structured_report(data, patient_id)
+        
+        # 步骤4：显示结果摘要
+        print("\n" + "=" * 60)
+        print("提取完成！")
+        print("=" * 60)
+        print(f"保存位置: {saved_dir}")
+        print(f"报告日期: {data.get('report_date')}")
+        print(f"报告类型: {data.get('report_type')}")
+        print(f"提取指标数: {len(data.get('metrics', {}))}")
+        print(f"\n主要指标:")
+        for key in ['WBC', 'RBC', 'HGB', 'PLT', 'CRP', 'hs-CRP']:
+            if key in data.get('metrics', {}):
+                info = data['metrics'][key]
+                print(f"  {key}: {info.get('value')} {info.get('unit', '')}")
+        print("=" * 60)
+        
+        return True
+        
+    except Exception as e:
+        print(f"[ERROR] 处理失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 def main():

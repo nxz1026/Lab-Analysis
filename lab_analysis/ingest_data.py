@@ -12,26 +12,26 @@ ingest_data.py — 统一数据摄入脚本
   # 检验报告图片
   python -m lab_analysis.ingest_data --type lab_image \
       --path "lab_2026-03-24.jpg" \
-      --patient-id "513229198801040014" \
+      --patient-id "YOUR_PATIENT_ID" \
       --report-date "2026-03-24" \
       --report-type "outpatient"
 
   # MRI DICOM ZIP文件
   python -m lab_analysis.ingest_data --type mri_dicom \
       --zip-path "export_part1.zip" \
-      --patient-id "513229198801040014" \
+      --patient-id "YOUR_PATIENT_ID" \
       --report-date "2026-04-11"
 
   # MRI DICOM 已解压目录
   python -m lab_analysis.ingest_data --type mri_dicom \
       --dicom-dir "dicom_temp/" \
-      --patient-id "513229198801040014" \
+      --patient-id "YOUR_PATIENT_ID" \
       --report-date "2026-04-11"
 
   # MRI 文字报告
   python -m lab_analysis.ingest_data --type mri_report \
       --path "mri_report.pdf" \
-      --patient-id "513229198801040014" \
+      --patient-id "YOUR_PATIENT_ID" \
       --report-date "2026-04-11"
 
 强制要求：
@@ -53,7 +53,7 @@ from zipfile import ZipFile
 
 from lab_analysis.patient_id import encode
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", "/root/wiki"))
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 INGEST_LOG = WIKI_ROOT / ".ingest_log.json"
 LOG_FILE = WIKI_ROOT / ".ingest_debug.log"
 
@@ -434,14 +434,14 @@ def main():
                 print('  # 单个文件')
                 print('  python -m lab_analysis.ingest_data --type lab_image \\')
                 print('      --path "lab_2026-03-24.jpg" \\')
-                print('      --patient-id "513229198801040014" \\')
+                print('      --patient-id "YOUR_PATIENT_ID" \\')
                 print('      --report-date "2026-03-24" \\')
                 print('      --report-type "outpatient"')
                 print()
                 print('  # 批量处理多个文件')
                 print('  python -m lab_analysis.ingest_data --type lab_image \\')
                 print('      --path "lab1.jpg" "lab2.jpg" "lab3.jpg" \\')
-                print('      --patient-id "513229198801040014" \\')
+                print('      --patient-id "YOUR_PATIENT_ID" \\')
                 print('      --report-date "2026-03-24" \\')
                 print('      --report-type "outpatient" \\')
                 print('      --batch')
@@ -482,20 +482,20 @@ def main():
                 print('  # 方式1: 单个ZIP文件')
                 print('  python -m lab_analysis.ingest_data --type mri_dicom \\')
                 print('      --zip-path "export_part1.zip" \\')
-                print('      --patient-id "513229198801040014" \\')
+                print('      --patient-id "YOUR_PATIENT_ID" \\')
                 print('      --report-date "2026-04-11"')
                 print()
                 print('  # 方式2: 批量处理多个ZIP文件')
                 print('  python -m lab_analysis.ingest_data --type mri_dicom \\')
                 print('      --zip-path "export1.zip" "export2.zip" \\')
-                print('      --patient-id "513229198801040014" \\')
+                print('      --patient-id "YOUR_PATIENT_ID" \\')
                 print('      --report-date "2026-04-11" \\')
                 print('      --batch')
                 print()
                 print('  # 方式3: 使用已解压目录')
                 print('  python -m lab_analysis.ingest_data --type mri_dicom \\')
                 print('      --dicom-dir "dicom_temp/" \\')
-                print('      --patient-id "513229198801040014" \\')
+                print('      --patient-id "YOUR_PATIENT_ID" \\')
                 print('      --report-date "2026-04-11"')
                 return 1
             
@@ -556,13 +556,13 @@ def main():
                 print('  # 单个文件')
                 print('  python -m lab_analysis.ingest_data --type mri_report \\')
                 print('      --path "mri_report.pdf" \\')
-                print('      --patient-id "513229198801040014" \\')
+                print('      --patient-id "YOUR_PATIENT_ID" \\')
                 print('      --report-date "2026-04-11"')
                 print()
                 print('  # 批量处理多个文件')
                 print('  python -m lab_analysis.ingest_data --type mri_report \\')
                 print('      --path "mri1.pdf" "mri2.pdf" \\')
-                print('      --patient-id "513229198801040014" \\')
+                print('      --patient-id "YOUR_PATIENT_ID" \\')
                 print('      --report-date "2026-04-11" \\')
                 print('      --batch')
                 return 1

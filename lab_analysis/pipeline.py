@@ -20,7 +20,7 @@ from pathlib import Path
 
 from lab_analysis.patient_id import encode
 
-WIKI_ROOT = Path.home() / "wiki"
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 
 def parse_args():
@@ -28,6 +28,7 @@ def parse_args():
     parser.add_argument("--patient-id", type=str, default=None, help="病人诊疗卡号（可选，如果不提供则从数据中自动识别或提示输入）")
     parser.add_argument("--skip-llm", action="store_true", help="跳过 LLM 循证解读步骤")
     parser.add_argument("--skip-imaging", action="store_true", help="跳过影像分析步骤")
+    parser.add_argument("--skip-ingest", action="store_true", help="跳过数据摄入步骤（使用已有数据）")
     parser.add_argument("--ingest-lab", type=str, nargs="*", help="检验报告图片路径列表")
     parser.add_argument("--ingest-dicom-zip", type=str, help="DICOM ZIP文件路径")
     parser.add_argument("--ingest-dicom-dir", type=str, help="DICOM已解压目录路径")
@@ -144,6 +145,222 @@ def check_patient_data(deid: str) -> bool:
     return True
 
 
+def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, report_type: str = None) -> bool:
+    """
+    从 Origin_data 目录自动摄入数据
+    
+    Args:
+        patient_id: 患者ID
+        report_date: 报告日期（可选）
+        report_type: 报告类型（可选）
+    
+    Returns:
+        是否成功摄入数据
+    """
+    origin_data_dir = WIKI_ROOT / "raw" / "Origin_data"
+    
+    if not origin_data_dir.exists():
+        print(f"[INFO] Origin_data 目录不存在: {origin_data_dir}")
+        return False
+    
+    # 查找所有检验报告图片
+    lab_images = list(origin_data_dir.glob("lab_*.jpg")) + list(origin_data_dir.glob("lab_*.png"))
+    
+    # 查找所有MRI报告图片
+    mri_images = list(origin_data_dir.glob("mri_*.jpg")) + list(origin_data_dir.glob("mri_*.png"))
+    
+    # 查找所有DICOM压缩包
+    dicom_zips = list(origin_data_dir.glob("export_*.zip")) + list(origin_data_dir.glob("dicom_*.zip"))
+    
+    # 查找所有DICOM文件（如果在根目录下）
+    dcm_files = list(origin_data_dir.glob("*.dcm"))
+    
+    if not any([lab_images, mri_images, dicom_zips, dcm_files]):
+        print(f"[INFO] Origin_data 目录中没有找到任何可处理的文件")
+        return False
+    
+    print(f"\n{'='*60}")
+    print(f"[STEP ①] 自动数据摄入 - 从 Origin_data 目录")
+    print(f"{'='*60}")
+    print(f"发现 {len(lab_images)} 张检验报告图片")
+    print(f"发现 {len(mri_images)} 张MRI报告图片")
+    print(f"发现 {len(dicom_zips)} 个DICOM压缩包")
+    print(f"发现 {len(dcm_files)} 个DICOM文件")
+    
+    total_success = 0
+    
+    # 处理检验报告图片
+    if lab_images:
+        print(f"\n{'─'*60}")
+        print(f"【检验报告处理】")
+        print(f"{'─'*60}")
+        
+        for idx, img_path in enumerate(lab_images, 1):
+            print(f"\n[{idx}/{len(lab_images)}] 处理: {img_path.name}")
+            
+            try:
+                # 解析文件名中的日期和类型
+                filename = img_path.stem  # 不带扩展名
+                parts = filename.split('_')
+                
+                # 尝试从文件名提取日期 (lab_YYYY-MM-DD_type)
+                extracted_date = None
+                extracted_type = None
+                
+                for part in parts:
+                    if '-' in part and len(part) == 10:  # YYYY-MM-DD
+                        extracted_date = part
+                    elif part in ['outpatient', 'inpatient']:
+                        extracted_type = part
+                
+                # 使用提供的参数或从文件名提取的参数
+                final_date = report_date or extracted_date
+                final_type = report_type or extracted_type
+                
+                if not final_type:
+                    print(f"  [WARNING] 无法从文件名确定报告类型，默认为 outpatient")
+                    final_type = "outpatient"
+                
+                print(f"  报告日期: {final_date or '未指定'}")
+                print(f"  报告类型: {final_type}")
+                
+                # 调用 extract_lab_data 模块进行处理
+                from lab_analysis import extract_lab_data
+                
+                # 构建参数
+                args = argparse.Namespace(
+                    image=str(img_path),
+                    patient_id=patient_id,
+                    no_interactive=False
+                )
+                
+                # 执行提取
+                result = extract_lab_data.main_with_args(args)
+                
+                if result:
+                    total_success += 1
+                    print(f"  [OK] 摄入成功")
+                else:
+                    print(f"  [FAIL] 摄入失败")
+                    
+            except Exception as e:
+                print(f"  [ERROR] 处理失败: {e}")
+                import traceback
+                traceback.print_exc()
+    
+    # 处理MRI报告图片
+    if mri_images:
+        print(f"\n{'─'*60}")
+        print(f"【MRI报告处理】")
+        print(f"{'─'*60}")
+        
+        for idx, img_path in enumerate(mri_images, 1):
+            print(f"\n[{idx}/{len(mri_images)}] 处理: {img_path.name}")
+            
+            try:
+                # 解析文件名中的日期
+                filename = img_path.stem  # 不带扩展名
+                parts = filename.split('_')
+                
+                # 尝试从文件名提取日期 (mri_YYYY-MM-DD)
+                extracted_date = None
+                
+                for part in parts:
+                    if '-' in part and len(part) == 10:  # YYYY-MM-DD
+                        extracted_date = part
+                        break
+                
+                # 使用提供的参数或从文件名提取的参数
+                final_date = report_date or extracted_date
+                
+                print(f"  报告日期: {final_date or '未指定'}")
+                print(f"  [INFO] MRI报告将作为文字报告摄入")
+                
+                # 调用 ingest_data 模块进行摄入
+                from lab_analysis import ingest_data
+                
+                result = ingest_data.ingest_mri_report(
+                    report_path=img_path,
+                    patient_id=patient_id,
+                    report_date=final_date
+                )
+                
+                if result:
+                    total_success += 1
+                    print(f"  [OK] MRI报告摄入成功")
+                else:
+                    print(f"  [FAIL] MRI报告摄入失败")
+                    
+            except Exception as e:
+                print(f"  [ERROR] 处理失败: {e}")
+                import traceback
+                traceback.print_exc()
+    
+    # 处理DICOM压缩包
+    if dicom_zips:
+        print(f"\n{'─'*60}")
+        print(f"【DICOM压缩包处理】")
+        print(f"{'─'*60}")
+        
+        for idx, zip_path in enumerate(dicom_zips, 1):
+            print(f"\n[{idx}/{len(dicom_zips)}] 处理: {zip_path.name}")
+            
+            try:
+                # 解析文件名中的日期
+                filename = zip_path.stem  # 不带扩展名
+                parts = filename.split('_')
+                
+                # 尝试从文件名提取日期
+                extracted_date = None
+                
+                for part in parts:
+                    if '-' in part and len(part) == 10:  # YYYY-MM-DD
+                        extracted_date = part
+                        break
+                
+                # 使用提供的参数或从文件名提取的参数
+                final_date = report_date or extracted_date
+                
+                print(f"  报告日期: {final_date or '未指定'}")
+                print(f"  [INFO] 正在解压并处理DICOM序列...")
+                
+                # 调用 ingest_data 模块进行摄入
+                from lab_analysis import ingest_data
+                
+                result = ingest_data.ingest_mri_dicom(
+                    zip_path=zip_path,
+                    patient_id=patient_id,
+                    report_date=final_date
+                )
+                
+                if result:
+                    total_success += 1
+                    print(f"  [OK] DICOM压缩包摄入成功")
+                else:
+                    print(f"  [FAIL] DICOM压缩包摄入失败")
+                    
+            except Exception as e:
+                print(f"  [ERROR] 处理失败: {e}")
+                import traceback
+                traceback.print_exc()
+    
+    # 处理DICOM文件（如果直接在根目录下）
+    if dcm_files:
+        print(f"\n{'─'*60}")
+        print(f"【DICOM文件处理】")
+        print(f"{'─'*60}")
+        print(f"  [WARNING] 发现 {len(dcm_files)} 个DICOM文件在根目录")
+        print(f"  [INFO] 建议将DICOM文件组织到子目录中，或使用ZIP压缩包")
+        print(f"  [INFO] 跳过直接处理，请使用 --ingest-dicom-dir 手动指定")
+    
+    print(f"\n{'='*60}")
+    total_files = len(lab_images) + len(mri_images) + len(dicom_zips)
+    print(f"数据摄入完成: 共处理 {total_files} 个文件，成功 {total_success} 个")
+    print(f"{'='*60}\n")
+    
+    return total_success > 0
+
+
 def pick_python_exe() -> str:
     """优先使用 ~/wiki/.venv（Hermes 部署）；否则当前解释器。"""
     unix_venv = WIKI_ROOT / ".venv" / "bin" / "python"
@@ -200,76 +417,85 @@ def main():
             print("\n[ERROR] 无法读取输入，请使用 --patient-id 参数提供患者ID")
             sys.exit(1)
     
-    # 步骤3：生成脱敏ID
+    # 步顤3：生成脱敏ID
     deid = get_deid(original_id)
-
+    
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     ts_dir = f"{deid}/{ts}"
-
+    
     print(f"[{datetime.now().isoformat()}] Pipeline 启动")
     print(f"原始病人ID: {original_id}")
     print(f"脱敏病人ID: {deid}")
     print(f"输出目录: data/{ts_dir}/")
     print(f"时间戳: {ts}")
-
-    # ① 数据摄入（如果提供了摄入参数）
-    if args.ingest_lab or args.ingest_dicom_zip or args.ingest_dicom_dir or args.ingest_mri_report:
-        print("\n① 数据摄入 (ingest_data)")
-        python = pick_python_exe()
-        root = repo_root()
-        full_env = dict(os.environ)
-        pp = str(root)
-        if full_env.get("PYTHONPATH"):
-            full_env["PYTHONPATH"] = pp + os.pathsep + full_env["PYTHONPATH"]
-        else:
-            full_env["PYTHONPATH"] = pp
-        
-        # 摄入检验报告图片
-        if args.ingest_lab:
-            for lab_path in args.ingest_lab:
+    
+    # ① 数据摄入（第一步）
+    if not args.skip_ingest:
+        # 先尝试从 Origin_data 自动摄入
+        has_origin_data = auto_ingest_from_origin_data(
+            patient_id=original_id,
+            report_date=args.report_date,
+            report_type=args.report_type
+        )
+            
+        # 如果提供了手动摄入参数，也执行
+        if args.ingest_lab or args.ingest_dicom_zip or args.ingest_dicom_dir or args.ingest_mri_report:
+            print("\n① 数据摄入 (手动指定)")
+            python = pick_python_exe()
+            root = repo_root()
+            full_env = dict(os.environ)
+            pp = str(root)
+            if full_env.get("PYTHONPATH"):
+                full_env["PYTHONPATH"] = pp + os.pathsep + full_env["PYTHONPATH"]
+            else:
+                full_env["PYTHONPATH"] = pp
+            
+            # 摄入检验报告图片
+            if args.ingest_lab:
+                for lab_path in args.ingest_lab:
+                    cmd = [python, "-m", "lab_analysis.ingest_data",
+                          "--type", "lab_image",
+                          "--path", lab_path,
+                          "--patient-id", original_id]
+                    if args.report_date:
+                        cmd.extend(["--report-date", args.report_date])
+                    if args.report_type:
+                        cmd.extend(["--report-type", args.report_type])
+                    print(f"  摄入检验报告: {lab_path}")
+                    result = subprocess.run(cmd, cwd=str(root), env=full_env)
+                    if result.returncode != 0:
+                        print(f"  [!] 摄入失败: {lab_path}")
+            
+            # 摄入DICOM数据
+            if args.ingest_dicom_zip or args.ingest_dicom_dir:
                 cmd = [python, "-m", "lab_analysis.ingest_data",
-                      "--type", "lab_image",
-                      "--path", lab_path,
+                      "--type", "mri_dicom",
+                      "--patient-id", original_id]
+                if args.ingest_dicom_zip:
+                    cmd.extend(["--zip-path", args.ingest_dicom_zip])
+                if args.ingest_dicom_dir:
+                    cmd.extend(["--dicom-dir", args.ingest_dicom_dir])
+                if args.report_date:
+                    cmd.extend(["--report-date", args.report_date])
+                print(f"  摄入DICOM数据...")
+                result = subprocess.run(cmd, cwd=str(root), env=full_env)
+                if result.returncode != 0:
+                    print(f"  [!] DICOM摄入失败")
+            
+            # 摄入MRI文字报告
+            if args.ingest_mri_report:
+                cmd = [python, "-m", "lab_analysis.ingest_data",
+                      "--type", "mri_report",
+                      "--path", args.ingest_mri_report,
                       "--patient-id", original_id]
                 if args.report_date:
                     cmd.extend(["--report-date", args.report_date])
-                if args.report_type:
-                    cmd.extend(["--report-type", args.report_type])
-                print(f"  摄入检验报告: {lab_path}")
+                print(f"  摄入MRI报告: {args.ingest_mri_report}")
                 result = subprocess.run(cmd, cwd=str(root), env=full_env)
                 if result.returncode != 0:
-                    print(f"  [!] 摄入失败: {lab_path}")
-        
-        # 摄入DICOM数据
-        if args.ingest_dicom_zip or args.ingest_dicom_dir:
-            cmd = [python, "-m", "lab_analysis.ingest_data",
-                  "--type", "mri_dicom",
-                  "--patient-id", original_id]
-            if args.ingest_dicom_zip:
-                cmd.extend(["--zip-path", args.ingest_dicom_zip])
-            if args.ingest_dicom_dir:
-                cmd.extend(["--dicom-dir", args.ingest_dicom_dir])
-            if args.report_date:
-                cmd.extend(["--report-date", args.report_date])
-            print(f"  摄入DICOM数据...")
-            result = subprocess.run(cmd, cwd=str(root), env=full_env)
-            if result.returncode != 0:
-                print(f"  [!] DICOM摄入失败")
-        
-        # 摄入MRI文字报告
-        if args.ingest_mri_report:
-            cmd = [python, "-m", "lab_analysis.ingest_data",
-                  "--type", "mri_report",
-                  "--path", args.ingest_mri_report,
-                  "--patient-id", original_id]
-            if args.report_date:
-                cmd.extend(["--report-date", args.report_date])
-            print(f"  摄入MRI报告: {args.ingest_mri_report}")
-            result = subprocess.run(cmd, cwd=str(root), env=full_env)
-            if result.returncode != 0:
-                print(f"  [!] MRI报告摄入失败")
-        
-        print("\n✅ 数据摄入完成，继续执行Pipeline...\n")
+                    print(f"  [!] MRI报告摄入失败")
+            
+            print("\n✅ 数据摄入完成，继续执行Pipeline...\n")
 
     # ② 前置检查：验证病人数据
     print("② 前置检查：验证病人数据")

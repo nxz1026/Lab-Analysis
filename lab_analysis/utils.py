@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 # 工作区根目录
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.home() / "wiki"))
+WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 
 def build_paths(patient_id: str) -> dict:
