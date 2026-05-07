@@ -12,6 +12,7 @@
 
 - [简介](#简介)
 - [核心特性](#核心特性)
+- [项目结构](#项目结构)
 - [快速开始](#快速开始)
 - [数据准备](#数据准备)
 - [Vision模块](#vision模块)
@@ -41,6 +42,37 @@ Lab-Analysis 是一个**端到端的医学数据分析流水线**，专为慢性
 - **循证医学支持**: 智能文献检索 + LLM深度解读
 - **临床实用性**: 三源质控、分级行动计划、随访计划、预后评估
 - **Vision智能识别**: OCR提取检验报告信息，支持批量处理
+
+---
+
+## 项目结构
+
+```
+Lab-Analysis/
+├── README.md                      # 项目文档
+├── LICENSE                        # MIT许可证
+├── pyproject.toml                 # 包配置
+├── requirements.txt               # 依赖列表
+├── run_full_pipeline.py           # 完整Pipeline执行脚本
+├── run_analysis.py                # 快捷入口脚本
+└── lab_analysis/                  # 核心Python包
+    ├── __init__.py
+    ├── __main__.py                # python -m lab_analysis 入口
+    ├── utils.py                   # 通用工具函数（新增）
+    ├── patient_id.py              # 患者ID脱敏工具
+    ├── pipeline.py                # 全流程编排器
+    ├── data_loader.py             # 检验数据加载器
+    ├── data_analyzer.py           # 统计分析引擎
+    ├── literature_searcher.py     # PubMed文献检索
+    ├── literature_interpreter.py  # LLM循证解读
+    ├── qwen_vl_report_check.py    # MRI影像分析
+    ├── gen_final_report.py        # 综合报告生成器
+    ├── upload_to_feishu.py        # 飞书云盘上传
+    ├── ingest_data.py             # 统一数据摄入（支持多种类型）
+    ├── vision_extractor.py        # Vision模块：图片识别
+    ├── extract_lab_data.py        # 检验指标提取
+    └── batch_vision_extract.py    # 批量Vision识别（已优化）
+```
 
 ---
 
@@ -172,6 +204,33 @@ python -m lab_analysis.extract_lab_data --image "lab_report.jpg" --patient-id <I
 
 ---
 
+## 数据摄入
+
+`ingest_data.py` 是统一的数据摄入脚本，支持多种数据类型：
+
+```bash
+# 检验报告图片
+python -m lab_analysis.ingest_data --type lab_image \
+    --path "lab_2026-03-24.jpg" \
+    --patient-id "513229198801040014" \
+    --report-date "2026-03-24" \
+    --report-type "outpatient"
+
+# MRI DICOM ZIP文件
+python -m lab_analysis.ingest_data --type mri_dicom \
+    --zip-path "export_part1.zip" \
+    --patient-id "513229198801040014" \
+    --report-date "2026-04-11"
+
+# MRI文字报告
+python -m lab_analysis.ingest_data --type mri_report \
+    --path "mri_report.pdf" \
+    --patient-id "513229198801040014" \
+    --report-date "2026-04-11"
+```
+
+---
+
 ## 输出说明
 
 ### 输出文件
@@ -209,6 +268,8 @@ python -m lab_analysis.extract_lab_data --image "lab_report.jpg" --patient-id <I
 | `DEEPSEEK_API_KEY` | DeepSeek API密钥（必需） |
 | `DASHSCOPE_API_KEY` | 阿里云DashScope密钥（必需） |
 | `OPENROUTER_API_KEY` | OpenRouter密钥（可选） |
+| `WIKI_ROOT` | 工作区根目录（默认: ~/wiki） |
+| `ORIGIN_DATA_DIR` | Vision批量识别数据源目录 |
 
 ### 配置文件位置
 
@@ -250,6 +311,25 @@ python -m lab_analysis.extract_lab_data --image "lab_report.jpg" --patient-id <I
 - 遵循 PEP 8
 - 使用 type hints
 - 提交信息使用 Conventional Commits
+
+### 模块说明
+
+| 模块 | 功能 |
+|------|------|
+| `utils.py` | 通用工具函数（路径构建、环境变量、身份证验证等） |
+| `patient_id.py` | 患者ID脱敏 |
+| `pipeline.py` | Pipeline编排器 |
+| `data_loader.py` | 检验数据加载 |
+| `data_analyzer.py` | 统计分析与可视化 |
+| `literature_searcher.py` | PubMed文献检索 |
+| `literature_interpreter.py` | LLM循证解读 |
+| `qwen_vl_report_check.py` | MRI影像分析 |
+| `gen_final_report.py` | 综合报告生成 |
+| `upload_to_feishu.py` | 飞书上传 |
+| `ingest_data.py` | 统一数据摄入 |
+| `vision_extractor.py` | Vision图片识别 |
+| `batch_vision_extract.py` | 批量Vision识别 |
+| `extract_lab_data.py` | 检验指标提取 |
 
 ### 添加新模块
 
