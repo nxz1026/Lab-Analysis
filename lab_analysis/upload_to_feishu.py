@@ -77,14 +77,17 @@ SUBFOLDER_NAMES = ["原始数据", "文献参考", "中间结果", "统计结果
 def check_lark_cli_installed() -> bool:
     """检查 lark-cli 是否已安装"""
     try:
+        # Windows 上可能需要 shell=True
         result = subprocess.run(
             ["lark-cli", "--version"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
+            shell=True  # Windows 兼容性
         )
         return result.returncode == 0
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+    except (FileNotFoundError, subprocess.TimeoutExpired, Exception) as e:
+        print(f"  [DEBUG] lark-cli 检测失败: {e}")
         return False
 
 
@@ -110,7 +113,8 @@ def upload_file_with_lark_cli(file_path: Path, folder_token: str) -> bool:
             cmd,
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=60,
+            shell=True  # Windows 兼容性
         )
         
         if result.returncode == 0:
@@ -409,7 +413,8 @@ def main():
                 list_cmd,
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
+                shell=True  # Windows 兼容性
             )
             
             day_folder_token = None
@@ -430,7 +435,7 @@ def main():
             if not day_folder_token:
                 print(f"  ⚠️  未找到'{TODAY}'文件夹，正在创建...")
                 create_cmd = [
-                    "lark-cli", "drive", "create_folder",
+                    "lark-cli", "drive", "+create-folder",
                     "--name", TODAY,
                     "--folder-token", folder_token
                 ]
@@ -439,7 +444,8 @@ def main():
                     create_cmd,
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
+                    shell=True  # Windows 兼容性
                 )
                 
                 if result.returncode == 0:
@@ -447,12 +453,18 @@ def main():
                     try:
                         data = json_module.loads(result.stdout)
                         day_folder_token = data.get("data", {}).get("token")
-                        print(f"  ✅ 已创建文件夹: {day_folder_token}")
-                    except:
-                        print(f"  ❌ 解析创建结果失败")
+                        if day_folder_token:
+                            print(f"  ✅ 已创建文件夹: {day_folder_token}")
+                        else:
+                            print(f"  ⚠️  创建成功但未返回token")
+                            return
+                    except Exception as parse_err:
+                        print(f"  ❌ 解析创建结果失败: {parse_err}")
+                        print(f"     Raw output: {result.stdout[:200] if result.stdout else 'empty'}")
                         return
                 else:
-                    print(f"  ❌ 创建文件夹失败: {result.stderr[:200]}")
+                    stderr_msg = result.stderr if result.stderr else "Unknown error"
+                    print(f"  ❌ 创建文件夹失败: {stderr_msg[:200]}")
                     return
             
             # 创建四个子文件夹
@@ -460,7 +472,7 @@ def main():
             feishu_subfolders = {}
             for sf_name in SUBFOLDER_NAMES:
                 create_cmd = [
-                    "lark-cli", "drive", "create_folder",
+                    "lark-cli", "drive", "+create-folder",
                     "--name", sf_name,
                     "--folder-token", day_folder_token
                 ]
@@ -469,7 +481,8 @@ def main():
                     create_cmd,
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
+                    shell=True  # Windows 兼容性
                 )
                 
                 if result.returncode == 0:
