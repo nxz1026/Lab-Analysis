@@ -280,6 +280,11 @@ def rename_dicom_sequences(source_dir: Path, target_dir: Path) -> int:
     """将DICOM序列目录重命名为 seq_01, seq_02, ..."""
     logger.info(f"开始处理DICOM序列: {source_dir}")
     
+    # 先检查并创建目标目录
+    if not target_dir.exists():
+        logger.info(f"创建目标目录: {target_dir}")
+        target_dir.mkdir(parents=True, exist_ok=True)
+    
     # 查找所有包含.dcm文件的子目录（直接子目录）
     seq_dirs = []
     for item in source_dir.iterdir():
