@@ -25,6 +25,9 @@ Thumbs.db
 .env
 *.pem
 
+# Backup files
+*_backup.py
+
 # Pipeline outputs (optional: remove the line below if you version test fixtures)
 data/
 
