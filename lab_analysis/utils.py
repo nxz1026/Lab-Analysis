@@ -31,7 +31,7 @@ except ImportError:
     HAS_TENACITY = False
 
 # 工作区根目录
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 def build_paths(patient_id: str) -> dict:
@@ -47,15 +47,15 @@ def build_paths(patient_id: str) -> dict:
     raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
     
-    data_dir = WIKI_ROOT / "data" / patient_id / ts
+    data_dir = WORK_ROOT / "data" / patient_id / ts
     
     return {
         "data_dir": data_dir,
         "patient_id": patient_id,
         "timestamp": ts,
-        "raw_papers": WIKI_ROOT / "raw" / f"patient_{patient_id}" / "papers",
-        "raw_lab": WIKI_ROOT / "raw" / f"patient_{patient_id}" / "lab",
-        "raw_imaging": WIKI_ROOT / "raw" / f"patient_{patient_id}" / "imaging",
+        "raw_papers": WORK_ROOT / "raw" / f"patient_{patient_id}" / "papers",
+        "raw_lab": WORK_ROOT / "raw" / f"patient_{patient_id}" / "lab",
+        "raw_imaging": WORK_ROOT / "raw" / f"patient_{patient_id}" / "imaging",
         "output_dir": data_dir,
     }
 

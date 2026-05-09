@@ -24,10 +24,10 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 # 工作区根目录
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 # 错误日志文件路径
-ERROR_LOG_FILE = WIKI_ROOT / "error.log"
+ERROR_LOG_FILE = WORK_ROOT / "error.log"
 
 
 def setup_error_logger(log_file: Optional[Path] = None) -> logging.Logger:
@@ -35,7 +35,7 @@ def setup_error_logger(log_file: Optional[Path] = None) -> logging.Logger:
     配置错误日志记录器
     
     Args:
-        log_file: 日志文件路径，默认为 WIKI_ROOT/error.log
+        log_file: 日志文件路径，默认为 WORK_ROOT/error.log
     
     Returns:
         配置好的 logger 实例

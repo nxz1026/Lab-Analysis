@@ -16,18 +16,18 @@ from datetime import datetime
 from pathlib import Path
 import os
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 def build_paths(patient_id: str):
     """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
     import os
-    raw_papers = WIKI_ROOT / "raw" / f"patient_{patient_id}" / "papers"
+    raw_papers = WORK_ROOT / "raw" / f"patient_{patient_id}" / "papers"
     # 支持时间戳目录：ANALYSIS_TS=patient_id/YYYYMMDD_HHMMSS
     raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
     # ANALYSIS_TS 可能是纯时间戳（run_analysis.py 传入），也可能是 "deid/ts"（直接传参）
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
-    output_dir = WIKI_ROOT / "data" / patient_id / ts
+    output_dir = WORK_ROOT / "data" / patient_id / ts
     analyzed_dir = output_dir / "02_analyzed"
     return {
         "raw_papers": raw_papers,

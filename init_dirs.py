@@ -3,7 +3,7 @@
 """
 init_dirs.py - 初始化项目目录结构
 
-根据 WIKI_ROOT 环境变量创建必要的目录结构
+根据 WORK_ROOT 环境变量创建必要的目录结构
 """
 import os
 from pathlib import Path
@@ -13,17 +13,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 获取工作区根目录
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 def create_directories():
     """创建必要的目录结构"""
-    print(f"工作区根目录: {WIKI_ROOT}")
+    print(f"工作区根目录: {WORK_ROOT}")
     print("=" * 60)
     
     # 定义需要创建的目录
     dirs_to_create = [
-        WIKI_ROOT / "raw" / "Origin_data",
-        WIKI_ROOT / "data",
+        WORK_ROOT / "raw" / "Origin_data",
+        WORK_ROOT / "data",
     ]
     
     # 创建目录
@@ -37,7 +37,7 @@ def create_directories():
     print("=" * 60)
     print("目录结构初始化完成！")
     print(f"\n完整目录结构:")
-    print(f"{WIKI_ROOT}/")
+    print(f"{WORK_ROOT}/")
     print(f"├── raw/")
     print(f"│   ├── Origin_data/          # 放置原始检验报告图片 (lab_*.jpg)")
     print(f"│   └── patient_{{ID}}/       # 各患者数据（自动生成）")

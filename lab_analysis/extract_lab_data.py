@@ -97,7 +97,7 @@ def validate_patient_id(patient_id: str, extracted_id: str = None, interactive: 
             return None
 
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 def get_api_key():
@@ -342,35 +342,35 @@ def save_structured_report(data: dict, patient_id: str) -> str:
     report_type = data.get('report_type', 'unknown')
     
     # 创建目录：papers/lab_report_YYYYMMDD_type/
-    report_dir = WIKI_ROOT / "raw" / f"patient_{patient_id_obf}" / "papers" / f"lab_report_{report_date}_{report_type}"
+    report_dir = WORK_ROOT / "raw" / f"patient_{patient_id_obf}" / "papers" / f"lab_report_{report_date}_{report_type}"
     report_dir.mkdir(parents=True, exist_ok=True)
     
     # 生成 metadata.md（使用验证过的患者ID）
     metadata_md = generate_metadata_md(data, patient_id)
     metadata_path = report_dir / "metadata.md"
     metadata_path.write_text(metadata_md, encoding="utf-8")
-    print(f"[OK] 已生成: {metadata_path.relative_to(WIKI_ROOT)}")
+    print(f"[OK] 已生成: {metadata_path.relative_to(WORK_ROOT)}")
     
     # 生成 metrics.md
     metrics_md = generate_metrics_md(data)
     metrics_path = report_dir / "metrics.md"
     metrics_path.write_text(metrics_md, encoding="utf-8")
-    print(f"[OK] 已生成: {metrics_path.relative_to(WIKI_ROOT)}")
+    print(f"[OK] 已生成: {metrics_path.relative_to(WORK_ROOT)}")
     
     # 复制原始图片（可选）
     original_image = report_dir / "original_image.jpg"
     if not original_image.exists():
         import shutil
         # 假设原始图片在 lab/ 目录下
-        lab_dir = WIKI_ROOT / "raw" / f"patient_{patient_id_obf}" / "lab"
+        lab_dir = WORK_ROOT / "raw" / f"patient_{patient_id_obf}" / "lab"
         if lab_dir.exists():
             for img_file in lab_dir.glob(f"*{report_date}*"):
                 if img_file.suffix.lower() in ['.jpg', '.jpeg', '.png']:
                     shutil.copy2(img_file, original_image)
-                    print(f"[OK] 已复制原始图片: {original_image.relative_to(WIKI_ROOT)}")
+                    print(f"[OK] 已复制原始图片: {original_image.relative_to(WORK_ROOT)}")
                     break
     
-    return str(report_dir.relative_to(WIKI_ROOT))
+    return str(report_dir.relative_to(WORK_ROOT))
 
 
 def main_with_args(args) -> bool:
@@ -397,7 +397,7 @@ def main_with_args(args) -> bool:
     print(f"图片路径: {image_path.name}")
     print(f"患者ID: {patient_id if patient_id else '(未提供，将使用AI提取)'}")
     print(f"交互模式: {'是' if interactive else '否（无效ID将直接放弃）'}")
-    print(f"工作区: {WIKI_ROOT}")
+    print(f"工作区: {WORK_ROOT}")
     print("=" * 60)
     
     try:
@@ -470,7 +470,7 @@ def main():
     print(f"图片路径: {image_path.name}")
     print(f"患者ID: {patient_id if patient_id else '(未提供，将使用AI提取)'}")
     print(f"交互模式: {'是' if interactive else '否（无效ID将直接放弃）'}")
-    print(f"工作区: {WIKI_ROOT}")
+    print(f"工作区: {WORK_ROOT}")
     print("=" * 60)
     
     # 步骤1：使用Qwen-VL提取数据

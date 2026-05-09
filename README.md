@@ -55,7 +55,7 @@ pip install -e .
 创建 `.env` 文件：
 
 ```env
-WIKI_ROOT=/path/to/your/wiki
+WORK_ROOT=/path/to/your/work
 ZHIPU_API_KEY=your_zhipu_key
 DEEPSEEK_API_KEY=your_deepseek_key
 DASHSCOPE_API_KEY=your_dashscope_key
@@ -175,7 +175,7 @@ python -m lab_analysis.organize_local_files --patient-id ID    # 本地归档
 
 - PEP 8 编码规范
 - 类型注解（Type Hints）
-- 路径使用 `WIKI_ROOT` + 相对路径
+- 路径使用 `WORK_ROOT` + 相对路径
 - 使用 `pathlib.Path`
 
 ### 依赖管理
@@ -190,7 +190,7 @@ pip-compile pyproject.toml -o requirements.lock
 
 ### 错误日志
 
-- **日志文件**: `{WIKI_ROOT}/error.log`
+- **日志文件**: `{WORK_ROOT}/error.log`
 - **自动记录**: Pipeline 失败时记录详细信息
 - **查看最近错误**:
   ```python
