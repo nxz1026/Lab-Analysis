@@ -241,6 +241,20 @@ python -m lab_analysis.organize_local_files --patient-id YOUR_PATIENT_ID
 - 遵循 PEP 8 编码规范
 - 使用类型注解（Type Hints）
 - 所有路径使用 `WIKI_ROOT` 环境变量 + 相对路径
+- 使用 `pathlib.Path` 进行路径操作
+
+### 错误处理与日志
+
+项目集成了自动错误日志记录功能：
+
+- **错误日志文件**: `{WIKI_ROOT}/error.log`
+- **自动记录**: Pipeline 步骤失败时自动记录详细错误信息
+- **包含内容**: 时间戳、错误描述、上下文信息、堆栈跟踪
+- **查看最近错误**: 
+  ```python
+  from lab_analysis.error_logger import get_recent_errors
+  errors = get_recent_errors(n=10)  # 获取最近10条错误
+  ```
 
 ### 添加新分析模块
 
