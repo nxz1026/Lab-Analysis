@@ -22,35 +22,8 @@ from pathlib import Path
 from datetime import datetime
 import os
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
-
-
-def build_paths(patient_id: str):
-    """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
-    import os
-    raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
-    # ANALYSIS_TS 可能是纯时间戳（run_analysis.py 传入），也可能是 "deid/ts"（直接传参）
-    ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
-    data_dir = WIKI_ROOT / "data" / patient_id / ts
-    analyzed_dir = data_dir / "02_analyzed"
-    figures_dir = analyzed_dir / "figures"
-    reports_dir = data_dir / "04_reports"
-    return {
-        "data_dir": data_dir,
-        "analyzed_dir": analyzed_dir,
-        "figures_dir": figures_dir,
-        "reports_dir": reports_dir,
-        "metrics_csv": analyzed_dir / "lab_metrics.csv",
-        "output_json": analyzed_dir / "analysis_results.json",
-        "fig_trend":   figures_dir / "fig_01_trend_regression.png",
-        "fig_corr":    figures_dir / "fig_02_correlation_heatmap.png",
-        "fig_infl":    figures_dir / "fig_03_inflammation_status.png",
-        "fig_abnorm":  figures_dir / "fig_04_abnormal_indicators.png",
-        "fig_ma":      figures_dir / "fig_05_moving_average.png",
-        "fig_cv":      figures_dir / "fig_06_cv_stability.png",
-        "fig_zscore":  figures_dir / "fig_07_zscore_distribution.png",
-        "report_md":   reports_dir / "analysis_results_report.md",
-    }
+from .config import WORK_ROOT
+from .utils import build_paths
 
 # 数值型指标
 NUMERIC_METRICS = [

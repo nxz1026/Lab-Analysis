@@ -20,7 +20,7 @@ from pathlib import Path
 
 from lab_analysis.patient_id import encode
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 def parse_args():
@@ -46,7 +46,7 @@ def repo_root() -> Path:
 
 def get_deid(original_id: str) -> str:
     """从映射文件查 de-identified ID；若无映射则用 encode()。"""
-    mapping_file = WIKI_ROOT / ".hermes" / "patient_mapping.json"
+    mapping_file = WORK_ROOT / ".hermes" / "patient_mapping.json"
     if mapping_file.exists():
         with open(mapping_file, encoding="utf-8") as f:
             mapping = json.load(f)
@@ -63,7 +63,7 @@ def extract_patient_id_from_reports() -> str:
     Returns:
         患者ID，如果无法提取则返回 None
     """
-    raw_dir = WIKI_ROOT / "raw"
+    raw_dir = WORK_ROOT / "raw"
     if not raw_dir.exists():
         return None
     
@@ -106,7 +106,7 @@ def extract_patient_id_from_reports() -> str:
 
 def check_patient_data(deid: str) -> bool:
     """检查病人原始数据目录是否存在且有内容（de-id 目录名）。"""
-    raw_dir = WIKI_ROOT / "raw" / f"patient_{deid}"
+    raw_dir = WORK_ROOT / "raw" / f"patient_{deid}"
     lab_dir = raw_dir / "lab"
     imaging_dir = raw_dir / "imaging"
     papers_dir = raw_dir / "papers"
@@ -129,8 +129,8 @@ def check_patient_data(deid: str) -> bool:
         print("\n".join(errors))
         if warnings:
             print("\n".join(warnings))
-        print(f"\n当前 {WIKI_ROOT / 'raw'} 下的病人目录：")
-        raw_parent = WIKI_ROOT / "raw"
+        print(f"\n当前 {WORK_ROOT / 'raw'} 下的病人目录：")
+        raw_parent = WORK_ROOT / "raw"
         if raw_parent.exists():
             for d in sorted(raw_parent.iterdir()):
                 if d.is_dir():
@@ -157,7 +157,7 @@ def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, repor
     Returns:
         是否成功摄入数据
     """
-    origin_data_dir = WIKI_ROOT / "raw" / "Origin_data"
+    origin_data_dir = WORK_ROOT / "raw" / "Origin_data"
     
     if not origin_data_dir.exists():
         print(f"[INFO] Origin_data 目录不存在: {origin_data_dir}")
@@ -363,8 +363,8 @@ def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, repor
 
 def pick_python_exe() -> str:
     """优先使用 ~/wiki/.venv（Hermes 部署）；否则当前解释器。"""
-    unix_venv = WIKI_ROOT / ".venv" / "bin" / "python"
-    win_venv = WIKI_ROOT / ".venv" / "Scripts" / "python.exe"
+    unix_venv = WORK_ROOT / ".venv" / "bin" / "python"
+    win_venv = WORK_ROOT / ".venv" / "Scripts" / "python.exe"
     if unix_venv.is_file():
         return str(unix_venv)
     if win_venv.is_file():
@@ -500,7 +500,7 @@ def main():
     # ② 前置检查：验证病人数据
     print("② 前置检查：验证病人数据")
     if not check_patient_data(deid):
-        wr = WIKI_ROOT
+        wr = WORK_ROOT
         print(f"\n[ERROR] 病人ID [{deid}] 没有找到对应的原始数据，请确认目录结构：")
         print(f"   {wr / 'raw' / f'patient_{deid}' / 'lab'}/        ← 检验报告截图")
         print(f"   {wr / 'raw' / f'patient_{deid}' / 'papers'}/    ← 结构化报告（lab_report_*/metrics.md）")
@@ -548,7 +548,7 @@ def main():
     if rc != 0:
         print("[!] organize_local_files 失败（非致命，完成）")
 
-    data_dir = WIKI_ROOT / "data" / ts_dir
+    data_dir = WORK_ROOT / "data" / ts_dir
     print(f"\n[{datetime.now().isoformat()}] Pipeline 完成")
     print(f"\n输出目录：{data_dir}/")
     if data_dir.exists():

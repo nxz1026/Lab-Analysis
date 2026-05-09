@@ -8,34 +8,19 @@ import os
 import sys
 from pathlib import Path
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 # ============================================================
-# 患者信息脱敏常量（发布前务必确认）
+# 患者信息配置（通过环境变量传入，发布版本不可含真实数据）
 # ============================================================
-PATIENT_NAME = "张三"
-PATIENT_AGE_SEX = "38岁男性"
-PATIENT_EXAM_ID = "Y00002207707"
-# ============================================================
-# ⚠️ 如需恢复从真实数据读取姓名，解除下方注释并注释掉以上常量
-# ============================================================
-# _name_raw = None
-# def _load_patient_name(lab_path: Path) -> str:
-#     """从 lab_metrics.json 的第一份报告里读取患者姓名。"""
-#     global _name_raw
-#     if _name_raw:
-#         return _name_raw
-#     if lab_path.exists():
-#         try:
-#             d = json.loads(lab_path.read_text())
-#             reports = d.get("reports", [])
-#             if reports:
-#                 _name_raw = reports[0].get("patient_name", "未知")
-#                 return _name_raw
-#         except Exception:
-#             pass
-#     return "未知"
-# ============================================================
+import os
+_P = os.environ.get
+
+PATIENT_NAME     = _P("PATIENT_NAME", "患者")
+PATIENT_AGE_SEX  = _P("PATIENT_AGE_SEX", "成年男性")
+PATIENT_EXAM_ID  = _P("PATIENT_EXAM_ID", "ANONYMIZED")
+
+del _P
 
 
 def parse_args():
@@ -44,17 +29,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def load_env_key(key: str) -> str:
-    val = os.environ.get(key, "")
-    if val:
-        return val
-    # 从项目根目录的 .env 文件加载
-    env_path = Path(__file__).parent.parent / ".env"
-    if env_path.exists():
-        for line in env_path.read_text(encoding="utf-8").splitlines():
-            if line.startswith(f"{key}="):
-                return line.split("=", 1)[1].strip()
-    return ""
+from .config import get_required_key
 
 
 def assess_three_source_consistency(data_dir: Path) -> str:
@@ -335,11 +310,9 @@ def main():
     patient_id = args.patient_id
     import os
     raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id)
-    data_dir = WIKI_ROOT / "data" / patient_id / ts
+    data_dir = WORK_ROOT / "data" / patient_id / ts
 
-    DEEPSEEK_API_KEY = load_env_key("DEEPSEEK_API_KEY")
-    if not DEEPSEEK_API_KEY:
-        print("❌ 未找到 DEEPSEEK_API_KEY"); return
+    DEEPSEEK_API_KEY = get_required_key("DEEPSEEK_API_KEY")
 
     reports_dir = data_dir / "04_reports"
     output_path = reports_dir / "final_integrated_report.md"

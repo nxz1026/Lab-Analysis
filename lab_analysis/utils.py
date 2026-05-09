@@ -1,165 +1,55 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-utils.py - 通用工具函数
-
-提供项目中多个模块共享的工具函数，包括：
-- 路径构建
-- 环境变量管理
-- 日志功能
-- 身份证号验证
+utils.py — 公共工具函数，替换各模块重复定义的 build_paths 等。
 """
+from __future__ import annotations
 
-import json
 import os
-import re
-from datetime import datetime
 from pathlib import Path
+from typing import TypedDict
 
-# 工作区根目录
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+from .config import WORK_ROOT
 
 
-def build_paths(patient_id: str) -> dict:
+class PatientPaths(TypedDict):
+    """build_paths 返回的路径字典类型。"""
+    raw_papers:   Path
+    output_dir:   Path
+    analyzed_dir: Path
+    data_dir:     Path
+    figures_dir:  Path
+    reports_dir:  Path
+    csv:          Path
+    json:         Path
+    metrics_csv:  Path
+    output_json:  Path
+    lit_dir:      Path
+
+
+def build_paths(patient_id: str, ts: str | None = None) -> PatientPaths:
     """
-    根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典
-    
-    Args:
-        patient_id: 患者ID（脱敏后）
-    
-    Returns:
-        包含各种路径的字典
+    根据 patient_id 和 ANALYSIS_TS 构建路径字典。
+
+    消除 data_loader.py 和 data_analyzer.py 中的重复定义。
     """
-    raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
-    ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
-    
-    data_dir = WIKI_ROOT / "data" / patient_id / ts
-    
-    return {
-        "data_dir": data_dir,
-        "patient_id": patient_id,
-        "timestamp": ts,
-        "raw_papers": WIKI_ROOT / "raw" / f"patient_{patient_id}" / "papers",
-        "raw_lab": WIKI_ROOT / "raw" / f"patient_{patient_id}" / "lab",
-        "raw_imaging": WIKI_ROOT / "raw" / f"patient_{patient_id}" / "imaging",
-        "output_dir": data_dir,
-    }
+    if ts is None:
+        raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
+        ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
 
+    data_dir    = WORK_ROOT / "data" / patient_id / ts
+    analyzed_dir = data_dir / "02_analyzed"
+    figures_dir  = analyzed_dir / "figures"
+    reports_dir  = data_dir / "04_reports"
 
-def get_project_root() -> Path:
-    """获取项目根目录（包含 pyproject.toml）"""
-    return Path(__file__).resolve().parent.parent
-
-
-def get_env_var(name: str, default=None, required: bool = False):
-    """
-    获取环境变量
-    
-    Args:
-        name: 环境变量名
-        default: 默认值
-        required: 是否必需，如果为True且变量不存在则抛出异常
-    
-    Returns:
-        环境变量值
-    """
-    value = os.environ.get(name, default)
-    if required and value is None:
-        raise EnvironmentError(f"必需的环境变量 {name} 未设置")
-    return value
-
-
-def validate_chinese_id(id_number: str) -> bool:
-    """
-    验证中国大陆身份证号格式
-    
-    Args:
-        id_number: 身份证号
-    
-    Returns:
-        是否有效
-    """
-    if not id_number:
-        return False
-    
-    # 18位身份证：17位数字 + 1位数字或X
-    pattern_18 = r'^\d{17}[\dXx]$'
-    # 15位身份证：15位数字
-    pattern_15 = r'^\d{15}$'
-    
-    return bool(re.match(pattern_18, id_number) or re.match(pattern_15, id_number))
-
-
-def parse_metadata_table(text: str) -> dict:
-    """
-    解析 Markdown 表格格式的 metadata（| 字段 | 值 |）
-    
-    Args:
-        text: metadata 文本
-    
-    Returns:
-        解析后的字典
-    """
-    row = {}
-    for line in text.splitlines():
-        line = line.strip()
-        if not line.startswith("|") or "---" in line or line.startswith("|字段"):
-            continue
-        parts = [p.strip() for p in line.split("|")]
-        if len(parts) >= 3 and parts[1]:
-            key = parts[1].strip()
-            val = parts[2].strip()
-            if key:
-                row[key] = val
-    return row
-
-
-def append_to_json_log(log_file: Path, record: dict):
-    """
-    追加记录到JSON日志文件
-    
-    Args:
-        log_file: 日志文件路径
-        record: 要追加的记录
-    """
-    if log_file.exists():
-        log = json.loads(log_file.read_text(encoding="utf-8"))
-    else:
-        log = {"records": []}
-    
-    log["records"].append(record)
-    log["last_updated"] = datetime.now().isoformat()
-    log_file.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def print_progress(current: int, total: int, prefix: str = "", suffix: str = "", bar_length: int = 30):
-    """
-    打印进度条
-    
-    Args:
-        current: 当前进度
-        total: 总数量
-        prefix: 前缀文本
-        suffix: 后缀文本
-        bar_length: 进度条长度
-    """
-    if total == 0:
-        return
-    fraction = current / total
-    filled = int(bar_length * fraction)
-    bar = "=" * filled + "-" * (bar_length - filled)
-    percent = f"{fraction * 100:.1f}%"
-    print(f"\r{prefix} |{bar}| {percent} {suffix}", end="", flush=True)
-    if current >= total:
-        print()
-
-
-def ensure_dirs(*dirs: Path):
-    """
-    确保目录存在，不存在则创建
-    
-    Args:
-        dirs: 目录路径列表
-    """
-    for d in dirs:
-        d.mkdir(parents=True, exist_ok=True)
+    return PatientPaths(
+        raw_papers  = WORK_ROOT / "raw" / f"patient_{patient_id}" / "papers",
+        output_dir  = data_dir,
+        analyzed_dir= analyzed_dir,
+        data_dir    = data_dir,
+        figures_dir = figures_dir,
+        reports_dir = reports_dir,
+        csv         = analyzed_dir / "lab_metrics.csv",
+        json        = analyzed_dir / "lab_metrics.json",
+        metrics_csv = analyzed_dir / "lab_metrics.csv",
+        output_json = analyzed_dir / "analysis_results.json",
+        lit_dir     = data_dir / "03_literature",
+    )
