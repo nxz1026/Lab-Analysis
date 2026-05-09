@@ -87,41 +87,50 @@ FEISHU_FOLDER_TOKEN=your_folder_token
 
 ### 运行 Pipeline
 
-#### 方式 1：完整流程
+**统一入口**（推荐）：
 
 ```bash
-# 使用诊疗卡号运行
-python run_analysis.py --patient-id YOUR_PATIENT_ID
+# 标准方式（推荐）
+python -m lab_analysis --patient-id YOUR_PATIENT_ID
 
-# 或使用模块方式
+# 便捷方式（效果相同）
+python run_analysis.py --patient-id YOUR_PATIENT_ID
+```
+
+> 💡 **提示**：两种方式完全等价，`run_analysis.py` 只是 `lab_analysis` 的代理脚本。推荐使用 `python -m lab_analysis` 以保持统一。
+
+#### 完整流程示例
+
+```bash
+# 基本用法
 python -m lab_analysis --patient-id YOUR_PATIENT_ID
 ```
 
-#### 方式 2：跳过某些步骤
+#### 跳过某些步骤
 
 ```bash
 # 跳过 LLM 文献解读
-python run_analysis.py --patient-id YOUR_PATIENT_ID --skip-llm
+python -m lab_analysis --patient-id YOUR_PATIENT_ID --skip-llm
 
 # 跳过影像分析
-python run_analysis.py --patient-id YOUR_PATIENT_ID --skip-imaging
+python -m lab_analysis --patient-id YOUR_PATIENT_ID --skip-imaging
 
 # 跳过数据摄入（使用已有数据）
-python run_analysis.py --patient-id YOUR_PATIENT_ID --skip-ingest
+python -m lab_analysis --patient-id YOUR_PATIENT_ID --skip-ingest
 ```
 
-#### 方式 3：手动摄入数据
+#### 手动摄入数据
 
 ```bash
 # 摄入检验报告图片
-python run_analysis.py \
+python -m lab_analysis \
   --patient-id YOUR_PATIENT_ID \
   --ingest-lab report1.jpg report2.jpg \
   --report-date 2026-05-07 \
   --report-type outpatient
 
 # 摄入 DICOM 影像
-python run_analysis.py \
+python -m lab_analysis \
   --patient-id YOUR_PATIENT_ID \
   --ingest-dicom-zip dicom_scan.zip
 ```
