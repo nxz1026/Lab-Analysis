@@ -461,7 +461,7 @@ def main():
     if not args.skip_ingest:
         # 先尝试从 Origin_data 自动摄入
         has_origin_data = auto_ingest_from_origin_data(
-            patient_id=deid,  # 使用脱敏ID
+            patient_id=original_id,  # 使用原始ID进行摄入验证
             report_date=args.report_date,
             report_type=args.report_type
         )
@@ -484,7 +484,7 @@ def main():
                     cmd = [python, "-m", "lab_analysis.ingest_data",
                           "--type", "lab_image",
                           "--path", lab_path,
-                          "--patient-id", deid]  # 使用脱敏ID
+                          "--patient-id", original_id]  # 使用原始ID，ingest_data 内部会脱敏
                     if args.report_date:
                         cmd.extend(["--report-date", args.report_date])
                     if args.report_type:
@@ -498,7 +498,7 @@ def main():
             if args.ingest_dicom_zip or args.ingest_dicom_dir:
                 cmd = [python, "-m", "lab_analysis.ingest_data",
                       "--type", "mri_dicom",
-                      "--patient-id", deid]  # 使用脱敏ID
+                      "--patient-id", original_id]  # 使用原始ID，ingest_data 内部会脱敏
                 if args.ingest_dicom_zip:
                     cmd.extend(["--zip-path", args.ingest_dicom_zip])
                 if args.ingest_dicom_dir:
@@ -515,7 +515,7 @@ def main():
                 cmd = [python, "-m", "lab_analysis.ingest_data",
                       "--type", "mri_report",
                       "--path", args.ingest_mri_report,
-                      "--patient-id", deid]  # 使用脱敏ID
+                      "--patient-id", original_id]  # 使用原始ID，ingest_data 内部会脱敏
                 if args.report_date:
                     cmd.extend(["--report-date", args.report_date])
                 print(f"  摄入MRI报告: {args.ingest_mri_report}")
