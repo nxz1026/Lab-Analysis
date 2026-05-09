@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import TypedDict
 
-from .config import WORK_ROOT
+from .config import ANALYSIS_TS, WORK_ROOT
 
 
 class PatientPaths(TypedDict):
@@ -32,8 +32,7 @@ def build_paths(patient_id: str, ts: str | None = None) -> PatientPaths:
     消除 data_loader.py 和 data_analyzer.py 中的重复定义。
     """
     if ts is None:
-        raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
-        ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
+        ts = ANALYSIS_TS or patient_id
 
     data_dir    = WORK_ROOT / "data" / patient_id / ts
     analyzed_dir = data_dir / "02_analyzed"

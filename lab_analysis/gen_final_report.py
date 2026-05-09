@@ -2,25 +2,16 @@
 # -*- coding: utf-8 -*-
 """生成最终综合临床报告 - 调用 DeepSeek API"""
 import json
-import requests
+from .api_clients import call_deepseek
 import argparse
-import os
 import sys
 from pathlib import Path
 
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+from .config import WORK_ROOT, get_required_key, get_optional_key
 
-# ============================================================
-# 患者信息配置（通过环境变量传入，发布版本不可含真实数据）
-# ============================================================
-import os
-_P = os.environ.get
-
-PATIENT_NAME     = _P("PATIENT_NAME", "患者")
-PATIENT_AGE_SEX  = _P("PATIENT_AGE_SEX", "成年男性")
-PATIENT_EXAM_ID  = _P("PATIENT_EXAM_ID", "ANONYMIZED")
-
-del _P
+_PATIENT_NAME    = get_required_key("PATIENT_NAME")
+_PATIENT_AGE_SEX = get_optional_key("PATIENT_AGE_SEX", "成年男性")
+_PATIENT_EXAM_ID = get_optional_key("PATIENT_EXAM_ID", "ANONYMIZED")
 
 
 def parse_args():
@@ -308,8 +299,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 def main():
     args = parse_args()
     patient_id = args.patient_id
-    import os
-    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id)
+    from .config import ANALYSIS_TS as ts
     data_dir = WORK_ROOT / "data" / patient_id / ts
 
     DEEPSEEK_API_KEY = get_required_key("DEEPSEEK_API_KEY")
@@ -335,30 +325,14 @@ def main():
 
     USER_PROMPT = build_prompt(data_dir, patient_id)
 
-    resp = requests.post(
-        "https://api.deepseek.com/chat/completions",
-        headers={
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "model": "deepseek-chat",
-            "messages": [
-                {"role": "system",
-                 "content": "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"},
-                {"role": "user", "content": USER_PROMPT}
-            ],
-            "max_tokens": 5000,
-            "temperature": 0.3
-        },
-        timeout=180
-    )
-
-    result = resp.json()
+    messages = [
+        {"role": "system",
+         "content": "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"},
+        {"role": "user", "content": USER_PROMPT},
+    ]
+    result = call_deepseek(DEEPSEEK_API_KEY, messages, max_tokens=5000, temperature=0.3, timeout=180)
     content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
     usage = result.get("usage", {})
-
-    print(f"HTTP: {resp.status_code}")
     print(f"Tokens: {usage.get('total_tokens', 'N/A')} "
           f"(in={usage.get('prompt_tokens','')}, out={usage.get('completion_tokens','')})")
     print(f"Content length: {len(content)}")

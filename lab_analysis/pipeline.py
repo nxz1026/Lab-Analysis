@@ -4,8 +4,7 @@
 Pipeline 统一入口：串联各步骤子模块。
 
 用法：
-  仓库根目录：python run_analysis.py --patient-id <诊疗卡号>
-  或：python -m lab_analysis --patient-id <诊疗卡号>
+  仓库根目录：python -m lab_analysis --patient-id <诊疗卡号>
 """
 
 from __future__ import annotations
@@ -18,9 +17,10 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from lab_analysis.patient_id import encode
+from .error_reporting import report_error
 
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+from .config import WORK_ROOT
+from .patient_id import encode
 
 
 def parse_args():
@@ -98,7 +98,8 @@ def extract_patient_id_from_reports() -> str:
                 if len(parts) >= 3:
                     patient_id = parts[2].strip()
                     if patient_id:
-                        print(f"[INFO] 从检验报告中提取到患者ID: {patient_id}")
+                        # 注意：此处 patient_id 来自 metadata.md（可能是 raw ID），
+                        # 仅用于内部 deid 查找，不对外输出
                         return patient_id
     
     return None
@@ -145,12 +146,13 @@ def check_patient_data(deid: str) -> bool:
     return True
 
 
-def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, report_type: str = None) -> bool:
+def auto_ingest_from_origin_data(patient_id: str, deid: str, report_date: str = None, report_type: str = None) -> bool:
     """
     从 Origin_data 目录自动摄入数据
-    
+
     Args:
-        patient_id: 患者ID
+        patient_id: 患者原始ID（仅用于查找映射）
+        deid: 脱敏ID（所有输出/日志使用）
         report_date: 报告日期（可选）
         report_type: 报告类型（可选）
     
@@ -230,7 +232,8 @@ def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, repor
                 # 构建参数
                 args = argparse.Namespace(
                     image=str(img_path),
-                    patient_id=patient_id,
+                    patient_id=original_id,
+                    deid=deid,
                     no_interactive=False
                 )
                 
@@ -242,12 +245,10 @@ def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, repor
                     print(f"  [OK] 摄入成功")
                 else:
                     print(f"  [FAIL] 摄入失败")
-                    
+
             except Exception as e:
-                print(f"  [ERROR] 处理失败: {e}")
-                import traceback
-                traceback.print_exc()
-    
+                report_error("检验报告摄入", e, {"patient_id": deid, "file": str(img_path)})
+
     # 处理MRI报告图片
     if mri_images:
         print(f"\n{'─'*60}")
@@ -290,12 +291,10 @@ def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, repor
                     print(f"  [OK] MRI报告摄入成功")
                 else:
                     print(f"  [FAIL] MRI报告摄入失败")
-                    
+
             except Exception as e:
-                print(f"  [ERROR] 处理失败: {e}")
-                import traceback
-                traceback.print_exc()
-    
+                report_error("MRI报告摄入", e, {"patient_id": deid, "file": str(img_path)})
+
     # 处理DICOM压缩包
     if dicom_zips:
         print(f"\n{'─'*60}")
@@ -338,12 +337,10 @@ def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, repor
                     print(f"  [OK] DICOM压缩包摄入成功")
                 else:
                     print(f"  [FAIL] DICOM压缩包摄入失败")
-                    
+
             except Exception as e:
-                print(f"  [ERROR] 处理失败: {e}")
-                import traceback
-                traceback.print_exc()
-    
+                report_error("DICOM摄入", e, {"patient_id": deid, "file": str(zip_path)})
+
     # 处理DICOM文件（如果直接在根目录下）
     if dcm_files:
         print(f"\n{'─'*60}")
@@ -412,7 +409,7 @@ def main():
             if not original_id:
                 print("[ERROR] 未输入患者ID，退出")
                 sys.exit(1)
-            print(f"[INFO] 使用用户输入的ID: {original_id}")
+            print(f"[INFO] 已确认患者身份")
         except (EOFError, KeyboardInterrupt):
             print("\n[ERROR] 无法读取输入，请使用 --patient-id 参数提供患者ID")
             sys.exit(1)
@@ -424,8 +421,7 @@ def main():
     ts_dir = f"{deid}/{ts}"
     
     print(f"[{datetime.now().isoformat()}] Pipeline 启动")
-    print(f"原始病人ID: {original_id}")
-    print(f"脱敏病人ID: {deid}")
+    print(f"患者标识: {deid}")
     print(f"输出目录: data/{ts_dir}/")
     print(f"时间戳: {ts}")
     
@@ -434,6 +430,7 @@ def main():
         # 先尝试从 Origin_data 自动摄入
         has_origin_data = auto_ingest_from_origin_data(
             patient_id=original_id,
+            deid=deid,
             report_date=args.report_date,
             report_type=args.report_type
         )
@@ -509,19 +506,18 @@ def main():
         sys.exit(1)
 
     pid_arg = ["--patient-id", deid]
-    ts_env = {"ANALYSIS_TS": ts}
-
-    rc = run_step("③ 数据加载 (data_loader)", "data_loader", pid_arg, ts_env)
+    lit_env  = {"ANALYSIS_TS": ts}
+    rc = run_step("③ 数据加载 (data_loader)", "data_loader", pid_arg, lit_env)
     if rc != 0:
         print("[!] data_loader 失败，退出")
         sys.exit(1)
 
-    rc = run_step("④ 数据分析 (data_analyzer)", "data_analyzer", pid_arg, ts_env)
+    rc = run_step("④ 数据分析 (data_analyzer)", "data_analyzer", pid_arg,    lit_env)
     if rc != 0:
         print("[!] data_analyzer 失败，退出")
         sys.exit(1)
 
-    rc = run_step("⑤ 文献检索 (literature_searcher)", "literature_searcher", pid_arg, ts_env)
+    rc = run_step("⑤ 文献检索 (literature_searcher)", "literature_searcher", pid_arg,    lit_env)
     if rc != 0:
         print("[!] literature_searcher 失败，退出")
         sys.exit(1)
@@ -529,22 +525,22 @@ def main():
     if args.skip_llm:
         print("\n[跳过] 循证解读（--skip-llm）")
     else:
-        rc = run_step("⑥ 循证解读 (literature_interpreter)", "literature_interpreter", pid_arg, ts_env)
+        rc = run_step("⑥ 循证解读 (literature_interpreter)", "literature_interpreter", pid_arg,    lit_env)
         if rc != 0:
             print("[!] literature_interpreter 失败（非致命，继续）")
 
     if args.skip_imaging:
         print("\n[跳过] 影像分析（--skip-imaging）")
     else:
-        rc = run_step("⑦ 影像分析 (qwen_vl_report_check)", "qwen_vl_report_check", pid_arg, ts_env)
+        rc = run_step("⑦ 影像分析 (qwen_vl_report_check)", "qwen_vl_report_check", pid_arg,    lit_env)
         if rc != 0:
             print("[!] qwen_vl_report_check 失败（非致命，继续）")
 
-    rc = run_step("⑧ 生成最终报告 (gen_final_report)", "gen_final_report", pid_arg, ts_env)
+    rc = run_step("⑧ 生成最终报告 (gen_final_report)", "gen_final_report", pid_arg,    lit_env)
     if rc != 0:
         print("[!] gen_final_report 失败（非致命，继续）")
 
-    rc = run_step("⑨ 本地文件组织 (organize_local_files)", "organize_local_files", pid_arg, ts_env)
+    rc = run_step("⑨ 本地文件组织 (organize_local_files)", "organize_local_files", pid_arg,    lit_env)
     if rc != 0:
         print("[!] organize_local_files 失败（非致命，完成）")
 

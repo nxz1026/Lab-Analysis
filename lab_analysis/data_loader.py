@@ -14,7 +14,6 @@ import sys
 import argparse
 from datetime import datetime
 from pathlib import Path
-import os
 
 from .config import WORK_ROOT, get_required_key, get_optional_key
 from .utils import build_paths

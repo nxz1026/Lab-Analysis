@@ -20,7 +20,6 @@ import matplotlib.patches as mpatches
 from matplotlib.colors import LinearSegmentedColormap
 from pathlib import Path
 from datetime import datetime
-import os
 
 from .config import WORK_ROOT
 from .utils import build_paths

@@ -24,12 +24,14 @@ import subprocess
 import sys
 from pathlib import Path
 
-from lab_analysis.utils import WORK_ROOT, validate_chinese_id
+from .config import WORK_ROOT, ORIGIN_DATA_DIR
+from .vision_extractor import validate_chinese_id
 
 
 def get_origin_data_dir() -> Path:
     """获取原始数据目录"""
-    return Path(os.environ.get("ORIGIN_DATA_DIR", WORK_ROOT / "raw" / "Origin_data"))
+    default = WORK_ROOT / "raw" / "Origin_Data"
+    return Path(os.environ.get("ORIGIN_DATA_DIR", default))
 
 
 def get_project_root() -> Path:
@@ -237,6 +239,6 @@ def main():
 
 
 if __name__ == "__main__":
-    import os
+    import os  # noqa: F401
     from datetime import datetime
     sys.exit(main())
