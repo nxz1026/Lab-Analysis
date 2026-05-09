@@ -53,9 +53,9 @@ from zipfile import ZipFile
 
 from lab_analysis.patient_id import encode
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
-INGEST_LOG = WIKI_ROOT / ".ingest_log.json"
-LOG_FILE = WIKI_ROOT / ".ingest_debug.log"
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+INGEST_LOG = WORK_ROOT / ".ingest_log.json"
+LOG_FILE = WORK_ROOT / ".ingest_debug.log"
 
 # 配置日志记录器
 logger = logging.getLogger("ingest_data")
@@ -183,7 +183,7 @@ def validate_patient_id(patient_id: str, interactive: bool = True) -> str:
 def save_image(image_path: Path, patient_id_obf: str, report_date: str, 
                report_type: str, data_type: str = "lab") -> str:
     """保存图片到 raw/patient_{脱敏ID}/{data_type}/"""
-    target_dir = WIKI_ROOT / "raw" / f"patient_{patient_id_obf}" / data_type
+    target_dir = WORK_ROOT / "raw" / f"patient_{patient_id_obf}" / data_type
     target_dir.mkdir(parents=True, exist_ok=True)
     
     dest_name = image_path.name
@@ -196,7 +196,7 @@ def save_image(image_path: Path, patient_id_obf: str, report_date: str,
         dest_path = target_dir / f"{stem}_{ts}{suffix}"
     
     shutil.copy2(image_path, dest_path)
-    return str(dest_path.relative_to(WIKI_ROOT))
+    return str(dest_path.relative_to(WORK_ROOT))
 
 
 def ingest_lab_image(image_path: Path, patient_id: str, report_date: str, 
@@ -328,7 +328,7 @@ def ingest_mri_dicom(zip_path: Path = None, dicom_dir: Path = None,
                      patient_id: str = None, report_date: str = None) -> dict:
     """摄入MRI DICOM数据"""
     patient_id_obf = encode(patient_id)
-    imaging_dir = WIKI_ROOT / "raw" / f"patient_{patient_id_obf}" / "imaging"
+    imaging_dir = WORK_ROOT / "raw" / f"patient_{patient_id_obf}" / "imaging"
     imaging_dir.mkdir(parents=True, exist_ok=True)
     
     # 确定DICOM源目录
@@ -348,7 +348,7 @@ def ingest_mri_dicom(zip_path: Path = None, dicom_dir: Path = None,
         "timestamp": datetime.now().isoformat(),
         "type": "mri_dicom",
         "source_path": str(zip_path or dicom_dir),
-        "saved_dir": str(imaging_dir.relative_to(WIKI_ROOT)),
+        "saved_dir": str(imaging_dir.relative_to(WORK_ROOT)),
         "patient_id_raw": patient_id,
         "patient_id_obf": patient_id_obf,
         "report_date": report_date,
