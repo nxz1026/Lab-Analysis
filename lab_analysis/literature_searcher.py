@@ -14,6 +14,8 @@ from datetime import datetime
 from pathlib import Path
 import os
 
+from lab_analysis.utils import api_retry_decorator
+
 WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 # ---------------------------------------------------------------------------
@@ -63,6 +65,7 @@ SEARCH_STRATEGIES = {
 }
 
 
+@api_retry_decorator(max_attempts=3, min_wait=1.0, max_wait=20.0, description="PubMed ESearch")
 def esearch(query: str, retmax: int = 8, sort: str = "relevance",
              date_filter: str = "5") -> dict:
     """esearch: 搜索 PMID 列表
@@ -90,6 +93,7 @@ def esearch(query: str, retmax: int = 8, sort: str = "relevance",
         return json.loads(resp.read())
 
 
+@api_retry_decorator(max_attempts=3, min_wait=1.0, max_wait=20.0, description="PubMed EFetch")
 def efetch(pmids: list[str]) -> str:
     """efetch: 用 PMID 抓摘要文本"""
     if not pmids:
