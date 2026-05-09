@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 # ============================================================
 # 患者信息脱敏常量（发布前务必确认）
@@ -335,7 +335,7 @@ def main():
     patient_id = args.patient_id
     import os
     raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id)
-    data_dir = WIKI_ROOT / "data" / patient_id / ts
+    data_dir = WORK_ROOT / "data" / patient_id / ts
 
     DEEPSEEK_API_KEY = load_env_key("DEEPSEEK_API_KEY")
     if not DEEPSEEK_API_KEY:

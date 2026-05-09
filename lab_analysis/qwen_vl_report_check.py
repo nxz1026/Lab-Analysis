@@ -8,7 +8,7 @@ qwen_vl_report_check.py
 import base64, json, os, sys, time
 from pathlib import Path
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
 if not DASHSCOPE_API_KEY:
@@ -122,10 +122,10 @@ def main():
     parser.add_argument("--patient-id", required=True)
     args = parser.parse_args()
 
-    # 使用 WIKI_ROOT 而不是硬编码路径
-    imaging_base = WIKI_ROOT / "raw" / f"patient_{args.patient_id}" / "imaging"
+    # 使用 WORK_ROOT 而不是硬编码路径
+    imaging_base = WORK_ROOT / "raw" / f"patient_{args.patient_id}" / "imaging"
     import os
-    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); lit_dir = WIKI_ROOT / "data" / args.patient_id / ts / "03_literature"
+    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); lit_dir = WORK_ROOT / "data" / args.patient_id / ts / "03_literature"
     lit_dir.mkdir(parents=True, exist_ok=True)
 
     # 前置检查：影像目录存在

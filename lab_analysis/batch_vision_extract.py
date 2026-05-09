@@ -24,13 +24,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from lab_analysis.utils import WIKI_ROOT, validate_chinese_id
+from lab_analysis.utils import WORK_ROOT, validate_chinese_id
 from lab_analysis.patient_id import encode
 
 
 def get_origin_data_dir() -> Path:
     """获取原始数据目录"""
-    return Path(os.environ.get("ORIGIN_DATA_DIR", WIKI_ROOT / "raw" / "Origin_data"))
+    return Path(os.environ.get("ORIGIN_DATA_DIR", WORK_ROOT / "raw" / "Origin_data"))
 
 
 def get_project_root() -> Path:

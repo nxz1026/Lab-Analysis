@@ -22,7 +22,7 @@ from pathlib import Path
 from datetime import datetime
 import os
 
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 def build_paths(patient_id: str):
@@ -31,7 +31,7 @@ def build_paths(patient_id: str):
     raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
     # ANALYSIS_TS 可能是纯时间戳（run_analysis.py 传入），也可能是 "deid/ts"（直接传参）
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
-    data_dir = WIKI_ROOT / "data" / patient_id / ts
+    data_dir = WORK_ROOT / "data" / patient_id / ts
     analyzed_dir = data_dir / "02_analyzed"
     figures_dir = analyzed_dir / "figures"
     reports_dir = data_dir / "04_reports"

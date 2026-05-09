@@ -6,7 +6,7 @@
 在本地按照飞书云盘的结构创建文件夹并复制分析结果
 
 本地文件结构（模拟飞书云盘）：
-{WIKI_ROOT}/local_upload/
+{WORK_ROOT}/local_upload/
 └── {今天日期}/          ← 当天年月日文件夹
     ├── 原始数据/          ← 检验+影像原始数据
     ├── 文献参考/          ← 文献检索结果
@@ -26,8 +26,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TODAY = date.today().strftime("%Y-%m-%d")
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", str(Path(__file__).parent.parent)))
-LOCAL_UPLOAD_ROOT = WIKI_ROOT / "local_upload"  # 本地上传根目录
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", str(Path(__file__).parent.parent)))
+LOCAL_UPLOAD_ROOT = WORK_ROOT / "local_upload"  # 本地上传根目录
 
 
 def build_paths(patient_id: str):
@@ -40,7 +40,7 @@ def build_paths(patient_id: str):
     raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
     # ANALYSIS_TS 可能是纯时间戳（run_analysis.py 传入），也可能是 "deid/ts"（直接传参）
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts  # fallback 为 patient_id
-    data_dir = WIKI_ROOT / "data" / patient_id / ts
+    data_dir = WORK_ROOT / "data" / patient_id / ts
     return {
         "data": data_dir,
     }
