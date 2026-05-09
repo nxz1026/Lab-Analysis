@@ -11,9 +11,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from lab_analysis.utils import api_retry_decorator
-
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 def load_json(path: str, default=None):
     try:
@@ -139,7 +137,7 @@ def main():
     args = parser.parse_args()
 
     import os
-    wiki_data = WIKI_ROOT / "data"
+    wiki_data = WORK_ROOT / "data"
     if args.patient_id:
         raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id)
         lit_dir = wiki_data / args.patient_id / ts / "03_literature"

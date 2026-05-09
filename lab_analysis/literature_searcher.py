@@ -14,9 +14,7 @@ from datetime import datetime
 from pathlib import Path
 import os
 
-from lab_analysis.utils import api_retry_decorator
-
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 # ---------------------------------------------------------------------------
 # 检索策略配置
@@ -270,7 +268,7 @@ def main():
 
     if args.patient_id:
         import os
-        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); lit_dir = WIKI_ROOT / "data" / args.patient_id / ts / "03_literature"
+        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); lit_dir = WORK_ROOT / "data" / args.patient_id / ts / "03_literature"
         args.out = args.out or str(lit_dir / "literature_results.json")
 
     all_topics = list(SEARCH_STRATEGIES.keys())

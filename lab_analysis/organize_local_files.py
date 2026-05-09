@@ -6,7 +6,7 @@
 在本地按照飞书云盘的结构创建文件夹并复制分析结果
 
 本地文件结构（模拟飞书云盘）：
-{WIKI_ROOT}/local_upload/
+{WORK_ROOT}/local_upload/
 └── {今天日期}/          ← 当天年月日文件夹
     ├── 原始数据/          ← 检验+影像原始数据
     ├── 文献参考/          ← 文献检索结果
@@ -18,32 +18,15 @@
 import os
 import argparse
 import shutil
-from pathlib import Path
 from datetime import date
+from pathlib import Path
 
 # ============ 配置 ============
-from dotenv import load_dotenv
-load_dotenv()
+from .config import WORK_ROOT, get_optional_key
+from .utils import build_paths
 
 TODAY = date.today().strftime("%Y-%m-%d")
-WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", str(Path(__file__).parent.parent)))
-LOCAL_UPLOAD_ROOT = WIKI_ROOT / "local_upload"  # 本地上传根目录
-
-
-def build_paths(patient_id: str):
-    """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。
-
-    路径结构：data/{patient_id}/{ANALYSIS_TS}/
-    - patient_id: de-identified ID（如 846552421134373347）
-    - ANALYSIS_TS: 仅时间戳（如 20260503_030142），无 de-id 前缀
-    """
-    raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
-    # ANALYSIS_TS 可能是纯时间戳（run_analysis.py 传入），也可能是 "deid/ts"（直接传参）
-    ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts  # fallback 为 patient_id
-    data_dir = WIKI_ROOT / "data" / patient_id / ts
-    return {
-        "data": data_dir,
-    }
+LOCAL_UPLOAD_ROOT = WORK_ROOT / "local_upload"  # 本地上传根目录
 
 
 def parse_args():

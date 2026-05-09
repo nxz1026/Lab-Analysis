@@ -12,7 +12,6 @@ vision_extractor.py — Vision 模块：从检验报告图片中提取患者ID�
 import argparse
 import base64
 import json
-import os
 import re
 import sys
 import time
@@ -42,13 +41,10 @@ def validate_chinese_id(id_number: str) -> bool:
 
 
 def get_api_key():
-    """从环境变量获取 API Key"""
-    api_key = os.environ.get("ZHIPU_API_KEY")
-    
-    if not api_key:
+    """从统一配置获取 API Key"""
+    if not ZHIPU_API_KEY:
         raise ValueError("未找到 ZHIPU_API_KEY，请配置在 .env 文件或环境变量中")
-    
-    return api_key
+    return ZHIPU_API_KEY
 
 
 def encode_image_to_base64(image_path: Path) -> str:

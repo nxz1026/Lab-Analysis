@@ -1,19 +1,9 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-utils.py - 通用工具函数
-
-提供项目中多个模块共享的工具函数，包括：
-- 路径构建
-- 环境变量管理
-- 日志功能
-- 身份证号验证
+utils.py — 公共工具函数，替换各模块重复定义的 build_paths 等。
 """
+from __future__ import annotations
 
-import json
 import os
-import re
-from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
 
