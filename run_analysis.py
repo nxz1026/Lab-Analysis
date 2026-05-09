@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-仓库根目录便捷入口，等价于：python -m lab_analysis --patient-id <id>
+便捷入口脚本 - 代理调用 lab_analysis.pipeline
 
-请在克隆目录下执行；或先 pip install -e .
+用法（二选一，效果相同）：
+  python run_analysis.py --patient-id <id>
+  python -m lab_analysis --patient-id <id>
+
+注意：此脚本仅为便捷入口，核心逻辑在 lab_analysis.pipeline 中实现。
+      推荐直接使用 python -m lab_analysis 以保持统一。
 """
 from __future__ import annotations
 
