@@ -5,22 +5,14 @@ qwen_vl_report_check.py
 上腹部MRI报告印证分析 — 每个部位选1-2张代表性DICOM图
 用法: python qwen_vl_report_check.py --patient-id YOUR_PATIENT_ID
 """
-import base64, json, os, sys, time
+import base64, json, sys, time
+from datetime import datetime
 from pathlib import Path
 
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+import requests
+import tenacity
 
-DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
-if not DASHSCOPE_API_KEY:
-    # 从项目根目录的 .env 文件加载
-    env_path = Path(__file__).parent.parent / ".env"
-    if env_path.exists():
-        for line in open(env_path, encoding='utf-8'):
-            if line.startswith("DASHSCOPE_API_KEY=") and not line.startswith("#"):
-                DASHSCOPE_API_KEY = line.strip().split("=", 1)[1].strip().strip("'\"")
-
-if not DASHSCOPE_API_KEY:
-    raise RuntimeError("DASHSCOPE_API_KEY 未设置")
+from .config import WORK_ROOT, DASHSCOPE_API_KEY
 
 API_BASE = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
 
@@ -88,6 +80,16 @@ def load_dicom_image(path: Path) -> str:
         raise RuntimeError(f"DICOM读取失败: {e}")
 
 
+def _is_dashscope_retryable(resp: requests.Response) -> bool:
+    return resp.status_code == 429
+
+
+@tenacity.retry(
+    retry=tenacity.retry_if_response(_is_dashscope_retryable),
+    wait=tenacity.wait_exponential(multiplier=2, min=2, max=60),
+    stop=tenacity.stop_after_attempt(5),
+    reraise=True,
+)
 def analyze_single(image_b64: str, seq_name: str, seq_desc: str, finding: str) -> dict:
     payload = {
         "model": "qwen-vl-plus",
@@ -122,10 +124,9 @@ def main():
     parser.add_argument("--patient-id", required=True)
     args = parser.parse_args()
 
-    # 使用 WORK_ROOT 而不是硬编码路径
+    from .config import ANALYSIS_TS
     imaging_base = WORK_ROOT / "raw" / f"patient_{args.patient_id}" / "imaging"
-    import os
-    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); lit_dir = WORK_ROOT / "data" / args.patient_id / ts / "03_literature"
+    lit_dir = WORK_ROOT / "data" / args.patient_id / (ANALYSIS_TS or args.patient_id) / "03_literature"
     lit_dir.mkdir(parents=True, exist_ok=True)
 
     # 前置检查：影像目录存在
@@ -219,6 +220,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import requests
-    from datetime import datetime
     main()

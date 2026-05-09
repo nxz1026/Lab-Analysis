@@ -12,9 +12,8 @@ import time
 import re
 from datetime import datetime
 from pathlib import Path
-import os
 
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+from .config import WORK_ROOT
 
 # ---------------------------------------------------------------------------
 # 检索策略配置
@@ -65,46 +64,20 @@ SEARCH_STRATEGIES = {
 
 def esearch(query: str, retmax: int = 8, sort: str = "relevance",
              date_filter: str = "5") -> dict:
-    """esearch: 搜索 PMID 列表
-
-    Args:
-        date_filter: 年份数，默认5即近5年。设为0则不过滤。
-    """
-    import urllib.parse
-    # 近 N 年过滤：Date - Publication 字段限制
-    if date_filter and int(date_filter) > 0:
-        n_years_ago = datetime.now().year - int(date_filter)
-        date_clause = f' AND ("{n_years_ago}"[Date - Publication] : "2099"[Date - Publication])'
-        query = query + date_clause
-
-    params = urllib.parse.urlencode({
-        "db": "pubmed",
-        "term": query,
-        "retmax": retmax,
-        "sort": sort,
-        "retmode": "json",
-    })
-    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?{params}"
-    req = urllib.request.Request(url, headers={"User-Agent": "Hermes-Lab-Analyzer/1.0"})
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read())
+    """esearch: 搜索 PMID 列表（内置 tenacity 指数退避重试）"""
+    from .api_clients import pubmed_esearch
+    return pubmed_esearch(
+        query=query,
+        retmax=retmax,
+        sort=sort,
+        date_filter=int(date_filter) if date_filter and date_filter != "0" else None,
+    )
 
 
 def efetch(pmids: list[str]) -> str:
-    """efetch: 用 PMID 抓摘要文本"""
-    if not pmids:
-        return ""
-    ids = ",".join(pmids)
-    params = urllib.parse.urlencode({
-        "db": "pubmed",
-        "id": ids,
-        "rettype": "abstract",
-        "retmode": "text",
-    })
-    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?{params}"
-    req = urllib.request.Request(url, headers={"User-Agent": "Hermes-Lab-Analyzer/1.0"})
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        return resp.read().decode("utf-8", errors="replace")
+    """efetch: 用 PMID 抓摘要文本（内置 tenacity 指数退避重试）"""
+    from .api_clients import pubmed_efetch
+    return pubmed_efetch(pmids=pmids)
 
 
 def parse_papers(raw_text: str, pmids: list[str] = None) -> list[dict]:
@@ -264,9 +237,9 @@ def main():
     parser.add_argument("--out", default=None, help="输出 JSON 路径")
     args = parser.parse_args()
 
+    from .config import ANALYSIS_TS
     if args.patient_id:
-        import os
-        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); lit_dir = WORK_ROOT / "data" / args.patient_id / ts / "03_literature"
+        lit_dir = WORK_ROOT / "data" / args.patient_id / (ANALYSIS_TS or args.patient_id) / "03_literature"
         args.out = args.out or str(lit_dir / "literature_results.json")
 
     all_topics = list(SEARCH_STRATEGIES.keys())

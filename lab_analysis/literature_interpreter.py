@@ -5,14 +5,12 @@
 """
 
 import json
-import os
 import sys
 import time
 from datetime import datetime
-import os
 from pathlib import Path
 
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+from .config import WORK_ROOT
 
 def load_json(path: str, default=None):
     try:
@@ -88,38 +86,17 @@ def build_prompt(analysis_path: str, lit_path: str) -> str:
 
 
 def call_deepseek(prompt: str) -> str:
-    api_key = os.environ.get("DEEPSEEK_API_KEY", "")
-    if not api_key:
-        # 从项目根目录的 .env 文件加载
-        env_path = Path(__file__).parent.parent / ".env"
-        if env_path.exists():
-            for line in env_path.read_text(encoding="utf-8").splitlines():
-                if line.startswith("DEEPSEEK_API_KEY="):
-                    api_key = line.split("=", 1)[1].strip()
-    if not api_key:
-        return "错误：未设置 DEEPSEEK_API_KEY"
+    from .config import DEEPSEEK_API_KEY
+    from .api_clients import call_deepseek as _call
 
-    import requests
-    payload = {
-        "model": "deepseek-chat",
-        "messages": [
-            {"role": "system", "content": "你是一位专业的医学检验科和重症医学科临床顾问，结合循证医学证据为患者的检验数据提供深入解读。"},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.3,
-        "max_tokens": 4096,
-    }
-    resp = requests.post(
-        "https://api.deepseek.com/chat/completions",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "User-Agent": "Hermes-Lab-Analyzer/1.0",
-        },
-        json=payload,
-        timeout=60,
-    )
-    resp.raise_for_status()
-    result = resp.json()
+    if not DEEPSEEK_API_KEY:
+        return "错误：未设置 DEEPSEEK_API_KEY"
+    messages = [
+        {"role": "system",
+         "content": "你是一位专业的医学检验科和重症医学科临床顾问，结合循证医学证据为患者的检验数据提供深入解读。"},
+        {"role": "user", "content": prompt},
+    ]
+    result = _call(DEEPSEEK_API_KEY, messages, temperature=0.3, max_tokens=4096, timeout=60)
     return result["choices"][0]["message"]["content"]
 
 
@@ -136,10 +113,10 @@ def main():
     parser.add_argument("--patient-id", default=None, help="诊疗卡号，设置后自动推导路径")
     args = parser.parse_args()
 
-    import os
+    from .config import ANALYSIS_TS
     wiki_data = WORK_ROOT / "data"
     if args.patient_id:
-        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id)
+        ts = ANALYSIS_TS or args.patient_id
         lit_dir = wiki_data / args.patient_id / ts / "03_literature"
         args.analysis = args.analysis or str(lit_dir.parent / "02_analyzed" / "analysis_results.json")
         args.lit = args.lit or str(lit_dir / "literature_results.json")
@@ -152,7 +129,7 @@ def main():
     # 前置检查
     import sys
     for label, path in [("analysis_results", args.analysis), ("literature_results", args.lit)]:
-        if path and not os.path.exists(path):
+        if path and not Path(path).exists():
             print(f"❌ 前置文件不存在: [{label}] {path}")
             sys.exit(1)
 

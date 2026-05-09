@@ -16,8 +16,7 @@ import re
 import sys
 from pathlib import Path
 
-import requests
-
+from .api_clients import call_zhipu_vision
 from .config import ZHIPU_API_KEY
 
 
@@ -62,11 +61,11 @@ def encode_image_to_base64(image_path: Path) -> str:
 def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> dict:
     """
     使用 Qwen-VL 从检验报告图片中提取关键信息
-    
+
     参数：
         image_path: 图片路径
         use_free_model: 是否优先使用免费模型（默认True）
-    
+
     返回：
     {
         "patient_id": "患者ID",
@@ -77,7 +76,7 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
     """
     api_key = get_api_key()
     image_b64 = encode_image_to_base64(image_path)
-    
+
     prompt = """你是医疗文档OCR专家。请从这张检验报告图片中提取以下关键信息：
 
 1. 患者ID/诊疗卡号（通常是数字，可能在"诊疗卡号"、"病历号"、"患者ID"等字段后）
@@ -95,101 +94,50 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
 如果某个字段无法确定，请用 null 表示。
 只返回JSON，不要其他文字。"""
 
-    # 使用智谱AI GLM-4V-Flash模型
     model_name = "glm-4v-flash"
-    
-    max_retries = 3
-    retry_count = 0
-    last_error = None
-    
-    while retry_count < max_retries:
-        try:
-            if retry_count > 0:
-                wait_time = 2 ** retry_count  # 指数退避: 2s, 4s, 8s
-                print(f"[Vision] 等待 {wait_time} 秒后重试...")
-                import time
-                time.sleep(wait_time)
-            
-            print(f"[Vision] 尝试使用模型: {model_name} (智谱AI) [尝试 {retry_count + 1}/{max_retries}]")
-            
-            payload = {
-                "model": model_name,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}},
-                            {"type": "text", "text": prompt}
-                        ]
-                    }
-                ]
-            }
-            
-            # 使用智谱AI API
-            api_url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-            
-            resp = requests.post(
-                api_url,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json"
-                },
-                json=payload,
-                timeout=120
-            )
-            resp.raise_for_status()
-            
-            data = resp.json()
-            # 智谱AI返回格式与OpenAI兼容
-            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            
-            print(f"[Vision] [OK] 模型 {model_name} 调用成功")
-            
-            # 解析JSON响应
-            try:
-                # 清理可能的markdown代码块标记
-                content = content.strip()
-                if content.startswith("```json"):
-                    content = content[7:]
-                if content.startswith("```"):
-                    content = content[3:]
-                if content.endswith("```"):
-                    content = content[:-3]
-                
-                result = json.loads(content.strip())
-                result['model_used'] = model_name  # 记录使用的模型
-                return result
-            except json.JSONDecodeError as e:
-                print(f"[ERROR] JSON解析失败: {e}")
-                print(f"原始响应: {content[:500]}")
-                last_error = f"JSON解析失败: {e}"
-                retry_count += 1
-                continue
-        
-        except Exception as e:
-            error_msg = str(e)
-            print(f"[ERROR] 模型调用失败: {error_msg}")
-            last_error = error_msg
-            
-            # 如果是429错误，等待更长时间
-            if "429" in error_msg:
-                print(f"[WARNING] 遇到速率限制，将增加等待时间")
-            
-            retry_count += 1
-            if retry_count < max_retries:
-                continue
-            else:
-                break
-    
-    # 所有重试都失败
-    print(f"[ERROR] 所有 {max_retries} 次尝试均失败。最后错误: {last_error}")
-    return {
-        "patient_id": None,
-        "report_date": None,
-        "report_type": None,
-        "confidence": 0.0,
-        "error": f"模型调用失败: {last_error}"
-    }
+
+    print(f"[Vision] 使用模型: {model_name} (智谱AI)")
+
+    try:
+        data = call_zhipu_vision(
+            api_key=api_key,
+            image_b64=image_b64,
+            prompt=prompt,
+            model=model_name,
+            timeout=120,
+        )
+        content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+    except Exception as e:
+        return {
+            "patient_id": None,
+            "report_date": None,
+            "report_type": None,
+            "confidence": 0.0,
+            "error": f"智谱AI调用失败（已重试5次）: {e}",
+        }
+
+    print(f"[Vision] [OK] 模型 {model_name} 调用成功")
+
+    # 解析JSON响应
+    try:
+        content = content.strip()
+        if content.startswith("```json"):
+            content = content[7:]
+        elif content.startswith("```"):
+            content = content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
+        result = json.loads(content.strip())
+        result['model_used'] = model_name
+        return result
+    except json.JSONDecodeError as e:
+        return {
+            "patient_id": None,
+            "report_date": None,
+            "report_type": None,
+            "confidence": 0.0,
+            "error": f"JSON解析失败: {e}",
+        }
 
 
 def main():
