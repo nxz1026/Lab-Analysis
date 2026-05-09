@@ -20,9 +20,6 @@ def parse_args():
     return parser.parse_args()
 
 
-from .config import get_required_key
-
-
 def assess_three_source_consistency(data_dir: Path) -> str:
     """评估三源一致性，生成质控段落。
 
