@@ -9,7 +9,6 @@ import os
 import sys
 import time
 from datetime import datetime
-import os
 from pathlib import Path
 
 WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
@@ -152,7 +151,7 @@ def main():
     # 前置检查
     import sys
     for label, path in [("analysis_results", args.analysis), ("literature_results", args.lit)]:
-        if path and not os.path.exists(path):
+        if path and not Path(path).exists():
             print(f"❌ 前置文件不存在: [{label}] {path}")
             sys.exit(1)
 
