@@ -15,10 +15,12 @@ import json
 import os
 import subprocess
 import sys
+import traceback
 from datetime import datetime
 from pathlib import Path
 
 from lab_analysis.patient_id import encode
+from lab_analysis.error_logger import log_pipeline_error, log_error
 
 WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
@@ -391,8 +393,35 @@ def run_step(name: str, module: str, extra_args: list[str] | None = None, env: d
         full_env["PYTHONPATH"] = pp + os.pathsep + full_env["PYTHONPATH"]
     else:
         full_env["PYTHONPATH"] = pp
-    result = subprocess.run(cmd, cwd=str(root), env=full_env)
-    return result.returncode
+    
+    try:
+        result = subprocess.run(cmd, cwd=str(root), env=full_env, capture_output=True, text=True)
+        
+        # 如果失败，记录错误日志
+        if result.returncode != 0:
+            error_msg = result.stderr.strip() if result.stderr else "Unknown error"
+            log_error(
+                message=f"Pipeline 步骤 '{name}' 执行失败",
+                exc_info=None,
+                context={
+                    "module": module,
+                    "command": " ".join(cmd),
+                    "returncode": result.returncode,
+                    "error": error_msg[:500]  # 限制错误信息长度
+                },
+                module="pipeline"
+            )
+        
+        return result.returncode
+    except Exception as e:
+        # 捕获 subprocess 异常
+        log_pipeline_error(
+            step_name=name,
+            patient_id=env.get("ANALYSIS_TS", "unknown") if env else "unknown",
+            exc_info=e,
+            additional_context={"module": module}
+        )
+        return 1
 
 
 def main():
