@@ -1,141 +1,82 @@
 # Lab-Analysis
 
-> 慢性胰腺炎检验数据自动化分析 Pipeline（检验 + 文献 + 影像 + 综合报告）
+慢性胰腺炎检验数据自动化分析 Pipeline（检验 + 文献 + 影像 + 综合报告）
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## 📋 项目简介
+## 📋 简介
 
-Lab-Analysis 是一个全自动化的医学检验数据分析系统，专为慢性胰腺炎患者设计。系统能够：
+全自动医学检验数据分析系统：
 
-- 🔬 **自动提取**检验报告图片中的数据（OCR + Vision AI）
-- 📊 **智能分析**检验指标趋势、相关性和异常检测
-- 📚 **文献检索**与循证医学解读（PubMed + DeepSeek）
-- 🖼️ **影像分析**MRI/DICOM 报告检查
-- 📝 **生成综合报告**整合所有分析结果
+- 🔬 **自动提取** - 检验报告 OCR 识别
+- 📊 **智能分析** - 7 张图表可视化
+- 📚 **文献检索** - PubMed + AI 解读
+- 🖼️ **影像检查** - MRI/DICOM 验证
+- 📝 **综合报告** - 三源一致性评估
 
 ## ✨ 核心功能
 
-### 1. 数据摄入 (Data Ingestion)
-- 支持检验报告图片自动识别（Vision AI）
-- DICOM 影像数据解压和序列重命名
+### 1. 数据摄入
+- 检验报告图片 OCR 识别
+- DICOM 影像解压与重命名
 - MRI 文字报告解析
-- 患者 ID 脱敏处理
+- 患者 ID 脱敏
 
-### 2. 数据分析 (Data Analysis)
-- **趋势回归分析** - 时间序列指标变化趋势
-- **相关性热图** - 多指标间相关性可视化
-- **炎症状态评估** - 综合炎症指标分析
-- **异常指标检测** - 基于统计学的异常值识别
-- **移动平均平滑** - 减少数据波动噪声
-- **变异系数分析** - 指标稳定性评估
+### 2. 数据分析（7 张图表）
+- 趋势回归、相关性热图
+- 炎症评估、异常检测
+- 移动平均、变异系数、综合仪表板
 
-### 3. 文献检索与解读 (Literature)
-- PubMed 自动检索相关文献
-- DeepSeek AI 循证医学解读
-- 文献与患者数据关联分析
+### 3. 文献检索与解读
+- PubMed 自动检索
+- DeepSeek AI 循证解读
 
-### 4. 影像报告检查 (Imaging)
-- Qwen-VL 模型检查 MRI 报告
-- 影像学发现与检验数据一致性验证
+### 4. 影像报告检查
+- Qwen-VL 模型验证 MRI 报告
+- 影像与检验数据一致性检查
 
-### 5. 综合报告生成 (Final Report)
-- 三源一致性评估（检验+文献+影像）
-- 自动生成结构化综合报告
-- 本地文件自动组织归档
+### 5. 综合报告生成
+- 三源一致性评估
+- 结构化报告 + 本地归档
 
 ## 🚀 快速开始
-
-### 前置要求
-
-- Python 3.10+
-- 环境变量配置（见下方）
 
 ### 安装
 
 ```bash
-# 克隆仓库
 git clone https://github.com/nxz1026/Lab-Analysis.git
 cd Lab-Analysis
-
-# 方式 1：作为可编辑包安装（推荐）
 pip install -e .
-
-# 方式 2：仅安装依赖（不安装包）
-pip install .
 ```
-
-> 💡 **提示**：项目使用 `pyproject.toml` 管理依赖，无需 `requirements.txt`。
-> 如需生成锁定文件，可使用 `pip-compile pyproject.toml`。
 
 ### 配置环境变量
 
-创建 `.env` 文件（参考 `.env.example`）：
+创建 `.env` 文件：
 
 ```env
-# ===== 基础配置 =====
-WIKI_ROOT=/path/to/your/wiki  # 项目数据根目录
-
-# ===== AI API 密钥 =====
-ZHIPU_API_KEY=your_zhipu_key           # 智谱 AI（Vision 模型）
-DEEPSEEK_API_KEY=your_deepseek_key     # DeepSeek（文献解读）
-DASHSCOPE_API_KEY=your_dashscope_key   # 阿里云（Qwen-VL）
-
-# ===== 可选：飞书云盘 =====
-FEISHU_APP_ID=your_app_id
-FEISHU_APP_SECRET=your_app_secret
-FEISHU_FOLDER_TOKEN=your_folder_token
+WIKI_ROOT=/path/to/your/wiki
+ZHIPU_API_KEY=your_zhipu_key
+DEEPSEEK_API_KEY=your_deepseek_key
+DASHSCOPE_API_KEY=your_dashscope_key
 ```
 
-### 运行 Pipeline
-
-**统一入口**（推荐）：
+### 运行
 
 ```bash
-# 标准方式（推荐）
+# 推荐方式
 python -m lab_analysis --patient-id YOUR_PATIENT_ID
 
-# 便捷方式（效果相同）
+# 或便捷方式
 python run_analysis.py --patient-id YOUR_PATIENT_ID
 ```
 
-> 💡 **提示**：两种方式完全等价，`run_analysis.py` 只是 `lab_analysis` 的代理脚本。推荐使用 `python -m lab_analysis` 以保持统一。
-
-#### 完整流程示例
+#### 跳过步骤
 
 ```bash
-# 基本用法
-python -m lab_analysis --patient-id YOUR_PATIENT_ID
-```
-
-#### 跳过某些步骤
-
-```bash
-# 跳过 LLM 文献解读
-python -m lab_analysis --patient-id YOUR_PATIENT_ID --skip-llm
-
-# 跳过影像分析
-python -m lab_analysis --patient-id YOUR_PATIENT_ID --skip-imaging
-
-# 跳过数据摄入（使用已有数据）
-python -m lab_analysis --patient-id YOUR_PATIENT_ID --skip-ingest
-```
-
-#### 手动摄入数据
-
-```bash
-# 摄入检验报告图片
-python -m lab_analysis \
-  --patient-id YOUR_PATIENT_ID \
-  --ingest-lab report1.jpg report2.jpg \
-  --report-date 2026-05-07 \
-  --report-type outpatient
-
-# 摄入 DICOM 影像
-python -m lab_analysis \
-  --patient-id YOUR_PATIENT_ID \
-  --ingest-dicom-zip dicom_scan.zip
+python -m lab_analysis --patient-id ID --skip-llm      # 跳过文献解读
+python -m lab_analysis --patient-id ID --skip-imaging  # 跳过影像分析
+python -m lab_analysis --patient-id ID --skip-ingest   # 跳过数据摄入
 ```
 
 ## 📂 项目结构
@@ -182,46 +123,41 @@ Lab-Analysis/
 └── run_analysis.py            # 运行脚本入口
 ```
 
-## 📊 输出说明
+## 📊 输出
 
-### 生成的 7 张分析图表
+### 7 张分析图表
 
-1. **fig_01_trend_regression.png** - 关键指标趋势回归分析
-2. **fig_02_correlation_heatmap.png** - 指标相关性热图
-3. **fig_03_inflammation_status.png** - 炎症状态综合评估
-4. **fig_04_abnormal_indicators.png** - 异常指标检测
-5. **fig_05_indicator_stability.png** - 指标稳定性分析（变异系数）
-6. **fig_06_trend_smoothing.png** - 趋势平滑对比（移动平均）
-7. **fig_07_comprehensive_dashboard.png** - 综合分析仪表板
+1. **fig_01** - 趋势回归
+2. **fig_02** - 相关性热图
+3. **fig_03** - 炎症评估
+4. **fig_04** - 异常检测
+5. **fig_05** - 稳定性分析
+6. **fig_06** - 趋势平滑
+7. **fig_07** - 综合仪表板
 
 ### 报告文件
 
-- **final_integrated_report.md** - 最终综合报告（包含三源一致性评估）
-- **analysis_results_report.md** - 统计分析详细报告
-- **literature_interpretation.md** - 文献循证解读
-- **mri_report_check_results.md** - 影像报告检查结果
+- `final_integrated_report.md` - 最终综合报告
+- `analysis_results_report.md` - 统计分析详细报告
+- `literature_interpretation.md` - 文献解读
+- `mri_report_check_results.md` - 影像检查结果
 
 ## 🔧 高级用法
 
-### 批量处理检验报告
+### 批量处理
 
 ```bash
 python -m lab_analysis.batch_vision_extract [--interactive]
 ```
 
-自动扫描 `Origin_data` 目录下的所有检验报告图片，批量识别并摄入。
+自动扫描 `Origin_data` 目录，批量识别并摄入检验报告。
 
-### 单独运行某个模块
+### 单独运行模块
 
 ```bash
-# 只运行数据分析
-python -m lab_analysis.data_analyzer --patient-id YOUR_PATIENT_ID
-
-# 只运行文献检索
-python -m lab_analysis.literature_searcher --patient-id YOUR_PATIENT_ID
-
-# 只生成本地归档
-python -m lab_analysis.organize_local_files --patient-id YOUR_PATIENT_ID
+python -m lab_analysis.data_analyzer --patient-id ID           # 数据分析
+python -m lab_analysis.literature_searcher --patient-id ID     # 文献检索
+python -m lab_analysis.organize_local_files --patient-id ID    # 本地归档
 ```
 
 ## 🛠️ 技术栈
@@ -230,93 +166,73 @@ python -m lab_analysis.organize_local_files --patient-id YOUR_PATIENT_ID
 - **机器学习**: scikit-learn
 - **可视化**: matplotlib
 - **图像处理**: Pillow
-- **AI 模型**:
-  - 智谱 GLM-4V（检验报告 OCR）
-  - DeepSeek（文献解读）
-  - 阿里云 Qwen-VL（影像报告检查）
+- **AI 模型**: 智谱 GLM-4V、DeepSeek、阿里云 Qwen-VL
 - **文献检索**: PubMed API
 
 ## 📝 开发指南
 
 ### 代码规范
 
-- 遵循 PEP 8 编码规范
-- 使用类型注解（Type Hints）
-- 所有路径使用 `WIKI_ROOT` 环境变量 + 相对路径
-- 使用 `pathlib.Path` 进行路径操作
+- PEP 8 编码规范
+- 类型注解（Type Hints）
+- 路径使用 `WIKI_ROOT` + 相对路径
+- 使用 `pathlib.Path`
 
 ### 依赖管理
 
-项目使用 `pyproject.toml` 作为唯一的依赖来源：
-
 ```bash
-# 安装所有依赖
-pip install -e .
-
-# 生成锁定文件（可选，用于复现环境）
-pip install pip-tools
+pip install -e .                    # 安装依赖
+pip install pip-tools               # 可选：生成锁定文件
 pip-compile pyproject.toml -o requirements.lock
-
-# 从锁定文件安装
-pip-sync requirements.lock
 ```
 
-> ⚠️ **注意**：不要手动创建或修改 `requirements.txt`，所有依赖应在 `pyproject.toml` 中声明。
+> ⚠️ 所有依赖在 `pyproject.toml` 中声明，勿手动创建 `requirements.txt`。
 
-### 错误处理与日志
+### 错误日志
 
-项目集成了自动错误日志记录功能：
-
-- **错误日志文件**: `{WIKI_ROOT}/error.log`
-- **自动记录**: Pipeline 步骤失败时自动记录详细错误信息
-- **包含内容**: 时间戳、错误描述、上下文信息、堆栈跟踪
-- **查看最近错误**: 
+- **日志文件**: `{WIKI_ROOT}/error.log`
+- **自动记录**: Pipeline 失败时记录详细信息
+- **查看最近错误**:
   ```python
   from lab_analysis.error_logger import get_recent_errors
-  errors = get_recent_errors(n=10)  # 获取最近10条错误
+  errors = get_recent_errors(n=10)
   ```
 
-### 添加新分析模块
+### 添加新模块
 
-1. 在 `lab_analysis/` 目录下创建新模块
-2. 实现标准接口（接受 `--patient-id` 参数）
-3. 在 `pipeline.py` 中注册新步骤
+1. 在 `lab_analysis/` 创建模块
+2. 实现标准接口（接受 `--patient-id`）
+3. 在 `pipeline.py` 注册步骤
 
 ### 测试
 
 ```bash
-# 运行单个模块测试
-python -m lab_analysis.data_analyzer --patient-id TEST_ID
-
-# 检查代码风格
-pip install ruff
-ruff check lab_analysis/
+python -m lab_analysis.data_analyzer --patient-id TEST_ID  # 测试模块
+pip install ruff; ruff check lab_analysis/                 # 代码检查
 ```
 
 ## 🤝 贡献
 
-欢迎提交 Issue 和 Pull Request！
+欢迎提交 Issue 和 PR！
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+1. Fork 仓库
+2. 创建分支 (`git checkout -b feature/xxx`)
+3. 提交更改 (`git commit -m 'Add xxx'`)
+4. 推送 (`git push origin feature/xxx`)
+5. 开启 PR
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+MIT License - 详见 [LICENSE](LICENSE)
 
 ## 👤 作者
 
-- **nxz1026** - [GitHub](https://github.com/nxz1026)
+**nxz1026** - [GitHub](https://github.com/nxz1026)
 
 ## 🙏 致谢
 
-- 智谱 AI - 提供 Vision 模型支持
-- DeepSeek - 提供文献解读能力
-- 阿里云 - 提供 Qwen-VL 模型
+- 智谱 AI、DeepSeek、阿里云
 
 ---
 
-**⭐ 如果这个项目对您有帮助，请给个 Star！**
+⭐ 如果这个项目对您有帮助，请给个 Star！
