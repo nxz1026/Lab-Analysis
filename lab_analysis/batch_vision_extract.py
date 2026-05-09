@@ -25,6 +25,7 @@ import sys
 from pathlib import Path
 
 from lab_analysis.utils import WIKI_ROOT, validate_chinese_id
+from lab_analysis.patient_id import encode
 
 
 def get_origin_data_dir() -> Path:
@@ -160,7 +161,7 @@ def main():
         if not result:
             print(f"❌ 识别失败，跳过")
             fail_count += 1
-            results.append({"file": image_path.name, "status": "识别失败", "patient_id": None})
+            results.append({"file": image_path.name, "status": "识别失败"})
             continue
         
         patient_id = result.get("patient_id")
@@ -183,33 +184,34 @@ def main():
                         if not validate_chinese_id(patient_id):
                             print(f"❌ 输入的ID仍然无效，跳过")
                             skipped_count += 1
-                            results.append({"file": image_path.name, "status": "ID无效，用户放弃", "patient_id": None})
+                            results.append({"file": image_path.name, "status": "ID无效，用户放弃"})
                             continue
                     elif choice == "2":
                         print("⏭️  用户选择跳过")
                         skipped_count += 1
-                        results.append({"file": image_path.name, "status": "用户跳过", "patient_id": None})
+                        results.append({"file": image_path.name, "status": "用户跳过"})
                         continue
                     else:
                         print("❌ 无效选择，跳过")
                         skipped_count += 1
-                        results.append({"file": image_path.name, "status": "无效选择", "patient_id": None})
+                        results.append({"file": image_path.name, "status": "无效选择"})
                         continue
                 except (EOFError, KeyboardInterrupt):
                     print("\n⏭️  用户中断，跳过")
                     skipped_count += 1
-                    results.append({"file": image_path.name, "status": "用户中断", "patient_id": None})
+                    results.append({"file": image_path.name, "status": "用户中断"})
                     continue
             else:
                 print(f"⏭️  ID无效，自动跳过")
                 skipped_count += 1
-                results.append({"file": image_path.name, "status": "ID无效，自动跳过", "patient_id": None})
+                results.append({"file": image_path.name, "status": "ID无效，自动跳过"})
                 continue
         
         # 步骤3: 存入数据
         run_ingest_data(image_path, patient_id, report_date, report_type)
         success_count += 1
-        results.append({"file": image_path.name, "status": "成功", "patient_id": patient_id, 
+        results.append({"file": image_path.name, "status": "成功", 
+                       "patient_id_obf": encode(patient_id),  # 只记录脱敏ID
                        "report_date": report_date, "report_type": report_type})
     
     # 生成汇总报告

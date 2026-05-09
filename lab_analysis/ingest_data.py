@@ -210,8 +210,7 @@ def ingest_lab_image(image_path: Path, patient_id: str, report_date: str,
         "type": "lab_image",
         "source_path": str(image_path),
         "saved_path": saved_path,
-        "patient_id_raw": patient_id,
-        "patient_id_obf": patient_id_obf,
+        "patient_id_obf": patient_id_obf,  # 只记录脱敏ID
         "report_date": report_date,
         "report_type": report_type,
     }
@@ -349,8 +348,7 @@ def ingest_mri_dicom(zip_path: Path = None, dicom_dir: Path = None,
         "type": "mri_dicom",
         "source_path": str(zip_path or dicom_dir),
         "saved_dir": str(imaging_dir.relative_to(WIKI_ROOT)),
-        "patient_id_raw": patient_id,
-        "patient_id_obf": patient_id_obf,
+        "patient_id_obf": patient_id_obf,  # 只记录脱敏ID
         "report_date": report_date,
         "sequence_count": seq_count,
     }
@@ -367,8 +365,7 @@ def ingest_mri_report(report_path: Path, patient_id: str, report_date: str) -> d
         "type": "mri_report",
         "source_path": str(report_path),
         "saved_path": saved_path,
-        "patient_id_raw": patient_id,
-        "patient_id_obf": patient_id_obf,
+        "patient_id_obf": patient_id_obf,  # 只记录脱敏ID
         "report_date": report_date,
     }
     return record

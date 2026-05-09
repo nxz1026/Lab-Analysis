@@ -15,9 +15,13 @@ import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 import requests
+
+from lab_analysis.utils import api_retry_decorator, validate_chinese_id
+from lab_analysis.patient_id import encode
 
 
 def validate_chinese_id(id_number: str) -> bool:
@@ -254,6 +258,8 @@ def main():
     print("识别结果:")
     print("=" * 60)
     print(f"患者ID:     {result.get('patient_id', 'N/A')}")
+    if result.get('patient_id'):
+        print(f"脱敏ID:     {encode(result['patient_id'])}")
     print(f"报告日期:   {result.get('report_date', 'N/A')}")
     print(f"报告类型:   {result.get('report_type', 'N/A')}")
     print(f"置信度:     {result.get('confidence', 'N/A')}")
@@ -264,12 +270,20 @@ def main():
     # 保存到文件
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+        # 添加脱敏ID字段
+        output_result = result.copy()
+        if result.get('patient_id'):
+            output_result['patient_id_obf'] = encode(result['patient_id'])
+        args.output.write_text(json.dumps(output_result, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"\n[OK] 结果已保存: {args.output}")
     
     # 输出JSON供后续脚本使用
     print("\nJSON输出:")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    # 添加脱敏ID字段
+    json_result = result.copy()
+    if result.get('patient_id'):
+        json_result['patient_id_obf'] = encode(result['patient_id'])
+    print(json.dumps(json_result, ensure_ascii=False, indent=2))
     
     return 0
 
