@@ -11,6 +11,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from lab_analysis.utils import api_retry_decorator
+
 WIKI_ROOT = Path(os.environ.get("WIKI_ROOT", Path.cwd()))
 
 def load_json(path: str, default=None):
@@ -86,6 +88,7 @@ def build_prompt(analysis_path: str, lit_path: str) -> str:
     return prompt
 
 
+@api_retry_decorator(max_attempts=3, min_wait=2.0, max_wait=30.0, description="DeepSeek API")
 def call_deepseek(prompt: str) -> str:
     api_key = os.environ.get("DEEPSEEK_API_KEY", "")
     if not api_key:
