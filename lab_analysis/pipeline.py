@@ -100,7 +100,7 @@ def extract_patient_id_from_reports() -> str:
                 if len(parts) >= 3:
                     patient_id = parts[2].strip()
                     if patient_id:
-                        print(f"[INFO] 从检验报告中提取到患者ID: {patient_id}")
+                        print(f"[INFO] 从检验报告中提取到患者ID（已脱敏）: {encode(patient_id)}")
                         return patient_id
     
     return None
@@ -441,7 +441,7 @@ def main():
             if not original_id:
                 print("[ERROR] 未输入患者ID，退出")
                 sys.exit(1)
-            print(f"[INFO] 使用用户输入的ID: {original_id}")
+            print(f"[INFO] 已接收用户输入的ID（将脱敏处理）")
         except (EOFError, KeyboardInterrupt):
             print("\n[ERROR] 无法读取输入，请使用 --patient-id 参数提供患者ID")
             sys.exit(1)
@@ -453,7 +453,6 @@ def main():
     ts_dir = f"{deid}/{ts}"
     
     print(f"[{datetime.now().isoformat()}] Pipeline 启动")
-    print(f"原始病人ID: {original_id}")
     print(f"脱敏病人ID: {deid}")
     print(f"输出目录: data/{ts_dir}/")
     print(f"时间戳: {ts}")
@@ -462,7 +461,7 @@ def main():
     if not args.skip_ingest:
         # 先尝试从 Origin_data 自动摄入
         has_origin_data = auto_ingest_from_origin_data(
-            patient_id=original_id,
+            patient_id=deid,  # 使用脱敏ID
             report_date=args.report_date,
             report_type=args.report_type
         )
@@ -485,7 +484,7 @@ def main():
                     cmd = [python, "-m", "lab_analysis.ingest_data",
                           "--type", "lab_image",
                           "--path", lab_path,
-                          "--patient-id", original_id]
+                          "--patient-id", deid]  # 使用脱敏ID
                     if args.report_date:
                         cmd.extend(["--report-date", args.report_date])
                     if args.report_type:
@@ -499,7 +498,7 @@ def main():
             if args.ingest_dicom_zip or args.ingest_dicom_dir:
                 cmd = [python, "-m", "lab_analysis.ingest_data",
                       "--type", "mri_dicom",
-                      "--patient-id", original_id]
+                      "--patient-id", deid]  # 使用脱敏ID
                 if args.ingest_dicom_zip:
                     cmd.extend(["--zip-path", args.ingest_dicom_zip])
                 if args.ingest_dicom_dir:
@@ -516,7 +515,7 @@ def main():
                 cmd = [python, "-m", "lab_analysis.ingest_data",
                       "--type", "mri_report",
                       "--path", args.ingest_mri_report,
-                      "--patient-id", original_id]
+                      "--patient-id", deid]  # 使用脱敏ID
                 if args.report_date:
                     cmd.extend(["--report-date", args.report_date])
                 print(f"  摄入MRI报告: {args.ingest_mri_report}")
