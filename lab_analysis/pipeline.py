@@ -232,7 +232,7 @@ def auto_ingest_from_origin_data(patient_id: str, deid: str, report_date: str = 
                 # 构建参数
                 args = argparse.Namespace(
                     image=str(img_path),
-                    patient_id=original_id,
+                    patient_id=patient_id,
                     deid=deid,
                     no_interactive=False
                 )

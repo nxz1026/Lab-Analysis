@@ -441,11 +441,12 @@ def main():
         print("[ERROR] 患者ID验证失败，终止处理")
         return 1
     patient_id = validated_id
-    print(f"[OK] 患者ID验证通过: {patient_id}")
+    print(f"[OK] 患者ID验证通过")
     
     # 步骤3：生成结构化文件
-    print("\n[步骤3] 生成结构化报告文件...")
-    saved_dir = save_structured_report(data, patient_id)
+    # deid 通过 args.deid 传入（pipeline 调用时已设置），用于写入 metadata.md 患者ID列
+    display_id_for_save = args.deid if args.deid and hasattr(args, 'deid') else patient_id
+    saved_dir = save_structured_report(data, display_id_for_save)
     
     # 步骤4：显示结果摘要
     print("\n" + "=" * 60)

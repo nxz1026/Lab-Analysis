@@ -50,6 +50,8 @@ cp .env.example .env
 | `DASHSCOPE_API_KEY` | 影像分析（Qwen-VL 模型） | https://dashscope.console.aliyun.com/ |
 | `ZHIPU_API_KEY` | 检验报告识别（GLM-4V-Flash） | https://open.bigmodel.cn/ |
 
+> 可选：`sentry-sdk>=2.0`（通过 `pip install -e ".[sentry]"` 安装）用于错误监控
+
 ### 3. 放入检验报告
 
 将原始图片放入 `raw/Origin_Data/`，命名规范：
@@ -86,9 +88,9 @@ Lab-Analysis/
 ├── .env                        # API 密钥配置（不要提交）
 ├── .env.example                # 配置模板
 ├── .gitignore
-├── pyproject.toml
-├── requirements.txt
-├── init_dirs.py               # 创建必要目录结构
+├── pyproject.toml              # 唯一依赖来源（pip install -e .）
+├── .env.example                 # 配置模板
+├── init_dirs.py                 # 创建必要目录结构
 └── lab_analysis/               # 核心模块（统一入口 python -m lab_analysis）
     ├── __init__.py
     ├── __main__.py             # python -m lab_analysis 入口
