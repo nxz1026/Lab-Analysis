@@ -20,8 +20,10 @@ batch_vision_extract.py — 批量识别检验报告图片
 """
 import argparse
 import json
+import os
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from lab_analysis.utils import WORK_ROOT, validate_chinese_id

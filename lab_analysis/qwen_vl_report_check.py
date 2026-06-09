@@ -5,7 +5,13 @@ qwen_vl_report_check.py
 上腹部MRI报告印证分析 — 每个部位选1-2张代表性DICOM图
 用法: python qwen_vl_report_check.py --patient-id YOUR_PATIENT_ID
 """
-import base64, json, os, sys, time
+import base64
+import json
+import os
+import requests
+import sys
+import time
+from datetime import datetime
 from pathlib import Path
 
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
@@ -117,15 +123,16 @@ def analyze_single(image_b64: str, seq_name: str, seq_desc: str, finding: str) -
 
 
 def main():
-    import argparse, requests
+    import argparse
     parser = argparse.ArgumentParser(description="上腹部MRI报告印证分析")
     parser.add_argument("--patient-id", required=True)
     args = parser.parse_args()
 
     # 使用 WORK_ROOT 而不是硬编码路径
     imaging_base = WORK_ROOT / "raw" / f"patient_{args.patient_id}" / "imaging"
-    import os
-    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); lit_dir = WORK_ROOT / "data" / args.patient_id / ts / "03_literature"
+    raw_ts = os.environ.get("ANALYSIS_TS", "")
+    ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id)
+    lit_dir = WORK_ROOT / "data" / args.patient_id / ts / "03_literature"
     lit_dir.mkdir(parents=True, exist_ok=True)
 
     # 前置检查：影像目录存在
@@ -219,6 +226,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import requests
-    from datetime import datetime
     main()

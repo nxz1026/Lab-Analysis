@@ -99,23 +99,31 @@ def main():
     print(f"{'='*60}\n")
 
     # 动态构建文件清单，文件名加病人ID前缀
+    analyzed_dir = data_dir / "02_analyzed"
+    lit_dir = data_dir / "03_literature"
+    reports_dir = data_dir / "04_reports"
+    figures_dir = analyzed_dir / "figures"
+    
     upload_map = [
         # --- 原始数据 ---
-        (data_dir / "lab_metrics.csv",                       "原始数据",  None),
-        (data_dir / "lab_metrics.json",                      "原始数据",  None),
+        (analyzed_dir / "lab_metrics.csv",                  "原始数据",  None),
+        (analyzed_dir / "lab_metrics.json",                 "原始数据",  None),
         # --- 文献参考 ---
-        (data_dir / "literature_results.md",               "文献参考",  None),
+        (lit_dir / "literature_results.md",                 "文献参考",  None),
         # --- 中间结果 ---
-        (data_dir / "literature_interpretation.md",   "中间结果",  None),
-        (data_dir / "mri_report_check_results.md",         "中间结果",  None),
+        (lit_dir / "literature_interpretation.md",          "中间结果",  None),
+        (lit_dir / "mri_report_check_results.md",            "中间结果",  None),
+        (analyzed_dir / "analysis_results_report.md",       "中间结果",  None),
         # --- 统计结果 ---
-        (data_dir / "analysis_results_report.md",            "中间结果",  None),
-        (data_dir / "fig_01_trend_regression.png",            "统计结果",  None),
-        (data_dir / "fig_02_correlation_heatmap.png",        "统计结果",  None),
-        (data_dir / "fig_03_inflammation_status.png",        "统计结果",  None),
-        (data_dir / "fig_04_abnormal_indicators.png",        "统计结果",  None),
+        (figures_dir / "fig_01_trend_regression.png",       "统计结果",  None),
+        (figures_dir / "fig_02_correlation_heatmap.png",     "统计结果",  None),
+        (figures_dir / "fig_03_inflammation_status.png",     "统计结果",  None),
+        (figures_dir / "fig_04_abnormal_indicators.png",     "统计结果",  None),
+        (figures_dir / "fig_05_moving_average.png",         "统计结果",  None),
+        (figures_dir / "fig_06_cv_stability.png",           "统计结果",  None),
+        (figures_dir / "fig_07_zscore_distribution.png",     "统计结果",  None),
         # --- 最终报告（当天根目录）---
-        (data_dir / "final_integrated_report.md",             None,        None),
+        (reports_dir / "final_integrated_report.md",         None,        None),
     ]
     
     # Step 1: 创建当天日期文件夹

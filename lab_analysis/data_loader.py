@@ -14,28 +14,18 @@ import sys
 import argparse
 from datetime import datetime
 from pathlib import Path
-import os
 
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+from lab_analysis.utils import build_paths as build_paths_utils, parse_metadata_table
 
 
 def build_paths(patient_id: str):
     """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
-    import os
-    raw_papers = WORK_ROOT / "raw" / f"patient_{patient_id}" / "papers"
-    # 支持时间戳目录：ANALYSIS_TS=patient_id/YYYYMMDD_HHMMSS
-    raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
-    # ANALYSIS_TS 可能是纯时间戳（run_analysis.py 传入），也可能是 "deid/ts"（直接传参）
-    ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
-    output_dir = WORK_ROOT / "data" / patient_id / ts
-    analyzed_dir = output_dir / "02_analyzed"
-    return {
-        "raw_papers": raw_papers,
-        "output_dir": output_dir,
-        "analyzed_dir": analyzed_dir,
-        "csv": analyzed_dir / "lab_metrics.csv",
-        "json": analyzed_dir / "lab_metrics.json",
-    }
+    paths = build_paths_utils(patient_id)
+    paths.update({
+        "csv": paths["analyzed_dir"] / "lab_metrics.csv",
+        "json": paths["analyzed_dir"] / "lab_metrics.json",
+    })
+    return paths
 
 
 # 所有指标（顺序与表格列一致）
@@ -78,22 +68,6 @@ def extract_value(result_str: str):
     s = result_str.strip().strip("*").strip()
     m = re.search(r"^[^0-9]*([0-9]+\.?\d*)", s)
     return float(m.group(1)) if m else None
-
-
-def parse_metadata_table(text: str) -> dict:
-    """解析 Markdown 表格格式的 metadata（| 字段 | 值 |）。"""
-    row = {}
-    for line in text.splitlines():
-        line = line.strip()
-        if not line.startswith("|") or "---" in line or line.startswith("|字段"):
-            continue
-        parts = [p.strip() for p in line.split("|")]
-        if len(parts) >= 3 and parts[1]:
-            key = parts[1].strip()
-            val = parts[2].strip()
-            if key:
-                row[key] = val
-    return row
 
 
 def parse_metrics_simple(text: str) -> dict:

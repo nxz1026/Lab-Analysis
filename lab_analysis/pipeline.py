@@ -446,7 +446,7 @@ def main():
             print("\n[ERROR] 无法读取输入，请使用 --patient-id 参数提供患者ID")
             sys.exit(1)
     
-    # 步顤3：生成脱敏ID
+    # 步骤3：生成脱敏ID
     deid = get_deid(original_id)
     
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
