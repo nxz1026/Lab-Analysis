@@ -43,7 +43,6 @@ import argparse
 import json
 import logging
 import os
-import re
 import shutil
 import sys
 import tempfile
@@ -52,6 +51,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from lab_analysis.patient_id import encode
+from lab_analysis.utils import validate_chinese_id as is_valid_id_card, print_progress
 
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 INGEST_LOG = WORK_ROOT / ".ingest_log.json"
@@ -74,25 +74,6 @@ console_handler.setLevel(logging.INFO)
 console_format = logging.Formatter("%(message)s")
 console_handler.setFormatter(console_format)
 logger.addHandler(console_handler)
-
-
-def is_valid_id_card(patient_id: str) -> bool:
-    """验证是否为有效的身份证号格式（18位或15位数字，最后一位可能是X）"""
-    pattern = r'^\d{17}[\dXx]$|^\d{15}$'
-    return bool(re.match(pattern, patient_id))
-
-
-def print_progress(current: int, total: int, prefix: str = "", suffix: str = "", bar_length: int = 30):
-    """打印进度条"""
-    if total == 0:
-        return
-    fraction = current / total
-    filled = int(bar_length * fraction)
-    bar = "=" * filled + "-" * (bar_length - filled)
-    percent = f"{fraction * 100:.1f}%"
-    print(f"\r{prefix} |{bar}| {percent} {suffix}", end="", flush=True)
-    if current >= total:
-        print()  # 完成后换行
 
 
 def process_batch(items: list, process_func: callable, batch_mode: bool, item_name: str = "项") -> tuple:

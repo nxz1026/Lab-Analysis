@@ -16,20 +16,17 @@ import argparse
 import base64
 import json
 import os
-import re
 import sys
 from pathlib import Path
 from datetime import datetime
 
 import requests
 
+from lab_analysis.utils import validate_chinese_id as is_valid_id_card
+from lab_analysis.patient_id import encode
 
-def is_valid_id_card(patient_id: str) -> bool:
-    """验证是否为有效的身份证号格式（18位或15位数字，最后一位可能是X）"""
-    if not patient_id:
-        return False
-    pattern = r'^\d{17}[\dXx]$|^\d{15}$'
-    return bool(re.match(pattern, patient_id))
+
+WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 def validate_patient_id(patient_id: str, extracted_id: str = None, interactive: bool = False) -> str:
@@ -95,9 +92,6 @@ def validate_patient_id(patient_id: str, extracted_id: str = None, interactive: 
             print("[ERROR] 无法获取任何患者ID，放弃此数据")
             print("[HINT] 请使用 --patient-id 参数提供患者ID")
             return None
-
-
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 def get_api_key():

@@ -11,30 +11,24 @@ from pathlib import Path
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 # ============================================================
-# 患者信息脱敏常量（发布前务必确认）
+# 患者信息从数据中动态读取
 # ============================================================
-PATIENT_NAME = "张三"
-PATIENT_AGE_SEX = "38岁男性"
-PATIENT_EXAM_ID = "Y00002207707"
-# ============================================================
-# ⚠️ 如需恢复从真实数据读取姓名，解除下方注释并注释掉以上常量
-# ============================================================
-# _name_raw = None
-# def _load_patient_name(lab_path: Path) -> str:
-#     """从 lab_metrics.json 的第一份报告里读取患者姓名。"""
-#     global _name_raw
-#     if _name_raw:
-#         return _name_raw
-#     if lab_path.exists():
-#         try:
-#             d = json.loads(lab_path.read_text())
-#             reports = d.get("reports", [])
-#             if reports:
-#                 _name_raw = reports[0].get("patient_name", "未知")
-#                 return _name_raw
-#         except Exception:
-#             pass
-#     return "未知"
+def _load_patient_info(lab_path: Path) -> dict:
+    """从 lab_metrics.json 的第一份报告里读取患者信息。"""
+    if lab_path.exists():
+        try:
+            d = json.loads(lab_path.read_text())
+            reports = d.get("reports", [])
+            if reports:
+                report = reports[0]
+                return {
+                    "name": report.get("patient_name", "患者"),
+                    "age_sex": report.get("age_sex", "未知"),
+                    "exam_id": report.get("exam_id", "未知"),
+                }
+        except Exception:
+            pass
+    return {"name": "患者", "age_sex": "未知", "exam_id": "未知"}
 # ============================================================
 
 
@@ -268,8 +262,14 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 
     import datetime as dt
     today = dt.date.today().strftime("%Y年%m月%d日")
+    
+    # 动态加载患者信息
+    patient_info = _load_patient_info(lab_path)
+    patient_name = patient_info["name"]
+    patient_age_sex = patient_info["age_sex"]
+    patient_exam_id = patient_info["exam_id"]
 
-    prompt = f"""你是资深临床医学专家，请为患者{PATIENT_NAME}（{PATIENT_AGE_SEX}，ID:{PATIENT_EXAM_ID}）生成最终综合临床诊断报告。
+    prompt = f"""你是资深临床医学专家，请为患者{patient_name}（{patient_age_sex}，ID:{patient_exam_id}）生成最终综合临床诊断报告。
 
 【说明】以下数据来自 pipeline 各步骤汇总，请生成结构化报告。
 
@@ -303,7 +303,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 请生成【最终综合临床诊断报告】，结构如下：
 
 # 最终综合临床诊断报告
-**患者**：{PATIENT_NAME} | {PATIENT_AGE_SEX} | 检查编号：{PATIENT_EXAM_ID}
+**患者**：{patient_name} | {patient_age_sex} | 检查编号：{patient_exam_id}
 **报告日期**：{today}
 **数据来源**：MRI影像报告（2026-04-11）+ 检验数据（2026-03-24~04-14）
 

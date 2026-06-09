@@ -24,23 +24,6 @@ from lab_analysis.utils import api_retry_decorator, validate_chinese_id
 from lab_analysis.patient_id import encode
 
 
-def validate_chinese_id(id_number: str) -> bool:
-    """
-    验证中国大陆身份证号格式
-    - 18位数字（最后一位可能是X）
-    - 或者15位数字（旧版）
-    """
-    if not id_number:
-        return False
-    
-    # 18位身份证：17位数字 + 1位数字或X
-    pattern_18 = r'^\d{17}[\dXx]$'
-    # 15位身份证：15位数字
-    pattern_15 = r'^\d{15}$'
-    
-    return bool(re.match(pattern_18, id_number) or re.match(pattern_15, id_number))
-
-
 def get_api_key():
     """从环境变量获取 API Key"""
     api_key = os.environ.get("ZHIPU_API_KEY")
