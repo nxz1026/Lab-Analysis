@@ -68,30 +68,34 @@ def compile_interpreter(train_data: List[Dict], dev_data: List[Dict]):
     # 定义评估指标
     def interpret_metric(example, pred, trace=None):
         """评估解读质量的指标"""
-        # 检查是否包含关键要素
-        required_sections = [
-            "病理生理",
-            "临床意义",
-            "建议"
-        ]
-        
-        score = sum(1 for section in required_sections 
-                   if section in pred.interpretation) / len(required_sections)
-        
-        # 检查可信度合理性
-        if 0.5 <= pred.confidence <= 1.0:
-            score += 0.2
-        
-        return score
+        try:
+            # 检查是否包含关键要素
+            required_sections = [
+                "病理生理",
+                "临床意义",
+                "建议"
+            ]
+            
+            score = sum(1 for section in required_sections 
+                       if section in pred.interpretation) / len(required_sections)
+            
+            # 检查可信度合理性
+            if hasattr(pred, 'confidence') and 0.5 <= pred.confidence <= 1.0:
+                score += 0.2
+            
+            return score >= 0.5  # 至少满足一半条件
+        except Exception as e:
+            print(f"[警告] 评估失败: {e}")
+            return False
     
-    # 使用 BootstrapFewShot 进行优化
+    # 使用 BootstrapFewShot 进行优化 (DSPy 3.x API)
     optimizer = dspy.teleprompt.BootstrapFewShot(metric=interpret_metric)
     
     module = LiteratureInterpreterModule()
     compiled_module = optimizer.compile(
         student=module,
-        trainset=train_data,
-        devset=dev_data
+        trainset=train_data
+        # DSPy 3.x 不再需要 devset 参数
     )
     
     return compiled_module

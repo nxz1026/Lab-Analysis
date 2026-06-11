@@ -1,0 +1,5821 @@
+{
+  "interpret.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "patient_id": "846552421134373347",
+        "analysis_results": {
+          "generated": "2026-06-11 11:32:53",
+          "n_reports": 4,
+          "date_range": {
+            "start": "2026-03-24",
+            "end": "2026-04-14"
+          },
+          "inflammation_classification": {
+            "labels": [
+              "过渡期",
+              "过渡期",
+              "急性期",
+              "过渡期"
+            ],
+            "report_dates": [
+              "2026-03-24",
+              "2026-03-30",
+              "2026-04-08",
+              "2026-04-14"
+            ]
+          },
+          "linear_regression": {
+            "hs-CRP": {
+              "slope": 0.571,
+              "intercept": 3.146,
+              "r2": 0.0333,
+              "trend": "上升",
+              "slope_per_day": 0.571,
+              "n_points": 4
+            },
+            "CRP": {
+              "slope": 0.744,
+              "intercept": 10.744,
+              "r2": 0.0667,
+              "trend": "上升",
+              "slope_per_day": 0.744,
+              "n_points": 4
+            },
+            "WBC": {
+              "slope": -0.394,
+              "intercept": 6.006,
+              "r2": 0.0962,
+              "trend": "下降",
+              "slope_per_day": -0.394,
+              "n_points": 4
+            },
+            "NEUT#": {
+              "slope": -0.242,
+              "intercept": 3.573,
+              "r2": 0.0743,
+              "trend": "下降",
+              "slope_per_day": -0.242,
+              "n_points": 4
+            },
+            "MONO%": {
+              "slope": 1.05,
+              "intercept": 7.95,
+              "r2": 0.0604,
+              "trend": "上升",
+              "slope_per_day": 1.05,
+              "n_points": 4
+            },
+            "RDW-SD": {
+              "slope": 1.66,
+              "intercept": 47.06,
+              "r2": 0.7388,
+              "trend": "上升",
+              "slope_per_day": 1.66,
+              "n_points": 4
+            },
+            "RDW-CV": {
+              "slope": 0.48,
+              "intercept": 13.58,
+              "r2": 0.8597,
+              "trend": "上升",
+              "slope_per_day": 0.48,
+              "n_points": 4
+            }
+          },
+          "correlation_matrix": {
+            "CRP~hs-CRP": 0.99,
+            "WBC~hs-CRP": -0.921,
+            "NEUT#~hs-CRP": -0.95,
+            "MONO%~hs-CRP": 0.992,
+            "RDW-SD~hs-CRP": 0.277,
+            "PCT~hs-CRP": -0.43,
+            "PLT~hs-CRP": -0.481,
+            "hs-CRP~CRP": 0.99,
+            "WBC~CRP": -0.966,
+            "NEUT#~CRP": -0.983,
+            "MONO%~CRP": 1.0,
+            "RDW-SD~CRP": 0.281,
+            "PCT~CRP": -0.467,
+            "PLT~CRP": -0.516,
+            "hs-CRP~WBC": -0.921,
+            "CRP~WBC": -0.966,
+            "NEUT#~WBC": 0.996,
+            "MONO%~WBC": -0.962,
+            "RDW-SD~WBC": -0.194,
+            "PCT~WBC": 0.577,
+            "PLT~WBC": 0.618,
+            "hs-CRP~NEUT#": -0.95,
+            "CRP~NEUT#": -0.983,
+            "WBC~NEUT#": 0.996,
+            "MONO%~NEUT#": -0.981,
+            "RDW-SD~NEUT#": -0.2,
+            "PCT~NEUT#": 0.565,
+            "PLT~NEUT#": 0.609,
+            "hs-CRP~MONO%": 0.992,
+            "CRP~MONO%": 1.0,
+            "WBC~MONO%": -0.962,
+            "NEUT#~MONO%": -0.981,
+            "RDW-SD~MONO%": 0.276,
+            "PCT~MONO%": -0.467,
+            "PLT~MONO%": -0.517,
+            "hs-CRP~RDW-SD": 0.277,
+            "CRP~RDW-SD": 0.281,
+            "WBC~RDW-SD": -0.194,
+            "NEUT#~RDW-SD": -0.2,
+            "MONO%~RDW-SD": 0.276,
+            "PCT~RDW-SD": 0.688,
+            "PLT~RDW-SD": 0.65,
+            "hs-CRP~PCT": -0.43,
+            "CRP~PCT": -0.467,
+            "WBC~PCT": 0.577,
+            "NEUT#~PCT": 0.565,
+            "MONO%~PCT": -0.467,
+            "RDW-SD~PCT": 0.688,
+            "PLT~PCT": 0.998,
+            "hs-CRP~PLT": -0.481,
+            "CRP~PLT": -0.516,
+            "WBC~PLT": 0.618,
+            "NEUT#~PLT": 0.609,
+            "MONO%~PLT": -0.517,
+            "RDW-SD~PLT": 0.65,
+            "PCT~PLT": 0.998
+          },
+          "descriptive_stats": {
+            "WBC": {
+              "count": 4,
+              "mean": 5.415,
+              "std": 1.64,
+              "min": 3.04,
+              "max": 6.7,
+              "cv": 0.3028
+            },
+            "RBC": {
+              "count": 4,
+              "mean": 4.55,
+              "std": 0.194,
+              "min": 4.31,
+              "max": 4.78,
+              "cv": 0.0427
+            },
+            "HGB": {
+              "count": 4,
+              "mean": 139.5,
+              "std": 5.802,
+              "min": 131.0,
+              "max": 144.0,
+              "cv": 0.0416
+            },
+            "HCT": {
+              "count": 4,
+              "mean": 42.85,
+              "std": 2.176,
+              "min": 40.0,
+              "max": 45.3,
+              "cv": 0.0508
+            },
+            "PLT": {
+              "count": 4,
+              "mean": 220.25,
+              "std": 86.842,
+              "min": 153.0,
+              "max": 336.0,
+              "cv": 0.3943
+            },
+            "PCT": {
+              "count": 4,
+              "mean": 0.225,
+              "std": 0.079,
+              "min": 0.16,
+              "max": 0.33,
+              "cv": 0.349
+            },
+            "MCV": {
+              "count": 1,
+              "mean": 94.8,
+              "std": 0,
+              "min": 94.8,
+              "max": 94.8,
+              "cv": 0.0
+            },
+            "MCH": {
+              "count": 4,
+              "mean": 30.65,
+              "std": 0.557,
+              "min": 30.1,
+              "max": 31.4,
+              "cv": 0.0182
+            },
+            "MCHC": {
+              "count": 4,
+              "mean": 325.75,
+              "std": 5.315,
+              "min": 318.0,
+              "max": 330.0,
+              "cv": 0.0163
+            },
+            "NEUT%": {
+              "count": 4,
+              "mean": 58.1,
+              "std": 5.479,
+              "min": 50.0,
+              "max": 61.6,
+              "cv": 0.0943
+            },
+            "LYMPH%": {
+              "count": 4,
+              "mean": 30.725,
+              "std": 0.954,
+              "min": 29.9,
+              "max": 32.1,
+              "cv": 0.031
+            },
+            "MONO%": {
+              "count": 4,
+              "mean": 9.525,
+              "std": 5.517,
+              "min": 6.7,
+              "max": 17.8,
+              "cv": 0.5793
+            },
+            "EO%": {
+              "count": 4,
+              "mean": 1.35,
+              "std": 0.465,
+              "min": 0.9,
+              "max": 2.0,
+              "cv": 0.3448
+            },
+            "BASO%": {
+              "count": 4,
+              "mean": 0.3,
+              "std": 0.082,
+              "min": 0.2,
+              "max": 0.4,
+              "cv": 0.2722
+            },
+            "NEUT#": {
+              "count": 4,
+              "mean": 3.21,
+              "std": 1.146,
+              "min": 1.52,
+              "max": 3.99,
+              "cv": 0.357
+            },
+            "LYMPH#": {
+              "count": 4,
+              "mean": 1.673,
+              "std": 0.538,
+              "min": 0.91,
+              "max": 2.15,
+              "cv": 0.3216
+            },
+            "MONO#": {
+              "count": 4,
+              "mean": 0.45,
+              "std": 0.068,
+              "min": 0.38,
+              "max": 0.54,
+              "cv": 0.1518
+            },
+            "EO#": {
+              "count": 4,
+              "mean": 0.068,
+              "std": 0.015,
+              "min": 0.05,
+              "max": 0.08,
+              "cv": 0.2222
+            },
+            "BASO#": {
+              "count": 4,
+              "mean": 0.015,
+              "std": 0.006,
+              "min": 0.01,
+              "max": 0.02,
+              "cv": 0.3849
+            },
+            "RDW-SD": {
+              "count": 4,
+              "mean": 49.55,
+              "std": 2.493,
+              "min": 46.9,
+              "max": 52.5,
+              "cv": 0.0503
+            },
+            "RDW-CV": {
+              "count": 4,
+              "mean": 14.3,
+              "std": 0.668,
+              "min": 13.7,
+              "max": 15.1,
+              "cv": 0.0467
+            },
+            "MPV": {
+              "count": 4,
+              "mean": 10.4,
+              "std": 0.648,
+              "min": 9.8,
+              "max": 11.3,
+              "cv": 0.0623
+            },
+            "PDW": {
+              "count": 4,
+              "mean": 11.75,
+              "std": 0.904,
+              "min": 10.9,
+              "max": 12.8,
+              "cv": 0.0769
+            },
+            "CRP": {
+              "count": 4,
+              "mean": 11.86,
+              "std": 3.72,
+              "min": 10.0,
+              "max": 17.44,
+              "cv": 0.3137
+            },
+            "hs-CRP": {
+              "count": 4,
+              "mean": 4.002,
+              "std": 4.039,
+              "min": 1.41,
+              "max": 10.0,
+              "cv": 1.0092
+            }
+          },
+          "abnormal_summary": {
+            "WBC": {
+              "ref_range": "3.5-9.5",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "PCT": {
+              "ref_range": "0.108-0.272",
+              "abnormal_dates": [
+                "2026-04-14"
+              ],
+              "n_abnormal": 1
+            },
+            "MONO%": {
+              "ref_range": "2-10",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "NEUT#": {
+              "ref_range": "1.8-6.3",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "LYMPH#": {
+              "ref_range": "1.1-3.2",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "RDW-SD": {
+              "ref_range": "37-50",
+              "abnormal_dates": [
+                "2026-04-08",
+                "2026-04-14"
+              ],
+              "n_abnormal": 2
+            },
+            "RDW-CV": {
+              "ref_range": "0-15",
+              "abnormal_dates": [
+                "2026-04-14"
+              ],
+              "n_abnormal": 1
+            },
+            "CRP": {
+              "ref_range": "0-10",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "hs-CRP": {
+              "ref_range": "0-1.0",
+              "abnormal_dates": [
+                "2026-03-24",
+                "2026-03-30",
+                "2026-04-08",
+                "2026-04-14"
+              ],
+              "n_abnormal": 4
+            }
+          },
+          "moving_average": {
+            "hs-CRP": {
+              "moving_avg": [
+                2.78,
+                2.095,
+                5.705,
+                5.91
+              ],
+              "rolling_std": [
+                0.0,
+                0.969,
+                6.074,
+                5.784
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "CRP": {
+              "moving_avg": [
+                10.0,
+                10.0,
+                13.72,
+                13.72
+              ],
+              "rolling_std": [
+                0.0,
+                0.0,
+                5.261,
+                5.261
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "WBC": {
+              "moving_avg": [
+                6.7,
+                6.18,
+                4.35,
+                4.65
+              ],
+              "rolling_std": [
+                0.0,
+                0.735,
+                1.853,
+                2.277
+              ],
+              "trend": "下降",
+              "window": 2
+            },
+            "NEUT#": {
+              "moving_avg": [
+                3.99,
+                3.74,
+                2.505,
+                2.68
+              ],
+              "rolling_std": [
+                0.0,
+                0.354,
+                1.393,
+                1.64
+              ],
+              "trend": "下降",
+              "window": 2
+            },
+            "MONO%": {
+              "moving_avg": [
+                6.9,
+                6.8,
+                12.25,
+                12.25
+              ],
+              "rolling_std": [
+                0.0,
+                0.141,
+                7.849,
+                7.849
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "RDW-SD": {
+              "moving_avg": [
+                48.2,
+                47.55,
+                48.75,
+                51.55
+              ],
+              "rolling_std": [
+                0.0,
+                0.919,
+                2.616,
+                1.344
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "RDW-CV": {
+              "moving_avg": [
+                13.8,
+                13.75,
+                14.15,
+                14.85
+              ],
+              "rolling_std": [
+                0.0,
+                0.071,
+                0.636,
+                0.354
+              ],
+              "trend": "上升",
+              "window": 2
+            }
+          },
+          "cv_stability": {
+            "WBC": {
+              "cv": 0.3028,
+              "mean": 5.415,
+              "std": 1.64,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.119,
+                0.3674,
+                0.3434
+              ]
+            },
+            "RBC": {
+              "cv": 0.0427,
+              "mean": 4.55,
+              "std": 0.194,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0109,
+                0.0326,
+                0.0518
+              ]
+            },
+            "HGB": {
+              "cv": 0.0416,
+              "mean": 139.5,
+              "std": 5.802,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.005,
+                0.0441,
+                0.0491
+              ]
+            },
+            "HCT": {
+              "cv": 0.0508,
+              "mean": 42.85,
+              "std": 2.176,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0016,
+                0.0419,
+                0.0622
+              ]
+            },
+            "PLT": {
+              "cv": 0.3943,
+              "mean": 220.25,
+              "std": 86.842,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.303,
+                0.2686,
+                0.4916
+              ]
+            },
+            "PCT": {
+              "cv": 0.349,
+              "mean": 0.225,
+              "std": 0.079,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.2828,
+                0.2294,
+                0.4336
+              ]
+            },
+            "MCH": {
+              "cv": 0.0182,
+              "mean": 30.65,
+              "std": 0.557,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0159,
+                0.0166,
+                0.0099
+              ]
+            },
+            "MCHC": {
+              "cv": 0.0163,
+              "mean": 325.75,
+              "std": 5.315,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0065,
+                0.0047,
+                0.017
+              ]
+            },
+            "NEUT%": {
+              "cv": 0.0943,
+              "mean": 58.1,
+              "std": 5.479,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0245,
+                0.1084,
+                0.1147
+              ]
+            },
+            "LYMPH%": {
+              "cv": 0.031,
+              "mean": 30.725,
+              "std": 0.954,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0385,
+                0.0374,
+                0.0106
+              ]
+            },
+            "MONO%": {
+              "cv": 0.5793,
+              "mean": 9.525,
+              "std": 5.517,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0208,
+                0.6068,
+                0.6162
+              ]
+            },
+            "EO%": {
+              "cv": 0.3448,
+              "mean": 1.35,
+              "std": 0.465,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.202,
+                0.4161,
+                0.3977
+              ]
+            },
+            "BASO%": {
+              "cv": 0.2722,
+              "mean": 0.3,
+              "std": 0.082,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.202,
+                0.1732,
+                0.3333
+              ]
+            },
+            "NEUT#": {
+              "cv": 0.357,
+              "mean": 3.21,
+              "std": 1.146,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0945,
+                0.4353,
+                0.424
+              ]
+            },
+            "LYMPH#": {
+              "cv": 0.3216,
+              "mean": 1.672,
+              "std": 0.538,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.1571,
+                0.3952,
+                0.3509
+              ]
+            },
+            "MONO#": {
+              "cv": 0.1518,
+              "mean": 0.45,
+              "std": 0.068,
+              "stability": "中等变异",
+              "risk_level": "中",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.1347,
+                0.1739,
+                0.1864
+              ]
+            },
+            "EO#": {
+              "cv": 0.2222,
+              "mean": 0.068,
+              "std": 0.015,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.3264,
+                0.2412,
+                0.2412
+              ]
+            },
+            "BASO#": {
+              "cv": 0.3849,
+              "mean": 0.015,
+              "std": 0.006,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0,
+                0.3464,
+                0.433
+              ]
+            },
+            "RDW-SD": {
+              "cv": 0.0503,
+              "mean": 49.55,
+              "std": 2.493,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0193,
+                0.0386,
+                0.057
+              ]
+            },
+            "RDW-CV": {
+              "cv": 0.0467,
+              "mean": 14.3,
+              "std": 0.668,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0051,
+                0.0352,
+                0.049
+              ]
+            },
+            "MPV": {
+              "cv": 0.0623,
+              "mean": 10.4,
+              "std": 0.648,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0207,
+                0.0589,
+                0.0719
+              ]
+            },
+            "PDW": {
+              "cv": 0.0769,
+              "mean": 11.75,
+              "std": 0.904,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0796,
+                0.0812,
+                0.0716
+              ]
+            },
+            "CRP": {
+              "cv": 0.3137,
+              "mean": 11.86,
+              "std": 3.72,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0,
+                0.3442,
+                0.3442
+              ]
+            },
+            "hs-CRP": {
+              "cv": 1.0092,
+              "mean": 4.002,
+              "std": 4.039,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.4624,
+                0.9757,
+                1.0987
+              ]
+            }
+          },
+          "zscore_outliers": {
+            "WBC": {
+              "z_scores": [
+                0.784,
+                0.149,
+                -1.448,
+                0.515
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 3.04,
+                "z_score": -1.448
+              },
+              "threshold": 2.0
+            },
+            "RBC": {
+              "z_scores": [
+                -0.155,
+                0.206,
+                -1.237,
+                1.185
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 4.31,
+                "z_score": -1.237
+              },
+              "threshold": 2.0
+            },
+            "HGB": {
+              "z_scores": [
+                0.431,
+                0.259,
+                -1.465,
+                0.776
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 131.0,
+                "z_score": -1.465
+              },
+              "threshold": 2.0
+            },
+            "HCT": {
+              "z_scores": [
+                0.069,
+                0.115,
+                -1.31,
+                1.126
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 40.0,
+                "z_score": -1.31
+              },
+              "threshold": 2.0
+            },
+            "PLT": {
+              "z_scores": [
+                0.204,
+                -0.763,
+                -0.774,
+                1.333
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 336.0,
+                "z_score": 1.333
+              },
+              "threshold": 2.0
+            },
+            "PCT": {
+              "z_scores": [
+                0.191,
+                -0.828,
+                -0.7,
+                1.337
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 0.33,
+                "z_score": 1.337
+              },
+              "threshold": 2.0
+            },
+            "MCH": {
+              "z_scores": [
+                1.347,
+                0.09,
+                -0.449,
+                -0.988
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-24",
+                "value": 31.4,
+                "z_score": 1.347
+              },
+              "threshold": 2.0
+            },
+            "MCHC": {
+              "z_scores": [
+                0.8,
+                0.235,
+                0.423,
+                -1.458
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 318.0,
+                "z_score": -1.458
+              },
+              "threshold": 2.0
+            },
+            "NEUT%": {
+              "z_scores": [
+                0.256,
+                0.639,
+                -1.478,
+                0.584
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 50.0,
+                "z_score": -1.478
+              },
+              "threshold": 2.0
+            },
+            "LYMPH%": {
+              "z_scores": [
+                1.442,
+                -0.341,
+                -0.865,
+                -0.236
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-24",
+                "value": 32.1,
+                "z_score": 1.442
+              },
+              "threshold": 2.0
+            },
+            "MONO%": {
+              "z_scores": [
+                -0.476,
+                -0.512,
+                1.5,
+                -0.512
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 17.8,
+                "z_score": 1.5
+              },
+              "threshold": 2.0
+            },
+            "EO%": {
+              "z_scores": [
+                -0.322,
+                -0.967,
+                1.396,
+                -0.107
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 2.0,
+                "z_score": 1.396
+              },
+              "threshold": 2.0
+            },
+            "BASO%": {
+              "z_scores": [
+                0.0,
+                1.225,
+                0.0,
+                -1.225
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-30",
+                "value": 0.4,
+                "z_score": 1.225
+              },
+              "threshold": 2.0
+            },
+            "NEUT#": {
+              "z_scores": [
+                0.681,
+                0.244,
+                -1.475,
+                0.55
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 1.52,
+                "z_score": -1.475
+              },
+              "threshold": 2.0
+            },
+            "LYMPH#": {
+              "z_scores": [
+                0.888,
+                0.088,
+                -1.417,
+                0.442
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.91,
+                "z_score": -1.417
+              },
+              "threshold": 2.0
+            },
+            "MONO#": {
+              "z_scores": [
+                0.146,
+                -1.025,
+                1.317,
+                -0.439
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.54,
+                "z_score": 1.317
+              },
+              "threshold": 2.0
+            },
+            "EO#": {
+              "z_scores": [
+                0.833,
+                -1.167,
+                -0.5,
+                0.833
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-30",
+                "value": 0.05,
+                "z_score": -1.167
+              },
+              "threshold": 2.0
+            },
+            "BASO#": {
+              "z_scores": [
+                0.866,
+                0.866,
+                -0.866,
+                -0.866
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.01,
+                "z_score": -0.866
+              },
+              "threshold": 2.0
+            },
+            "RDW-SD": {
+              "z_scores": [
+                -0.541,
+                -1.063,
+                0.421,
+                1.183
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 52.5,
+                "z_score": 1.183
+              },
+              "threshold": 2.0
+            },
+            "RDW-CV": {
+              "z_scores": [
+                -0.748,
+                -0.898,
+                0.449,
+                1.197
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 15.1,
+                "z_score": 1.197
+              },
+              "threshold": 2.0
+            },
+            "MPV": {
+              "z_scores": [
+                -0.463,
+                0.0,
+                1.389,
+                -0.926
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 11.3,
+                "z_score": 1.389
+              },
+              "threshold": 2.0
+            },
+            "PDW": {
+              "z_scores": [
+                -0.941,
+                0.498,
+                1.162,
+                -0.719
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 12.8,
+                "z_score": 1.162
+              },
+              "threshold": 2.0
+            },
+            "CRP": {
+              "z_scores": [
+                -0.5,
+                -0.5,
+                1.5,
+                -0.5
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 17.44,
+                "z_score": 1.5
+              },
+              "threshold": 2.0
+            },
+            "hs-CRP": {
+              "z_scores": [
+                -0.303,
+                -0.642,
+                1.485,
+                -0.54
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 10.0,
+                "z_score": 1.485
+              },
+              "threshold": 2.0
+            }
+          }
+        },
+        "literature_results": {},
+        "interpretation": ""
+      },
+      {
+        "patient_id": "846552421134373347",
+        "analysis_results": {
+          "generated": "2026-06-11 11:13:44",
+          "n_reports": 4,
+          "date_range": {
+            "start": "2026-03-24",
+            "end": "2026-04-14"
+          },
+          "inflammation_classification": {
+            "labels": [
+              "过渡期",
+              "过渡期",
+              "急性期",
+              "过渡期"
+            ],
+            "report_dates": [
+              "2026-03-24",
+              "2026-03-30",
+              "2026-04-08",
+              "2026-04-14"
+            ]
+          },
+          "linear_regression": {
+            "hs-CRP": {
+              "slope": 0.571,
+              "intercept": 3.146,
+              "r2": 0.0333,
+              "trend": "上升",
+              "slope_per_day": 0.571,
+              "n_points": 4
+            },
+            "CRP": {
+              "slope": 0.744,
+              "intercept": 10.744,
+              "r2": 0.0667,
+              "trend": "上升",
+              "slope_per_day": 0.744,
+              "n_points": 4
+            },
+            "WBC": {
+              "slope": -0.394,
+              "intercept": 6.006,
+              "r2": 0.0962,
+              "trend": "下降",
+              "slope_per_day": -0.394,
+              "n_points": 4
+            },
+            "NEUT#": {
+              "slope": -0.242,
+              "intercept": 3.573,
+              "r2": 0.0743,
+              "trend": "下降",
+              "slope_per_day": -0.242,
+              "n_points": 4
+            },
+            "MONO%": {
+              "slope": 1.05,
+              "intercept": 7.95,
+              "r2": 0.0604,
+              "trend": "上升",
+              "slope_per_day": 1.05,
+              "n_points": 4
+            },
+            "RDW-SD": {
+              "slope": 1.66,
+              "intercept": 47.06,
+              "r2": 0.7388,
+              "trend": "上升",
+              "slope_per_day": 1.66,
+              "n_points": 4
+            },
+            "RDW-CV": {
+              "slope": 0.48,
+              "intercept": 13.58,
+              "r2": 0.8597,
+              "trend": "上升",
+              "slope_per_day": 0.48,
+              "n_points": 4
+            }
+          },
+          "correlation_matrix": {
+            "CRP~hs-CRP": 0.99,
+            "WBC~hs-CRP": -0.921,
+            "NEUT#~hs-CRP": -0.95,
+            "MONO%~hs-CRP": 0.992,
+            "RDW-SD~hs-CRP": 0.277,
+            "PCT~hs-CRP": -0.43,
+            "PLT~hs-CRP": -0.481,
+            "hs-CRP~CRP": 0.99,
+            "WBC~CRP": -0.966,
+            "NEUT#~CRP": -0.983,
+            "MONO%~CRP": 1.0,
+            "RDW-SD~CRP": 0.281,
+            "PCT~CRP": -0.467,
+            "PLT~CRP": -0.516,
+            "hs-CRP~WBC": -0.921,
+            "CRP~WBC": -0.966,
+            "NEUT#~WBC": 0.996,
+            "MONO%~WBC": -0.962,
+            "RDW-SD~WBC": -0.194,
+            "PCT~WBC": 0.577,
+            "PLT~WBC": 0.618,
+            "hs-CRP~NEUT#": -0.95,
+            "CRP~NEUT#": -0.983,
+            "WBC~NEUT#": 0.996,
+            "MONO%~NEUT#": -0.981,
+            "RDW-SD~NEUT#": -0.2,
+            "PCT~NEUT#": 0.565,
+            "PLT~NEUT#": 0.609,
+            "hs-CRP~MONO%": 0.992,
+            "CRP~MONO%": 1.0,
+            "WBC~MONO%": -0.962,
+            "NEUT#~MONO%": -0.981,
+            "RDW-SD~MONO%": 0.276,
+            "PCT~MONO%": -0.467,
+            "PLT~MONO%": -0.517,
+            "hs-CRP~RDW-SD": 0.277,
+            "CRP~RDW-SD": 0.281,
+            "WBC~RDW-SD": -0.194,
+            "NEUT#~RDW-SD": -0.2,
+            "MONO%~RDW-SD": 0.276,
+            "PCT~RDW-SD": 0.688,
+            "PLT~RDW-SD": 0.65,
+            "hs-CRP~PCT": -0.43,
+            "CRP~PCT": -0.467,
+            "WBC~PCT": 0.577,
+            "NEUT#~PCT": 0.565,
+            "MONO%~PCT": -0.467,
+            "RDW-SD~PCT": 0.688,
+            "PLT~PCT": 0.998,
+            "hs-CRP~PLT": -0.481,
+            "CRP~PLT": -0.516,
+            "WBC~PLT": 0.618,
+            "NEUT#~PLT": 0.609,
+            "MONO%~PLT": -0.517,
+            "RDW-SD~PLT": 0.65,
+            "PCT~PLT": 0.998
+          },
+          "descriptive_stats": {
+            "WBC": {
+              "count": 4,
+              "mean": 5.415,
+              "std": 1.64,
+              "min": 3.04,
+              "max": 6.7,
+              "cv": 0.3028
+            },
+            "RBC": {
+              "count": 4,
+              "mean": 4.55,
+              "std": 0.194,
+              "min": 4.31,
+              "max": 4.78,
+              "cv": 0.0427
+            },
+            "HGB": {
+              "count": 4,
+              "mean": 139.5,
+              "std": 5.802,
+              "min": 131.0,
+              "max": 144.0,
+              "cv": 0.0416
+            },
+            "HCT": {
+              "count": 4,
+              "mean": 42.85,
+              "std": 2.176,
+              "min": 40.0,
+              "max": 45.3,
+              "cv": 0.0508
+            },
+            "PLT": {
+              "count": 4,
+              "mean": 220.25,
+              "std": 86.842,
+              "min": 153.0,
+              "max": 336.0,
+              "cv": 0.3943
+            },
+            "PCT": {
+              "count": 4,
+              "mean": 0.225,
+              "std": 0.079,
+              "min": 0.16,
+              "max": 0.33,
+              "cv": 0.349
+            },
+            "MCV": {
+              "count": 1,
+              "mean": 94.8,
+              "std": 0,
+              "min": 94.8,
+              "max": 94.8,
+              "cv": 0.0
+            },
+            "MCH": {
+              "count": 4,
+              "mean": 30.65,
+              "std": 0.557,
+              "min": 30.1,
+              "max": 31.4,
+              "cv": 0.0182
+            },
+            "MCHC": {
+              "count": 4,
+              "mean": 325.75,
+              "std": 5.315,
+              "min": 318.0,
+              "max": 330.0,
+              "cv": 0.0163
+            },
+            "NEUT%": {
+              "count": 4,
+              "mean": 58.1,
+              "std": 5.479,
+              "min": 50.0,
+              "max": 61.6,
+              "cv": 0.0943
+            },
+            "LYMPH%": {
+              "count": 4,
+              "mean": 30.725,
+              "std": 0.954,
+              "min": 29.9,
+              "max": 32.1,
+              "cv": 0.031
+            },
+            "MONO%": {
+              "count": 4,
+              "mean": 9.525,
+              "std": 5.517,
+              "min": 6.7,
+              "max": 17.8,
+              "cv": 0.5793
+            },
+            "EO%": {
+              "count": 4,
+              "mean": 1.35,
+              "std": 0.465,
+              "min": 0.9,
+              "max": 2.0,
+              "cv": 0.3448
+            },
+            "BASO%": {
+              "count": 4,
+              "mean": 0.3,
+              "std": 0.082,
+              "min": 0.2,
+              "max": 0.4,
+              "cv": 0.2722
+            },
+            "NEUT#": {
+              "count": 4,
+              "mean": 3.21,
+              "std": 1.146,
+              "min": 1.52,
+              "max": 3.99,
+              "cv": 0.357
+            },
+            "LYMPH#": {
+              "count": 4,
+              "mean": 1.673,
+              "std": 0.538,
+              "min": 0.91,
+              "max": 2.15,
+              "cv": 0.3216
+            },
+            "MONO#": {
+              "count": 4,
+              "mean": 0.45,
+              "std": 0.068,
+              "min": 0.38,
+              "max": 0.54,
+              "cv": 0.1518
+            },
+            "EO#": {
+              "count": 4,
+              "mean": 0.068,
+              "std": 0.015,
+              "min": 0.05,
+              "max": 0.08,
+              "cv": 0.2222
+            },
+            "BASO#": {
+              "count": 4,
+              "mean": 0.015,
+              "std": 0.006,
+              "min": 0.01,
+              "max": 0.02,
+              "cv": 0.3849
+            },
+            "RDW-SD": {
+              "count": 4,
+              "mean": 49.55,
+              "std": 2.493,
+              "min": 46.9,
+              "max": 52.5,
+              "cv": 0.0503
+            },
+            "RDW-CV": {
+              "count": 4,
+              "mean": 14.3,
+              "std": 0.668,
+              "min": 13.7,
+              "max": 15.1,
+              "cv": 0.0467
+            },
+            "MPV": {
+              "count": 4,
+              "mean": 10.4,
+              "std": 0.648,
+              "min": 9.8,
+              "max": 11.3,
+              "cv": 0.0623
+            },
+            "PDW": {
+              "count": 4,
+              "mean": 11.75,
+              "std": 0.904,
+              "min": 10.9,
+              "max": 12.8,
+              "cv": 0.0769
+            },
+            "CRP": {
+              "count": 4,
+              "mean": 11.86,
+              "std": 3.72,
+              "min": 10.0,
+              "max": 17.44,
+              "cv": 0.3137
+            },
+            "hs-CRP": {
+              "count": 4,
+              "mean": 4.002,
+              "std": 4.039,
+              "min": 1.41,
+              "max": 10.0,
+              "cv": 1.0092
+            }
+          },
+          "abnormal_summary": {
+            "WBC": {
+              "ref_range": "3.5-9.5",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "PCT": {
+              "ref_range": "0.108-0.272",
+              "abnormal_dates": [
+                "2026-04-14"
+              ],
+              "n_abnormal": 1
+            },
+            "MONO%": {
+              "ref_range": "2-10",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "NEUT#": {
+              "ref_range": "1.8-6.3",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "LYMPH#": {
+              "ref_range": "1.1-3.2",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "RDW-SD": {
+              "ref_range": "37-50",
+              "abnormal_dates": [
+                "2026-04-08",
+                "2026-04-14"
+              ],
+              "n_abnormal": 2
+            },
+            "RDW-CV": {
+              "ref_range": "0-15",
+              "abnormal_dates": [
+                "2026-04-14"
+              ],
+              "n_abnormal": 1
+            },
+            "CRP": {
+              "ref_range": "0-10",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "hs-CRP": {
+              "ref_range": "0-1.0",
+              "abnormal_dates": [
+                "2026-03-24",
+                "2026-03-30",
+                "2026-04-08",
+                "2026-04-14"
+              ],
+              "n_abnormal": 4
+            }
+          },
+          "moving_average": {
+            "hs-CRP": {
+              "moving_avg": [
+                2.78,
+                2.095,
+                5.705,
+                5.91
+              ],
+              "rolling_std": [
+                0.0,
+                0.969,
+                6.074,
+                5.784
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "CRP": {
+              "moving_avg": [
+                10.0,
+                10.0,
+                13.72,
+                13.72
+              ],
+              "rolling_std": [
+                0.0,
+                0.0,
+                5.261,
+                5.261
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "WBC": {
+              "moving_avg": [
+                6.7,
+                6.18,
+                4.35,
+                4.65
+              ],
+              "rolling_std": [
+                0.0,
+                0.735,
+                1.853,
+                2.277
+              ],
+              "trend": "下降",
+              "window": 2
+            },
+            "NEUT#": {
+              "moving_avg": [
+                3.99,
+                3.74,
+                2.505,
+                2.68
+              ],
+              "rolling_std": [
+                0.0,
+                0.354,
+                1.393,
+                1.64
+              ],
+              "trend": "下降",
+              "window": 2
+            },
+            "MONO%": {
+              "moving_avg": [
+                6.9,
+                6.8,
+                12.25,
+                12.25
+              ],
+              "rolling_std": [
+                0.0,
+                0.141,
+                7.849,
+                7.849
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "RDW-SD": {
+              "moving_avg": [
+                48.2,
+                47.55,
+                48.75,
+                51.55
+              ],
+              "rolling_std": [
+                0.0,
+                0.919,
+                2.616,
+                1.344
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "RDW-CV": {
+              "moving_avg": [
+                13.8,
+                13.75,
+                14.15,
+                14.85
+              ],
+              "rolling_std": [
+                0.0,
+                0.071,
+                0.636,
+                0.354
+              ],
+              "trend": "上升",
+              "window": 2
+            }
+          },
+          "cv_stability": {
+            "WBC": {
+              "cv": 0.3028,
+              "mean": 5.415,
+              "std": 1.64,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.119,
+                0.3674,
+                0.3434
+              ]
+            },
+            "RBC": {
+              "cv": 0.0427,
+              "mean": 4.55,
+              "std": 0.194,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0109,
+                0.0326,
+                0.0518
+              ]
+            },
+            "HGB": {
+              "cv": 0.0416,
+              "mean": 139.5,
+              "std": 5.802,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.005,
+                0.0441,
+                0.0491
+              ]
+            },
+            "HCT": {
+              "cv": 0.0508,
+              "mean": 42.85,
+              "std": 2.176,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0016,
+                0.0419,
+                0.0622
+              ]
+            },
+            "PLT": {
+              "cv": 0.3943,
+              "mean": 220.25,
+              "std": 86.842,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.303,
+                0.2686,
+                0.4916
+              ]
+            },
+            "PCT": {
+              "cv": 0.349,
+              "mean": 0.225,
+              "std": 0.079,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.2828,
+                0.2294,
+                0.4336
+              ]
+            },
+            "MCH": {
+              "cv": 0.0182,
+              "mean": 30.65,
+              "std": 0.557,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0159,
+                0.0166,
+                0.0099
+              ]
+            },
+            "MCHC": {
+              "cv": 0.0163,
+              "mean": 325.75,
+              "std": 5.315,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0065,
+                0.0047,
+                0.017
+              ]
+            },
+            "NEUT%": {
+              "cv": 0.0943,
+              "mean": 58.1,
+              "std": 5.479,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0245,
+                0.1084,
+                0.1147
+              ]
+            },
+            "LYMPH%": {
+              "cv": 0.031,
+              "mean": 30.725,
+              "std": 0.954,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0385,
+                0.0374,
+                0.0106
+              ]
+            },
+            "MONO%": {
+              "cv": 0.5793,
+              "mean": 9.525,
+              "std": 5.517,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0208,
+                0.6068,
+                0.6162
+              ]
+            },
+            "EO%": {
+              "cv": 0.3448,
+              "mean": 1.35,
+              "std": 0.465,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.202,
+                0.4161,
+                0.3977
+              ]
+            },
+            "BASO%": {
+              "cv": 0.2722,
+              "mean": 0.3,
+              "std": 0.082,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.202,
+                0.1732,
+                0.3333
+              ]
+            },
+            "NEUT#": {
+              "cv": 0.357,
+              "mean": 3.21,
+              "std": 1.146,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0945,
+                0.4353,
+                0.424
+              ]
+            },
+            "LYMPH#": {
+              "cv": 0.3216,
+              "mean": 1.672,
+              "std": 0.538,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.1571,
+                0.3952,
+                0.3509
+              ]
+            },
+            "MONO#": {
+              "cv": 0.1518,
+              "mean": 0.45,
+              "std": 0.068,
+              "stability": "中等变异",
+              "risk_level": "中",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.1347,
+                0.1739,
+                0.1864
+              ]
+            },
+            "EO#": {
+              "cv": 0.2222,
+              "mean": 0.068,
+              "std": 0.015,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.3264,
+                0.2412,
+                0.2412
+              ]
+            },
+            "BASO#": {
+              "cv": 0.3849,
+              "mean": 0.015,
+              "std": 0.006,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0,
+                0.3464,
+                0.433
+              ]
+            },
+            "RDW-SD": {
+              "cv": 0.0503,
+              "mean": 49.55,
+              "std": 2.493,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0193,
+                0.0386,
+                0.057
+              ]
+            },
+            "RDW-CV": {
+              "cv": 0.0467,
+              "mean": 14.3,
+              "std": 0.668,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0051,
+                0.0352,
+                0.049
+              ]
+            },
+            "MPV": {
+              "cv": 0.0623,
+              "mean": 10.4,
+              "std": 0.648,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0207,
+                0.0589,
+                0.0719
+              ]
+            },
+            "PDW": {
+              "cv": 0.0769,
+              "mean": 11.75,
+              "std": 0.904,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0796,
+                0.0812,
+                0.0716
+              ]
+            },
+            "CRP": {
+              "cv": 0.3137,
+              "mean": 11.86,
+              "std": 3.72,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0,
+                0.3442,
+                0.3442
+              ]
+            },
+            "hs-CRP": {
+              "cv": 1.0092,
+              "mean": 4.002,
+              "std": 4.039,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.4624,
+                0.9757,
+                1.0987
+              ]
+            }
+          },
+          "zscore_outliers": {
+            "WBC": {
+              "z_scores": [
+                0.784,
+                0.149,
+                -1.448,
+                0.515
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 3.04,
+                "z_score": -1.448
+              },
+              "threshold": 2.0
+            },
+            "RBC": {
+              "z_scores": [
+                -0.155,
+                0.206,
+                -1.237,
+                1.185
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 4.31,
+                "z_score": -1.237
+              },
+              "threshold": 2.0
+            },
+            "HGB": {
+              "z_scores": [
+                0.431,
+                0.259,
+                -1.465,
+                0.776
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 131.0,
+                "z_score": -1.465
+              },
+              "threshold": 2.0
+            },
+            "HCT": {
+              "z_scores": [
+                0.069,
+                0.115,
+                -1.31,
+                1.126
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 40.0,
+                "z_score": -1.31
+              },
+              "threshold": 2.0
+            },
+            "PLT": {
+              "z_scores": [
+                0.204,
+                -0.763,
+                -0.774,
+                1.333
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 336.0,
+                "z_score": 1.333
+              },
+              "threshold": 2.0
+            },
+            "PCT": {
+              "z_scores": [
+                0.191,
+                -0.828,
+                -0.7,
+                1.337
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 0.33,
+                "z_score": 1.337
+              },
+              "threshold": 2.0
+            },
+            "MCH": {
+              "z_scores": [
+                1.347,
+                0.09,
+                -0.449,
+                -0.988
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-24",
+                "value": 31.4,
+                "z_score": 1.347
+              },
+              "threshold": 2.0
+            },
+            "MCHC": {
+              "z_scores": [
+                0.8,
+                0.235,
+                0.423,
+                -1.458
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 318.0,
+                "z_score": -1.458
+              },
+              "threshold": 2.0
+            },
+            "NEUT%": {
+              "z_scores": [
+                0.256,
+                0.639,
+                -1.478,
+                0.584
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 50.0,
+                "z_score": -1.478
+              },
+              "threshold": 2.0
+            },
+            "LYMPH%": {
+              "z_scores": [
+                1.442,
+                -0.341,
+                -0.865,
+                -0.236
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-24",
+                "value": 32.1,
+                "z_score": 1.442
+              },
+              "threshold": 2.0
+            },
+            "MONO%": {
+              "z_scores": [
+                -0.476,
+                -0.512,
+                1.5,
+                -0.512
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 17.8,
+                "z_score": 1.5
+              },
+              "threshold": 2.0
+            },
+            "EO%": {
+              "z_scores": [
+                -0.322,
+                -0.967,
+                1.396,
+                -0.107
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 2.0,
+                "z_score": 1.396
+              },
+              "threshold": 2.0
+            },
+            "BASO%": {
+              "z_scores": [
+                0.0,
+                1.225,
+                0.0,
+                -1.225
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-30",
+                "value": 0.4,
+                "z_score": 1.225
+              },
+              "threshold": 2.0
+            },
+            "NEUT#": {
+              "z_scores": [
+                0.681,
+                0.244,
+                -1.475,
+                0.55
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 1.52,
+                "z_score": -1.475
+              },
+              "threshold": 2.0
+            },
+            "LYMPH#": {
+              "z_scores": [
+                0.888,
+                0.088,
+                -1.417,
+                0.442
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.91,
+                "z_score": -1.417
+              },
+              "threshold": 2.0
+            },
+            "MONO#": {
+              "z_scores": [
+                0.146,
+                -1.025,
+                1.317,
+                -0.439
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.54,
+                "z_score": 1.317
+              },
+              "threshold": 2.0
+            },
+            "EO#": {
+              "z_scores": [
+                0.833,
+                -1.167,
+                -0.5,
+                0.833
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-30",
+                "value": 0.05,
+                "z_score": -1.167
+              },
+              "threshold": 2.0
+            },
+            "BASO#": {
+              "z_scores": [
+                0.866,
+                0.866,
+                -0.866,
+                -0.866
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.01,
+                "z_score": -0.866
+              },
+              "threshold": 2.0
+            },
+            "RDW-SD": {
+              "z_scores": [
+                -0.541,
+                -1.063,
+                0.421,
+                1.183
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 52.5,
+                "z_score": 1.183
+              },
+              "threshold": 2.0
+            },
+            "RDW-CV": {
+              "z_scores": [
+                -0.748,
+                -0.898,
+                0.449,
+                1.197
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 15.1,
+                "z_score": 1.197
+              },
+              "threshold": 2.0
+            },
+            "MPV": {
+              "z_scores": [
+                -0.463,
+                0.0,
+                1.389,
+                -0.926
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 11.3,
+                "z_score": 1.389
+              },
+              "threshold": 2.0
+            },
+            "PDW": {
+              "z_scores": [
+                -0.941,
+                0.498,
+                1.162,
+                -0.719
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 12.8,
+                "z_score": 1.162
+              },
+              "threshold": 2.0
+            },
+            "CRP": {
+              "z_scores": [
+                -0.5,
+                -0.5,
+                1.5,
+                -0.5
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 17.44,
+                "z_score": 1.5
+              },
+              "threshold": 2.0
+            },
+            "hs-CRP": {
+              "z_scores": [
+                -0.303,
+                -0.642,
+                1.485,
+                -0.54
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 10.0,
+                "z_score": 1.485
+              },
+              "threshold": 2.0
+            }
+          }
+        },
+        "literature_results": {},
+        "interpretation": ""
+      },
+      {
+        "patient_id": "846552421134373347",
+        "analysis_results": {
+          "generated": "2026-06-11 11:25:29",
+          "n_reports": 4,
+          "date_range": {
+            "start": "2026-03-24",
+            "end": "2026-04-14"
+          },
+          "inflammation_classification": {
+            "labels": [
+              "过渡期",
+              "过渡期",
+              "急性期",
+              "过渡期"
+            ],
+            "report_dates": [
+              "2026-03-24",
+              "2026-03-30",
+              "2026-04-08",
+              "2026-04-14"
+            ]
+          },
+          "linear_regression": {
+            "hs-CRP": {
+              "slope": 0.571,
+              "intercept": 3.146,
+              "r2": 0.0333,
+              "trend": "上升",
+              "slope_per_day": 0.571,
+              "n_points": 4
+            },
+            "CRP": {
+              "slope": 0.744,
+              "intercept": 10.744,
+              "r2": 0.0667,
+              "trend": "上升",
+              "slope_per_day": 0.744,
+              "n_points": 4
+            },
+            "WBC": {
+              "slope": -0.394,
+              "intercept": 6.006,
+              "r2": 0.0962,
+              "trend": "下降",
+              "slope_per_day": -0.394,
+              "n_points": 4
+            },
+            "NEUT#": {
+              "slope": -0.242,
+              "intercept": 3.573,
+              "r2": 0.0743,
+              "trend": "下降",
+              "slope_per_day": -0.242,
+              "n_points": 4
+            },
+            "MONO%": {
+              "slope": 1.05,
+              "intercept": 7.95,
+              "r2": 0.0604,
+              "trend": "上升",
+              "slope_per_day": 1.05,
+              "n_points": 4
+            },
+            "RDW-SD": {
+              "slope": 1.66,
+              "intercept": 47.06,
+              "r2": 0.7388,
+              "trend": "上升",
+              "slope_per_day": 1.66,
+              "n_points": 4
+            },
+            "RDW-CV": {
+              "slope": 0.48,
+              "intercept": 13.58,
+              "r2": 0.8597,
+              "trend": "上升",
+              "slope_per_day": 0.48,
+              "n_points": 4
+            }
+          },
+          "correlation_matrix": {
+            "CRP~hs-CRP": 0.99,
+            "WBC~hs-CRP": -0.921,
+            "NEUT#~hs-CRP": -0.95,
+            "MONO%~hs-CRP": 0.992,
+            "RDW-SD~hs-CRP": 0.277,
+            "PCT~hs-CRP": -0.43,
+            "PLT~hs-CRP": -0.481,
+            "hs-CRP~CRP": 0.99,
+            "WBC~CRP": -0.966,
+            "NEUT#~CRP": -0.983,
+            "MONO%~CRP": 1.0,
+            "RDW-SD~CRP": 0.281,
+            "PCT~CRP": -0.467,
+            "PLT~CRP": -0.516,
+            "hs-CRP~WBC": -0.921,
+            "CRP~WBC": -0.966,
+            "NEUT#~WBC": 0.996,
+            "MONO%~WBC": -0.962,
+            "RDW-SD~WBC": -0.194,
+            "PCT~WBC": 0.577,
+            "PLT~WBC": 0.618,
+            "hs-CRP~NEUT#": -0.95,
+            "CRP~NEUT#": -0.983,
+            "WBC~NEUT#": 0.996,
+            "MONO%~NEUT#": -0.981,
+            "RDW-SD~NEUT#": -0.2,
+            "PCT~NEUT#": 0.565,
+            "PLT~NEUT#": 0.609,
+            "hs-CRP~MONO%": 0.992,
+            "CRP~MONO%": 1.0,
+            "WBC~MONO%": -0.962,
+            "NEUT#~MONO%": -0.981,
+            "RDW-SD~MONO%": 0.276,
+            "PCT~MONO%": -0.467,
+            "PLT~MONO%": -0.517,
+            "hs-CRP~RDW-SD": 0.277,
+            "CRP~RDW-SD": 0.281,
+            "WBC~RDW-SD": -0.194,
+            "NEUT#~RDW-SD": -0.2,
+            "MONO%~RDW-SD": 0.276,
+            "PCT~RDW-SD": 0.688,
+            "PLT~RDW-SD": 0.65,
+            "hs-CRP~PCT": -0.43,
+            "CRP~PCT": -0.467,
+            "WBC~PCT": 0.577,
+            "NEUT#~PCT": 0.565,
+            "MONO%~PCT": -0.467,
+            "RDW-SD~PCT": 0.688,
+            "PLT~PCT": 0.998,
+            "hs-CRP~PLT": -0.481,
+            "CRP~PLT": -0.516,
+            "WBC~PLT": 0.618,
+            "NEUT#~PLT": 0.609,
+            "MONO%~PLT": -0.517,
+            "RDW-SD~PLT": 0.65,
+            "PCT~PLT": 0.998
+          },
+          "descriptive_stats": {
+            "WBC": {
+              "count": 4,
+              "mean": 5.415,
+              "std": 1.64,
+              "min": 3.04,
+              "max": 6.7,
+              "cv": 0.3028
+            },
+            "RBC": {
+              "count": 4,
+              "mean": 4.55,
+              "std": 0.194,
+              "min": 4.31,
+              "max": 4.78,
+              "cv": 0.0427
+            },
+            "HGB": {
+              "count": 4,
+              "mean": 139.5,
+              "std": 5.802,
+              "min": 131.0,
+              "max": 144.0,
+              "cv": 0.0416
+            },
+            "HCT": {
+              "count": 4,
+              "mean": 42.85,
+              "std": 2.176,
+              "min": 40.0,
+              "max": 45.3,
+              "cv": 0.0508
+            },
+            "PLT": {
+              "count": 4,
+              "mean": 220.25,
+              "std": 86.842,
+              "min": 153.0,
+              "max": 336.0,
+              "cv": 0.3943
+            },
+            "PCT": {
+              "count": 4,
+              "mean": 0.225,
+              "std": 0.079,
+              "min": 0.16,
+              "max": 0.33,
+              "cv": 0.349
+            },
+            "MCV": {
+              "count": 1,
+              "mean": 94.8,
+              "std": 0,
+              "min": 94.8,
+              "max": 94.8,
+              "cv": 0.0
+            },
+            "MCH": {
+              "count": 4,
+              "mean": 30.65,
+              "std": 0.557,
+              "min": 30.1,
+              "max": 31.4,
+              "cv": 0.0182
+            },
+            "MCHC": {
+              "count": 4,
+              "mean": 325.75,
+              "std": 5.315,
+              "min": 318.0,
+              "max": 330.0,
+              "cv": 0.0163
+            },
+            "NEUT%": {
+              "count": 4,
+              "mean": 58.1,
+              "std": 5.479,
+              "min": 50.0,
+              "max": 61.6,
+              "cv": 0.0943
+            },
+            "LYMPH%": {
+              "count": 4,
+              "mean": 30.725,
+              "std": 0.954,
+              "min": 29.9,
+              "max": 32.1,
+              "cv": 0.031
+            },
+            "MONO%": {
+              "count": 4,
+              "mean": 9.525,
+              "std": 5.517,
+              "min": 6.7,
+              "max": 17.8,
+              "cv": 0.5793
+            },
+            "EO%": {
+              "count": 4,
+              "mean": 1.35,
+              "std": 0.465,
+              "min": 0.9,
+              "max": 2.0,
+              "cv": 0.3448
+            },
+            "BASO%": {
+              "count": 4,
+              "mean": 0.3,
+              "std": 0.082,
+              "min": 0.2,
+              "max": 0.4,
+              "cv": 0.2722
+            },
+            "NEUT#": {
+              "count": 4,
+              "mean": 3.21,
+              "std": 1.146,
+              "min": 1.52,
+              "max": 3.99,
+              "cv": 0.357
+            },
+            "LYMPH#": {
+              "count": 4,
+              "mean": 1.673,
+              "std": 0.538,
+              "min": 0.91,
+              "max": 2.15,
+              "cv": 0.3216
+            },
+            "MONO#": {
+              "count": 4,
+              "mean": 0.45,
+              "std": 0.068,
+              "min": 0.38,
+              "max": 0.54,
+              "cv": 0.1518
+            },
+            "EO#": {
+              "count": 4,
+              "mean": 0.068,
+              "std": 0.015,
+              "min": 0.05,
+              "max": 0.08,
+              "cv": 0.2222
+            },
+            "BASO#": {
+              "count": 4,
+              "mean": 0.015,
+              "std": 0.006,
+              "min": 0.01,
+              "max": 0.02,
+              "cv": 0.3849
+            },
+            "RDW-SD": {
+              "count": 4,
+              "mean": 49.55,
+              "std": 2.493,
+              "min": 46.9,
+              "max": 52.5,
+              "cv": 0.0503
+            },
+            "RDW-CV": {
+              "count": 4,
+              "mean": 14.3,
+              "std": 0.668,
+              "min": 13.7,
+              "max": 15.1,
+              "cv": 0.0467
+            },
+            "MPV": {
+              "count": 4,
+              "mean": 10.4,
+              "std": 0.648,
+              "min": 9.8,
+              "max": 11.3,
+              "cv": 0.0623
+            },
+            "PDW": {
+              "count": 4,
+              "mean": 11.75,
+              "std": 0.904,
+              "min": 10.9,
+              "max": 12.8,
+              "cv": 0.0769
+            },
+            "CRP": {
+              "count": 4,
+              "mean": 11.86,
+              "std": 3.72,
+              "min": 10.0,
+              "max": 17.44,
+              "cv": 0.3137
+            },
+            "hs-CRP": {
+              "count": 4,
+              "mean": 4.002,
+              "std": 4.039,
+              "min": 1.41,
+              "max": 10.0,
+              "cv": 1.0092
+            }
+          },
+          "abnormal_summary": {
+            "WBC": {
+              "ref_range": "3.5-9.5",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "PCT": {
+              "ref_range": "0.108-0.272",
+              "abnormal_dates": [
+                "2026-04-14"
+              ],
+              "n_abnormal": 1
+            },
+            "MONO%": {
+              "ref_range": "2-10",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "NEUT#": {
+              "ref_range": "1.8-6.3",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "LYMPH#": {
+              "ref_range": "1.1-3.2",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "RDW-SD": {
+              "ref_range": "37-50",
+              "abnormal_dates": [
+                "2026-04-08",
+                "2026-04-14"
+              ],
+              "n_abnormal": 2
+            },
+            "RDW-CV": {
+              "ref_range": "0-15",
+              "abnormal_dates": [
+                "2026-04-14"
+              ],
+              "n_abnormal": 1
+            },
+            "CRP": {
+              "ref_range": "0-10",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "hs-CRP": {
+              "ref_range": "0-1.0",
+              "abnormal_dates": [
+                "2026-03-24",
+                "2026-03-30",
+                "2026-04-08",
+                "2026-04-14"
+              ],
+              "n_abnormal": 4
+            }
+          },
+          "moving_average": {
+            "hs-CRP": {
+              "moving_avg": [
+                2.78,
+                2.095,
+                5.705,
+                5.91
+              ],
+              "rolling_std": [
+                0.0,
+                0.969,
+                6.074,
+                5.784
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "CRP": {
+              "moving_avg": [
+                10.0,
+                10.0,
+                13.72,
+                13.72
+              ],
+              "rolling_std": [
+                0.0,
+                0.0,
+                5.261,
+                5.261
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "WBC": {
+              "moving_avg": [
+                6.7,
+                6.18,
+                4.35,
+                4.65
+              ],
+              "rolling_std": [
+                0.0,
+                0.735,
+                1.853,
+                2.277
+              ],
+              "trend": "下降",
+              "window": 2
+            },
+            "NEUT#": {
+              "moving_avg": [
+                3.99,
+                3.74,
+                2.505,
+                2.68
+              ],
+              "rolling_std": [
+                0.0,
+                0.354,
+                1.393,
+                1.64
+              ],
+              "trend": "下降",
+              "window": 2
+            },
+            "MONO%": {
+              "moving_avg": [
+                6.9,
+                6.8,
+                12.25,
+                12.25
+              ],
+              "rolling_std": [
+                0.0,
+                0.141,
+                7.849,
+                7.849
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "RDW-SD": {
+              "moving_avg": [
+                48.2,
+                47.55,
+                48.75,
+                51.55
+              ],
+              "rolling_std": [
+                0.0,
+                0.919,
+                2.616,
+                1.344
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "RDW-CV": {
+              "moving_avg": [
+                13.8,
+                13.75,
+                14.15,
+                14.85
+              ],
+              "rolling_std": [
+                0.0,
+                0.071,
+                0.636,
+                0.354
+              ],
+              "trend": "上升",
+              "window": 2
+            }
+          },
+          "cv_stability": {
+            "WBC": {
+              "cv": 0.3028,
+              "mean": 5.415,
+              "std": 1.64,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.119,
+                0.3674,
+                0.3434
+              ]
+            },
+            "RBC": {
+              "cv": 0.0427,
+              "mean": 4.55,
+              "std": 0.194,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0109,
+                0.0326,
+                0.0518
+              ]
+            },
+            "HGB": {
+              "cv": 0.0416,
+              "mean": 139.5,
+              "std": 5.802,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.005,
+                0.0441,
+                0.0491
+              ]
+            },
+            "HCT": {
+              "cv": 0.0508,
+              "mean": 42.85,
+              "std": 2.176,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0016,
+                0.0419,
+                0.0622
+              ]
+            },
+            "PLT": {
+              "cv": 0.3943,
+              "mean": 220.25,
+              "std": 86.842,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.303,
+                0.2686,
+                0.4916
+              ]
+            },
+            "PCT": {
+              "cv": 0.349,
+              "mean": 0.225,
+              "std": 0.079,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.2828,
+                0.2294,
+                0.4336
+              ]
+            },
+            "MCH": {
+              "cv": 0.0182,
+              "mean": 30.65,
+              "std": 0.557,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0159,
+                0.0166,
+                0.0099
+              ]
+            },
+            "MCHC": {
+              "cv": 0.0163,
+              "mean": 325.75,
+              "std": 5.315,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0065,
+                0.0047,
+                0.017
+              ]
+            },
+            "NEUT%": {
+              "cv": 0.0943,
+              "mean": 58.1,
+              "std": 5.479,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0245,
+                0.1084,
+                0.1147
+              ]
+            },
+            "LYMPH%": {
+              "cv": 0.031,
+              "mean": 30.725,
+              "std": 0.954,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0385,
+                0.0374,
+                0.0106
+              ]
+            },
+            "MONO%": {
+              "cv": 0.5793,
+              "mean": 9.525,
+              "std": 5.517,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0208,
+                0.6068,
+                0.6162
+              ]
+            },
+            "EO%": {
+              "cv": 0.3448,
+              "mean": 1.35,
+              "std": 0.465,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.202,
+                0.4161,
+                0.3977
+              ]
+            },
+            "BASO%": {
+              "cv": 0.2722,
+              "mean": 0.3,
+              "std": 0.082,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.202,
+                0.1732,
+                0.3333
+              ]
+            },
+            "NEUT#": {
+              "cv": 0.357,
+              "mean": 3.21,
+              "std": 1.146,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0945,
+                0.4353,
+                0.424
+              ]
+            },
+            "LYMPH#": {
+              "cv": 0.3216,
+              "mean": 1.672,
+              "std": 0.538,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.1571,
+                0.3952,
+                0.3509
+              ]
+            },
+            "MONO#": {
+              "cv": 0.1518,
+              "mean": 0.45,
+              "std": 0.068,
+              "stability": "中等变异",
+              "risk_level": "中",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.1347,
+                0.1739,
+                0.1864
+              ]
+            },
+            "EO#": {
+              "cv": 0.2222,
+              "mean": 0.068,
+              "std": 0.015,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.3264,
+                0.2412,
+                0.2412
+              ]
+            },
+            "BASO#": {
+              "cv": 0.3849,
+              "mean": 0.015,
+              "std": 0.006,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0,
+                0.3464,
+                0.433
+              ]
+            },
+            "RDW-SD": {
+              "cv": 0.0503,
+              "mean": 49.55,
+              "std": 2.493,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0193,
+                0.0386,
+                0.057
+              ]
+            },
+            "RDW-CV": {
+              "cv": 0.0467,
+              "mean": 14.3,
+              "std": 0.668,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0051,
+                0.0352,
+                0.049
+              ]
+            },
+            "MPV": {
+              "cv": 0.0623,
+              "mean": 10.4,
+              "std": 0.648,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0207,
+                0.0589,
+                0.0719
+              ]
+            },
+            "PDW": {
+              "cv": 0.0769,
+              "mean": 11.75,
+              "std": 0.904,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0796,
+                0.0812,
+                0.0716
+              ]
+            },
+            "CRP": {
+              "cv": 0.3137,
+              "mean": 11.86,
+              "std": 3.72,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0,
+                0.3442,
+                0.3442
+              ]
+            },
+            "hs-CRP": {
+              "cv": 1.0092,
+              "mean": 4.002,
+              "std": 4.039,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.4624,
+                0.9757,
+                1.0987
+              ]
+            }
+          },
+          "zscore_outliers": {
+            "WBC": {
+              "z_scores": [
+                0.784,
+                0.149,
+                -1.448,
+                0.515
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 3.04,
+                "z_score": -1.448
+              },
+              "threshold": 2.0
+            },
+            "RBC": {
+              "z_scores": [
+                -0.155,
+                0.206,
+                -1.237,
+                1.185
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 4.31,
+                "z_score": -1.237
+              },
+              "threshold": 2.0
+            },
+            "HGB": {
+              "z_scores": [
+                0.431,
+                0.259,
+                -1.465,
+                0.776
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 131.0,
+                "z_score": -1.465
+              },
+              "threshold": 2.0
+            },
+            "HCT": {
+              "z_scores": [
+                0.069,
+                0.115,
+                -1.31,
+                1.126
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 40.0,
+                "z_score": -1.31
+              },
+              "threshold": 2.0
+            },
+            "PLT": {
+              "z_scores": [
+                0.204,
+                -0.763,
+                -0.774,
+                1.333
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 336.0,
+                "z_score": 1.333
+              },
+              "threshold": 2.0
+            },
+            "PCT": {
+              "z_scores": [
+                0.191,
+                -0.828,
+                -0.7,
+                1.337
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 0.33,
+                "z_score": 1.337
+              },
+              "threshold": 2.0
+            },
+            "MCH": {
+              "z_scores": [
+                1.347,
+                0.09,
+                -0.449,
+                -0.988
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-24",
+                "value": 31.4,
+                "z_score": 1.347
+              },
+              "threshold": 2.0
+            },
+            "MCHC": {
+              "z_scores": [
+                0.8,
+                0.235,
+                0.423,
+                -1.458
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 318.0,
+                "z_score": -1.458
+              },
+              "threshold": 2.0
+            },
+            "NEUT%": {
+              "z_scores": [
+                0.256,
+                0.639,
+                -1.478,
+                0.584
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 50.0,
+                "z_score": -1.478
+              },
+              "threshold": 2.0
+            },
+            "LYMPH%": {
+              "z_scores": [
+                1.442,
+                -0.341,
+                -0.865,
+                -0.236
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-24",
+                "value": 32.1,
+                "z_score": 1.442
+              },
+              "threshold": 2.0
+            },
+            "MONO%": {
+              "z_scores": [
+                -0.476,
+                -0.512,
+                1.5,
+                -0.512
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 17.8,
+                "z_score": 1.5
+              },
+              "threshold": 2.0
+            },
+            "EO%": {
+              "z_scores": [
+                -0.322,
+                -0.967,
+                1.396,
+                -0.107
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 2.0,
+                "z_score": 1.396
+              },
+              "threshold": 2.0
+            },
+            "BASO%": {
+              "z_scores": [
+                0.0,
+                1.225,
+                0.0,
+                -1.225
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-30",
+                "value": 0.4,
+                "z_score": 1.225
+              },
+              "threshold": 2.0
+            },
+            "NEUT#": {
+              "z_scores": [
+                0.681,
+                0.244,
+                -1.475,
+                0.55
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 1.52,
+                "z_score": -1.475
+              },
+              "threshold": 2.0
+            },
+            "LYMPH#": {
+              "z_scores": [
+                0.888,
+                0.088,
+                -1.417,
+                0.442
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.91,
+                "z_score": -1.417
+              },
+              "threshold": 2.0
+            },
+            "MONO#": {
+              "z_scores": [
+                0.146,
+                -1.025,
+                1.317,
+                -0.439
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.54,
+                "z_score": 1.317
+              },
+              "threshold": 2.0
+            },
+            "EO#": {
+              "z_scores": [
+                0.833,
+                -1.167,
+                -0.5,
+                0.833
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-30",
+                "value": 0.05,
+                "z_score": -1.167
+              },
+              "threshold": 2.0
+            },
+            "BASO#": {
+              "z_scores": [
+                0.866,
+                0.866,
+                -0.866,
+                -0.866
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.01,
+                "z_score": -0.866
+              },
+              "threshold": 2.0
+            },
+            "RDW-SD": {
+              "z_scores": [
+                -0.541,
+                -1.063,
+                0.421,
+                1.183
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 52.5,
+                "z_score": 1.183
+              },
+              "threshold": 2.0
+            },
+            "RDW-CV": {
+              "z_scores": [
+                -0.748,
+                -0.898,
+                0.449,
+                1.197
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 15.1,
+                "z_score": 1.197
+              },
+              "threshold": 2.0
+            },
+            "MPV": {
+              "z_scores": [
+                -0.463,
+                0.0,
+                1.389,
+                -0.926
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 11.3,
+                "z_score": 1.389
+              },
+              "threshold": 2.0
+            },
+            "PDW": {
+              "z_scores": [
+                -0.941,
+                0.498,
+                1.162,
+                -0.719
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 12.8,
+                "z_score": 1.162
+              },
+              "threshold": 2.0
+            },
+            "CRP": {
+              "z_scores": [
+                -0.5,
+                -0.5,
+                1.5,
+                -0.5
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 17.44,
+                "z_score": 1.5
+              },
+              "threshold": 2.0
+            },
+            "hs-CRP": {
+              "z_scores": [
+                -0.303,
+                -0.642,
+                1.485,
+                -0.54
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 10.0,
+                "z_score": 1.485
+              },
+              "threshold": 2.0
+            }
+          }
+        },
+        "literature_results": {},
+        "interpretation": ""
+      },
+      {
+        "patient_id": "846552421134373347",
+        "analysis_results": {
+          "generated": "2026-06-11 11:22:18",
+          "n_reports": 4,
+          "date_range": {
+            "start": "2026-03-24",
+            "end": "2026-04-14"
+          },
+          "inflammation_classification": {
+            "labels": [
+              "过渡期",
+              "过渡期",
+              "急性期",
+              "过渡期"
+            ],
+            "report_dates": [
+              "2026-03-24",
+              "2026-03-30",
+              "2026-04-08",
+              "2026-04-14"
+            ]
+          },
+          "linear_regression": {
+            "hs-CRP": {
+              "slope": 0.571,
+              "intercept": 3.146,
+              "r2": 0.0333,
+              "trend": "上升",
+              "slope_per_day": 0.571,
+              "n_points": 4
+            },
+            "CRP": {
+              "slope": 0.744,
+              "intercept": 10.744,
+              "r2": 0.0667,
+              "trend": "上升",
+              "slope_per_day": 0.744,
+              "n_points": 4
+            },
+            "WBC": {
+              "slope": -0.394,
+              "intercept": 6.006,
+              "r2": 0.0962,
+              "trend": "下降",
+              "slope_per_day": -0.394,
+              "n_points": 4
+            },
+            "NEUT#": {
+              "slope": -0.242,
+              "intercept": 3.573,
+              "r2": 0.0743,
+              "trend": "下降",
+              "slope_per_day": -0.242,
+              "n_points": 4
+            },
+            "MONO%": {
+              "slope": 1.05,
+              "intercept": 7.95,
+              "r2": 0.0604,
+              "trend": "上升",
+              "slope_per_day": 1.05,
+              "n_points": 4
+            },
+            "RDW-SD": {
+              "slope": 1.66,
+              "intercept": 47.06,
+              "r2": 0.7388,
+              "trend": "上升",
+              "slope_per_day": 1.66,
+              "n_points": 4
+            },
+            "RDW-CV": {
+              "slope": 0.48,
+              "intercept": 13.58,
+              "r2": 0.8597,
+              "trend": "上升",
+              "slope_per_day": 0.48,
+              "n_points": 4
+            }
+          },
+          "correlation_matrix": {
+            "CRP~hs-CRP": 0.99,
+            "WBC~hs-CRP": -0.921,
+            "NEUT#~hs-CRP": -0.95,
+            "MONO%~hs-CRP": 0.992,
+            "RDW-SD~hs-CRP": 0.277,
+            "PCT~hs-CRP": -0.43,
+            "PLT~hs-CRP": -0.481,
+            "hs-CRP~CRP": 0.99,
+            "WBC~CRP": -0.966,
+            "NEUT#~CRP": -0.983,
+            "MONO%~CRP": 1.0,
+            "RDW-SD~CRP": 0.281,
+            "PCT~CRP": -0.467,
+            "PLT~CRP": -0.516,
+            "hs-CRP~WBC": -0.921,
+            "CRP~WBC": -0.966,
+            "NEUT#~WBC": 0.996,
+            "MONO%~WBC": -0.962,
+            "RDW-SD~WBC": -0.194,
+            "PCT~WBC": 0.577,
+            "PLT~WBC": 0.618,
+            "hs-CRP~NEUT#": -0.95,
+            "CRP~NEUT#": -0.983,
+            "WBC~NEUT#": 0.996,
+            "MONO%~NEUT#": -0.981,
+            "RDW-SD~NEUT#": -0.2,
+            "PCT~NEUT#": 0.565,
+            "PLT~NEUT#": 0.609,
+            "hs-CRP~MONO%": 0.992,
+            "CRP~MONO%": 1.0,
+            "WBC~MONO%": -0.962,
+            "NEUT#~MONO%": -0.981,
+            "RDW-SD~MONO%": 0.276,
+            "PCT~MONO%": -0.467,
+            "PLT~MONO%": -0.517,
+            "hs-CRP~RDW-SD": 0.277,
+            "CRP~RDW-SD": 0.281,
+            "WBC~RDW-SD": -0.194,
+            "NEUT#~RDW-SD": -0.2,
+            "MONO%~RDW-SD": 0.276,
+            "PCT~RDW-SD": 0.688,
+            "PLT~RDW-SD": 0.65,
+            "hs-CRP~PCT": -0.43,
+            "CRP~PCT": -0.467,
+            "WBC~PCT": 0.577,
+            "NEUT#~PCT": 0.565,
+            "MONO%~PCT": -0.467,
+            "RDW-SD~PCT": 0.688,
+            "PLT~PCT": 0.998,
+            "hs-CRP~PLT": -0.481,
+            "CRP~PLT": -0.516,
+            "WBC~PLT": 0.618,
+            "NEUT#~PLT": 0.609,
+            "MONO%~PLT": -0.517,
+            "RDW-SD~PLT": 0.65,
+            "PCT~PLT": 0.998
+          },
+          "descriptive_stats": {
+            "WBC": {
+              "count": 4,
+              "mean": 5.415,
+              "std": 1.64,
+              "min": 3.04,
+              "max": 6.7,
+              "cv": 0.3028
+            },
+            "RBC": {
+              "count": 4,
+              "mean": 4.55,
+              "std": 0.194,
+              "min": 4.31,
+              "max": 4.78,
+              "cv": 0.0427
+            },
+            "HGB": {
+              "count": 4,
+              "mean": 139.5,
+              "std": 5.802,
+              "min": 131.0,
+              "max": 144.0,
+              "cv": 0.0416
+            },
+            "HCT": {
+              "count": 4,
+              "mean": 42.85,
+              "std": 2.176,
+              "min": 40.0,
+              "max": 45.3,
+              "cv": 0.0508
+            },
+            "PLT": {
+              "count": 4,
+              "mean": 220.25,
+              "std": 86.842,
+              "min": 153.0,
+              "max": 336.0,
+              "cv": 0.3943
+            },
+            "PCT": {
+              "count": 4,
+              "mean": 0.225,
+              "std": 0.079,
+              "min": 0.16,
+              "max": 0.33,
+              "cv": 0.349
+            },
+            "MCV": {
+              "count": 1,
+              "mean": 94.8,
+              "std": 0,
+              "min": 94.8,
+              "max": 94.8,
+              "cv": 0.0
+            },
+            "MCH": {
+              "count": 4,
+              "mean": 30.65,
+              "std": 0.557,
+              "min": 30.1,
+              "max": 31.4,
+              "cv": 0.0182
+            },
+            "MCHC": {
+              "count": 4,
+              "mean": 325.75,
+              "std": 5.315,
+              "min": 318.0,
+              "max": 330.0,
+              "cv": 0.0163
+            },
+            "NEUT%": {
+              "count": 4,
+              "mean": 58.1,
+              "std": 5.479,
+              "min": 50.0,
+              "max": 61.6,
+              "cv": 0.0943
+            },
+            "LYMPH%": {
+              "count": 4,
+              "mean": 30.725,
+              "std": 0.954,
+              "min": 29.9,
+              "max": 32.1,
+              "cv": 0.031
+            },
+            "MONO%": {
+              "count": 4,
+              "mean": 9.525,
+              "std": 5.517,
+              "min": 6.7,
+              "max": 17.8,
+              "cv": 0.5793
+            },
+            "EO%": {
+              "count": 4,
+              "mean": 1.35,
+              "std": 0.465,
+              "min": 0.9,
+              "max": 2.0,
+              "cv": 0.3448
+            },
+            "BASO%": {
+              "count": 4,
+              "mean": 0.3,
+              "std": 0.082,
+              "min": 0.2,
+              "max": 0.4,
+              "cv": 0.2722
+            },
+            "NEUT#": {
+              "count": 4,
+              "mean": 3.21,
+              "std": 1.146,
+              "min": 1.52,
+              "max": 3.99,
+              "cv": 0.357
+            },
+            "LYMPH#": {
+              "count": 4,
+              "mean": 1.673,
+              "std": 0.538,
+              "min": 0.91,
+              "max": 2.15,
+              "cv": 0.3216
+            },
+            "MONO#": {
+              "count": 4,
+              "mean": 0.45,
+              "std": 0.068,
+              "min": 0.38,
+              "max": 0.54,
+              "cv": 0.1518
+            },
+            "EO#": {
+              "count": 4,
+              "mean": 0.068,
+              "std": 0.015,
+              "min": 0.05,
+              "max": 0.08,
+              "cv": 0.2222
+            },
+            "BASO#": {
+              "count": 4,
+              "mean": 0.015,
+              "std": 0.006,
+              "min": 0.01,
+              "max": 0.02,
+              "cv": 0.3849
+            },
+            "RDW-SD": {
+              "count": 4,
+              "mean": 49.55,
+              "std": 2.493,
+              "min": 46.9,
+              "max": 52.5,
+              "cv": 0.0503
+            },
+            "RDW-CV": {
+              "count": 4,
+              "mean": 14.3,
+              "std": 0.668,
+              "min": 13.7,
+              "max": 15.1,
+              "cv": 0.0467
+            },
+            "MPV": {
+              "count": 4,
+              "mean": 10.4,
+              "std": 0.648,
+              "min": 9.8,
+              "max": 11.3,
+              "cv": 0.0623
+            },
+            "PDW": {
+              "count": 4,
+              "mean": 11.75,
+              "std": 0.904,
+              "min": 10.9,
+              "max": 12.8,
+              "cv": 0.0769
+            },
+            "CRP": {
+              "count": 4,
+              "mean": 11.86,
+              "std": 3.72,
+              "min": 10.0,
+              "max": 17.44,
+              "cv": 0.3137
+            },
+            "hs-CRP": {
+              "count": 4,
+              "mean": 4.002,
+              "std": 4.039,
+              "min": 1.41,
+              "max": 10.0,
+              "cv": 1.0092
+            }
+          },
+          "abnormal_summary": {
+            "WBC": {
+              "ref_range": "3.5-9.5",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "PCT": {
+              "ref_range": "0.108-0.272",
+              "abnormal_dates": [
+                "2026-04-14"
+              ],
+              "n_abnormal": 1
+            },
+            "MONO%": {
+              "ref_range": "2-10",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "NEUT#": {
+              "ref_range": "1.8-6.3",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "LYMPH#": {
+              "ref_range": "1.1-3.2",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "RDW-SD": {
+              "ref_range": "37-50",
+              "abnormal_dates": [
+                "2026-04-08",
+                "2026-04-14"
+              ],
+              "n_abnormal": 2
+            },
+            "RDW-CV": {
+              "ref_range": "0-15",
+              "abnormal_dates": [
+                "2026-04-14"
+              ],
+              "n_abnormal": 1
+            },
+            "CRP": {
+              "ref_range": "0-10",
+              "abnormal_dates": [
+                "2026-04-08"
+              ],
+              "n_abnormal": 1
+            },
+            "hs-CRP": {
+              "ref_range": "0-1.0",
+              "abnormal_dates": [
+                "2026-03-24",
+                "2026-03-30",
+                "2026-04-08",
+                "2026-04-14"
+              ],
+              "n_abnormal": 4
+            }
+          },
+          "moving_average": {
+            "hs-CRP": {
+              "moving_avg": [
+                2.78,
+                2.095,
+                5.705,
+                5.91
+              ],
+              "rolling_std": [
+                0.0,
+                0.969,
+                6.074,
+                5.784
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "CRP": {
+              "moving_avg": [
+                10.0,
+                10.0,
+                13.72,
+                13.72
+              ],
+              "rolling_std": [
+                0.0,
+                0.0,
+                5.261,
+                5.261
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "WBC": {
+              "moving_avg": [
+                6.7,
+                6.18,
+                4.35,
+                4.65
+              ],
+              "rolling_std": [
+                0.0,
+                0.735,
+                1.853,
+                2.277
+              ],
+              "trend": "下降",
+              "window": 2
+            },
+            "NEUT#": {
+              "moving_avg": [
+                3.99,
+                3.74,
+                2.505,
+                2.68
+              ],
+              "rolling_std": [
+                0.0,
+                0.354,
+                1.393,
+                1.64
+              ],
+              "trend": "下降",
+              "window": 2
+            },
+            "MONO%": {
+              "moving_avg": [
+                6.9,
+                6.8,
+                12.25,
+                12.25
+              ],
+              "rolling_std": [
+                0.0,
+                0.141,
+                7.849,
+                7.849
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "RDW-SD": {
+              "moving_avg": [
+                48.2,
+                47.55,
+                48.75,
+                51.55
+              ],
+              "rolling_std": [
+                0.0,
+                0.919,
+                2.616,
+                1.344
+              ],
+              "trend": "上升",
+              "window": 2
+            },
+            "RDW-CV": {
+              "moving_avg": [
+                13.8,
+                13.75,
+                14.15,
+                14.85
+              ],
+              "rolling_std": [
+                0.0,
+                0.071,
+                0.636,
+                0.354
+              ],
+              "trend": "上升",
+              "window": 2
+            }
+          },
+          "cv_stability": {
+            "WBC": {
+              "cv": 0.3028,
+              "mean": 5.415,
+              "std": 1.64,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.119,
+                0.3674,
+                0.3434
+              ]
+            },
+            "RBC": {
+              "cv": 0.0427,
+              "mean": 4.55,
+              "std": 0.194,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0109,
+                0.0326,
+                0.0518
+              ]
+            },
+            "HGB": {
+              "cv": 0.0416,
+              "mean": 139.5,
+              "std": 5.802,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.005,
+                0.0441,
+                0.0491
+              ]
+            },
+            "HCT": {
+              "cv": 0.0508,
+              "mean": 42.85,
+              "std": 2.176,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0016,
+                0.0419,
+                0.0622
+              ]
+            },
+            "PLT": {
+              "cv": 0.3943,
+              "mean": 220.25,
+              "std": 86.842,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.303,
+                0.2686,
+                0.4916
+              ]
+            },
+            "PCT": {
+              "cv": 0.349,
+              "mean": 0.225,
+              "std": 0.079,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.2828,
+                0.2294,
+                0.4336
+              ]
+            },
+            "MCH": {
+              "cv": 0.0182,
+              "mean": 30.65,
+              "std": 0.557,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0159,
+                0.0166,
+                0.0099
+              ]
+            },
+            "MCHC": {
+              "cv": 0.0163,
+              "mean": 325.75,
+              "std": 5.315,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0065,
+                0.0047,
+                0.017
+              ]
+            },
+            "NEUT%": {
+              "cv": 0.0943,
+              "mean": 58.1,
+              "std": 5.479,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0245,
+                0.1084,
+                0.1147
+              ]
+            },
+            "LYMPH%": {
+              "cv": 0.031,
+              "mean": 30.725,
+              "std": 0.954,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0385,
+                0.0374,
+                0.0106
+              ]
+            },
+            "MONO%": {
+              "cv": 0.5793,
+              "mean": 9.525,
+              "std": 5.517,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0208,
+                0.6068,
+                0.6162
+              ]
+            },
+            "EO%": {
+              "cv": 0.3448,
+              "mean": 1.35,
+              "std": 0.465,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.202,
+                0.4161,
+                0.3977
+              ]
+            },
+            "BASO%": {
+              "cv": 0.2722,
+              "mean": 0.3,
+              "std": 0.082,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.202,
+                0.1732,
+                0.3333
+              ]
+            },
+            "NEUT#": {
+              "cv": 0.357,
+              "mean": 3.21,
+              "std": 1.146,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0945,
+                0.4353,
+                0.424
+              ]
+            },
+            "LYMPH#": {
+              "cv": 0.3216,
+              "mean": 1.672,
+              "std": 0.538,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.1571,
+                0.3952,
+                0.3509
+              ]
+            },
+            "MONO#": {
+              "cv": 0.1518,
+              "mean": 0.45,
+              "std": 0.068,
+              "stability": "中等变异",
+              "risk_level": "中",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.1347,
+                0.1739,
+                0.1864
+              ]
+            },
+            "EO#": {
+              "cv": 0.2222,
+              "mean": 0.068,
+              "std": 0.015,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.3264,
+                0.2412,
+                0.2412
+              ]
+            },
+            "BASO#": {
+              "cv": 0.3849,
+              "mean": 0.015,
+              "std": 0.006,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0,
+                0.3464,
+                0.433
+              ]
+            },
+            "RDW-SD": {
+              "cv": 0.0503,
+              "mean": 49.55,
+              "std": 2.493,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0193,
+                0.0386,
+                0.057
+              ]
+            },
+            "RDW-CV": {
+              "cv": 0.0467,
+              "mean": 14.3,
+              "std": 0.668,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0051,
+                0.0352,
+                0.049
+              ]
+            },
+            "MPV": {
+              "cv": 0.0623,
+              "mean": 10.4,
+              "std": 0.648,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0207,
+                0.0589,
+                0.0719
+              ]
+            },
+            "PDW": {
+              "cv": 0.0769,
+              "mean": 11.75,
+              "std": 0.904,
+              "stability": "稳定",
+              "risk_level": "低",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0796,
+                0.0812,
+                0.0716
+              ]
+            },
+            "CRP": {
+              "cv": 0.3137,
+              "mean": 11.86,
+              "std": 3.72,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.0,
+                0.3442,
+                0.3442
+              ]
+            },
+            "hs-CRP": {
+              "cv": 1.0092,
+              "mean": 4.002,
+              "std": 4.039,
+              "stability": "高变异",
+              "risk_level": "高",
+              "n_points": 4,
+              "rolling_cv": [
+                null,
+                0.4624,
+                0.9757,
+                1.0987
+              ]
+            }
+          },
+          "zscore_outliers": {
+            "WBC": {
+              "z_scores": [
+                0.784,
+                0.149,
+                -1.448,
+                0.515
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 3.04,
+                "z_score": -1.448
+              },
+              "threshold": 2.0
+            },
+            "RBC": {
+              "z_scores": [
+                -0.155,
+                0.206,
+                -1.237,
+                1.185
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 4.31,
+                "z_score": -1.237
+              },
+              "threshold": 2.0
+            },
+            "HGB": {
+              "z_scores": [
+                0.431,
+                0.259,
+                -1.465,
+                0.776
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 131.0,
+                "z_score": -1.465
+              },
+              "threshold": 2.0
+            },
+            "HCT": {
+              "z_scores": [
+                0.069,
+                0.115,
+                -1.31,
+                1.126
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 40.0,
+                "z_score": -1.31
+              },
+              "threshold": 2.0
+            },
+            "PLT": {
+              "z_scores": [
+                0.204,
+                -0.763,
+                -0.774,
+                1.333
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 336.0,
+                "z_score": 1.333
+              },
+              "threshold": 2.0
+            },
+            "PCT": {
+              "z_scores": [
+                0.191,
+                -0.828,
+                -0.7,
+                1.337
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 0.33,
+                "z_score": 1.337
+              },
+              "threshold": 2.0
+            },
+            "MCH": {
+              "z_scores": [
+                1.347,
+                0.09,
+                -0.449,
+                -0.988
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-24",
+                "value": 31.4,
+                "z_score": 1.347
+              },
+              "threshold": 2.0
+            },
+            "MCHC": {
+              "z_scores": [
+                0.8,
+                0.235,
+                0.423,
+                -1.458
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 318.0,
+                "z_score": -1.458
+              },
+              "threshold": 2.0
+            },
+            "NEUT%": {
+              "z_scores": [
+                0.256,
+                0.639,
+                -1.478,
+                0.584
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 50.0,
+                "z_score": -1.478
+              },
+              "threshold": 2.0
+            },
+            "LYMPH%": {
+              "z_scores": [
+                1.442,
+                -0.341,
+                -0.865,
+                -0.236
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-24",
+                "value": 32.1,
+                "z_score": 1.442
+              },
+              "threshold": 2.0
+            },
+            "MONO%": {
+              "z_scores": [
+                -0.476,
+                -0.512,
+                1.5,
+                -0.512
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 17.8,
+                "z_score": 1.5
+              },
+              "threshold": 2.0
+            },
+            "EO%": {
+              "z_scores": [
+                -0.322,
+                -0.967,
+                1.396,
+                -0.107
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 2.0,
+                "z_score": 1.396
+              },
+              "threshold": 2.0
+            },
+            "BASO%": {
+              "z_scores": [
+                0.0,
+                1.225,
+                0.0,
+                -1.225
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-30",
+                "value": 0.4,
+                "z_score": 1.225
+              },
+              "threshold": 2.0
+            },
+            "NEUT#": {
+              "z_scores": [
+                0.681,
+                0.244,
+                -1.475,
+                0.55
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 1.52,
+                "z_score": -1.475
+              },
+              "threshold": 2.0
+            },
+            "LYMPH#": {
+              "z_scores": [
+                0.888,
+                0.088,
+                -1.417,
+                0.442
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.91,
+                "z_score": -1.417
+              },
+              "threshold": 2.0
+            },
+            "MONO#": {
+              "z_scores": [
+                0.146,
+                -1.025,
+                1.317,
+                -0.439
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.54,
+                "z_score": 1.317
+              },
+              "threshold": 2.0
+            },
+            "EO#": {
+              "z_scores": [
+                0.833,
+                -1.167,
+                -0.5,
+                0.833
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-03-30",
+                "value": 0.05,
+                "z_score": -1.167
+              },
+              "threshold": 2.0
+            },
+            "BASO#": {
+              "z_scores": [
+                0.866,
+                0.866,
+                -0.866,
+                -0.866
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 0.01,
+                "z_score": -0.866
+              },
+              "threshold": 2.0
+            },
+            "RDW-SD": {
+              "z_scores": [
+                -0.541,
+                -1.063,
+                0.421,
+                1.183
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 52.5,
+                "z_score": 1.183
+              },
+              "threshold": 2.0
+            },
+            "RDW-CV": {
+              "z_scores": [
+                -0.748,
+                -0.898,
+                0.449,
+                1.197
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-14",
+                "value": 15.1,
+                "z_score": 1.197
+              },
+              "threshold": 2.0
+            },
+            "MPV": {
+              "z_scores": [
+                -0.463,
+                0.0,
+                1.389,
+                -0.926
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 11.3,
+                "z_score": 1.389
+              },
+              "threshold": 2.0
+            },
+            "PDW": {
+              "z_scores": [
+                -0.941,
+                0.498,
+                1.162,
+                -0.719
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 12.8,
+                "z_score": 1.162
+              },
+              "threshold": 2.0
+            },
+            "CRP": {
+              "z_scores": [
+                -0.5,
+                -0.5,
+                1.5,
+                -0.5
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 17.44,
+                "z_score": 1.5
+              },
+              "threshold": 2.0
+            },
+            "hs-CRP": {
+              "z_scores": [
+                -0.303,
+                -0.642,
+                1.485,
+                -0.54
+              ],
+              "outliers_mild": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "outliers_severe": {
+                "count": 0,
+                "dates": [],
+                "values": []
+              },
+              "max_deviation": {
+                "date": "2026-04-08",
+                "value": 10.0,
+                "z_score": 1.485
+              },
+              "threshold": 2.0
+            }
+          }
+        },
+        "literature_results": {},
+        "interpretation": ""
+      }
+    ],
+    "signature": {
+      "instructions": "文献解读的输入输出签名",
+      "fields": [
+        {
+          "prefix": "Patient Id:",
+          "description": "患者ID(脱敏)"
+        },
+        {
+          "prefix": "Analysis Results:",
+          "description": "数据分析结果,包含异常指标和统计信息"
+        },
+        {
+          "prefix": "Literature Results:",
+          "description": "文献检索结果,包含相关论文摘要"
+        },
+        {
+          "prefix": "Reasoning:",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Interpretation:",
+          "description": "专业的循证医学解读,包括:\n1. 异常指标的病理生理机制解释\n2. 与文献证据的关联分析\n3. 临床意义和建议\n4. 需要进一步检查的项目"
+        },
+        {
+          "prefix": "Confidence:",
+          "description": "解读的可信度评分(0-1)"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.14",
+      "dspy": "3.2.1",
+      "cloudpickle": "3.1"
+    }
+  }
+}
