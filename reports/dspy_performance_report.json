@@ -1,0 +1,164 @@
+{
+  "generated_at": "2026-06-11 16:43:15",
+  "summary": {
+    "standard_mode": {
+      "avg_length": 3609,
+      "avg_score": 8.33,
+      "avg_sections": 4.0,
+      "count": 6
+    },
+    "dspy_mode": {
+      "avg_length": 219,
+      "avg_score": 5.0,
+      "avg_sections": 5.0,
+      "count": 1
+    },
+    "improvement": {
+      "length": "+-93.9%",
+      "score": "+-40.0%",
+      "sections": "5.0 vs 4.0"
+    }
+  },
+  "detailed_results": {
+    "standard": [
+      {
+        "length": 5,
+        "has_sections": false,
+        "has_mechanism": false,
+        "has_clinical_significance": false,
+        "has_recommendations": false,
+        "section_count": 0,
+        "length_score": "poor",
+        "found_sections": [],
+        "structure_score": "poor",
+        "overall_score": 5.0
+      },
+      {
+        "length": 5154,
+        "has_sections": false,
+        "has_mechanism": false,
+        "has_clinical_significance": false,
+        "has_recommendations": false,
+        "section_count": 4,
+        "length_score": "excellent",
+        "found_sections": [
+          "临床意义",
+          "建议",
+          "机制",
+          "治疗"
+        ],
+        "structure_score": "excellent",
+        "overall_score": 9.0
+      },
+      {
+        "length": 4169,
+        "has_sections": false,
+        "has_mechanism": false,
+        "has_clinical_significance": false,
+        "has_recommendations": false,
+        "section_count": 5,
+        "length_score": "excellent",
+        "found_sections": [
+          "临床意义",
+          "建议",
+          "机制",
+          "治疗",
+          "诊断"
+        ],
+        "structure_score": "excellent",
+        "overall_score": 9.0
+      },
+      {
+        "length": 4162,
+        "has_sections": false,
+        "has_mechanism": false,
+        "has_clinical_significance": false,
+        "has_recommendations": false,
+        "section_count": 6,
+        "length_score": "excellent",
+        "found_sections": [
+          "病理生理",
+          "临床意义",
+          "建议",
+          "机制",
+          "治疗",
+          "诊断"
+        ],
+        "structure_score": "excellent",
+        "overall_score": 9.0
+      },
+      {
+        "length": 3801,
+        "has_sections": false,
+        "has_mechanism": false,
+        "has_clinical_significance": false,
+        "has_recommendations": false,
+        "section_count": 4,
+        "length_score": "excellent",
+        "found_sections": [
+          "临床意义",
+          "建议",
+          "机制",
+          "治疗"
+        ],
+        "structure_score": "excellent",
+        "overall_score": 9.0
+      },
+      {
+        "length": 4362,
+        "has_sections": false,
+        "has_mechanism": false,
+        "has_clinical_significance": false,
+        "has_recommendations": false,
+        "section_count": 5,
+        "length_score": "excellent",
+        "found_sections": [
+          "临床意义",
+          "建议",
+          "机制",
+          "治疗",
+          "诊断"
+        ],
+        "structure_score": "excellent",
+        "overall_score": 9.0
+      }
+    ],
+    "dspy": [
+      {
+        "length": 219,
+        "has_sections": false,
+        "has_mechanism": false,
+        "has_clinical_significance": false,
+        "has_recommendations": false,
+        "section_count": 5,
+        "length_score": "poor",
+        "found_sections": [
+          "病理生理",
+          "临床意义",
+          "建议",
+          "机制",
+          "治疗"
+        ],
+        "structure_score": "excellent",
+        "overall_score": 5.0
+      }
+    ],
+    "improvement": {
+      "length": "+-93.9%",
+      "score": "+-40.0%",
+      "sections": "5.0 vs 4.0"
+    },
+    "standard_stats": {
+      "avg_length": 3609,
+      "avg_score": 8.33,
+      "avg_sections": 4.0,
+      "count": 6
+    },
+    "dspy_stats": {
+      "avg_length": 219,
+      "avg_score": 5.0,
+      "avg_sections": 5.0,
+      "count": 1
+    }
+  }
+}
