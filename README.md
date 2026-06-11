@@ -28,6 +28,7 @@
 | **自动化** | 9 步 Pipeline 一键运行,中间产物可追溯 |
 | **可解释** | 7 张统计图表 + 完整日志 + 错误回溯 |
 | **LLM 增强** | 集成 DSPy,自动优化提示词,支持标准 vs 优化双模式对比 |
+| **跨平台** | Windows / Linux 双平台自动适配,控制台编码自动修复 |
 | **可扩展** | 模块化设计,新增分析维度只需实现标准接口 |
 
 ---
@@ -98,21 +99,28 @@ python -m lab_analysis.literature_interpreter_dspy --patient-id <id> --use-dspy
 
 #### `lab_analysis/dspy_modules/prompt_inspector.py`
 
-DSPy 模块的 prompt 提取器,提供 3 个核心函数:
+DSPy 模块的 prompt 提取器,提供 5 个核心函数:
 
 ```python
 from lab_analysis.dspy_modules.prompt_inspector import (
     extract_module_prompts,      # 提取模块所有 predictor 的 prompt 信息
     save_prompts_to_json,         # 保存为 JSON
     save_prompts_to_markdown,     # 保存为可读 Markdown
+    get_actual_dspy_prompt,       # 获取 DSPy 实际发送给 LLM 的完整 prompt
+    save_actual_dspy_prompt,      # 保存 actual prompt 到 txt 文件
 )
 
 prompts_data = extract_module_prompts(my_dspy_module, "literature_interpreter")
 save_prompts_to_json("literature_interpreter", prompts_data, output_dir)
 save_prompts_to_markdown("literature_interpreter", prompts_data, output_dir)
+
+# 捕获并保存 DSPy 实际 LLM prompt（含 ChainOfThought 格式 + few-shot 示例）
+save_actual_dspy_prompt("literature_interpreter", prompts_dir)
 ```
 
 提取内容: Signature instructions、输入/输出字段描述、Few-shot demos、DSPy 内部完整 prompt 重建。
+
+**自动保存**: 4 个 DSPy 模块（`literature_interpreter`、`mri_analyzer`、`final_report_generator`、`lab_data_extractor`）在每次推理后自动调用 `save_actual_dspy_prompt()`,无需用户手动调用。标准 prompt (`*_standard_prompt.txt`) 与 DSPy 实际 prompt (`*_dspy_actual_prompt.txt`) 并排保存,便于 diff 对比。
 
 #### `examples/dspy_prompt_comparison.py`
 
@@ -160,7 +168,7 @@ Lab-Analysis/
 │   ├── upload_to_feishu_backup.py    # 飞书上传备份实现
 │   ├── patient_id.py                 # 患者 ID 脱敏
 │   ├── error_logger.py               # 错误日志记录
-│   ├── utils.py                      # 通用工具
+│   ├── utils.py                      # 通用工具(含 is_windows / fix_console_encoding 平台适配)
 │   └── dspy_modules/                 # 🧠 DSPy 优化模块
 │       ├── __init__.py               # 包导出
 │       ├── literature_interpreter.py # DSPy 文献解读
@@ -390,17 +398,21 @@ data/{patient_id}/{timestamp}/
 ├── 03_literature/                        # 文献解读工作目录
 │   └── dspy_prompts/
 │       ├── literature_interpreter_standard_prompt.txt
+│       ├── literature_interpreter_dspy_actual_prompt.txt  ← 实际 LLM 发送 prompt
 │       ├── literature_interpreter_dspy_prompts.json
 │       └── literature_interpreter_dspy_prompts.md
 ├── 04_reports/                           # 报告生成工作目录
 │   └── dspy_prompts/
 │       ├── final_report_standard_prompt.txt
+│       ├── final_report_dspy_actual_prompt.txt
 │       ├── final_report_dspy_prompts.json
 │       └── final_report_dspy_prompts.md
 └── dspy_prompts/                         # 影像/检验 prompt
     ├── mri_analyzer_standard_prompt.txt
+    ├── mri_analyzer_dspy_actual_prompt.txt
     ├── mri_analyzer_dspy_prompts.json
     ├── mri_analyzer_dspy_prompts.md
+    ├── lab_data_extractor_dspy_actual_prompt.txt
     ├── lab_data_extractor_dspy_prompts.json
     └── lab_data_extractor_dspy_prompts.md
 ```
@@ -458,6 +470,7 @@ data/{patient_id}/{timestamp}/
 - 路径统一使用 `pathlib.Path`
 - 优先 `WORK_ROOT` + 相对路径
 - 双模式脚本命名 `<module>_dspy.py`
+- 平台适配: 使用 `utils.is_windows()` 判断操作系统,`utils.fix_console_encoding()` 统一控制台编码(在 `__init__.py` 导入时自动调用);避免硬编码路径分隔符,统一使用 `Path` 或 `os.sep`
 
 ### 添加新模块
 
