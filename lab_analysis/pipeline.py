@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument("--skip-llm", action="store_true", help="跳过 LLM 循证解读步骤")
     parser.add_argument("--skip-imaging", action="store_true", help="跳过影像分析步骤")
     parser.add_argument("--skip-ingest", action="store_true", help="跳过数据摄入步骤（使用已有数据）")
+    parser.add_argument("--use-dspy", action="store_true", help="使用 DSPy 优化版本进行文献解读")
     parser.add_argument("--ingest-lab", type=str, nargs="*", help="检验报告图片路径列表")
     parser.add_argument("--ingest-dicom-zip", type=str, help="DICOM ZIP文件路径")
     parser.add_argument("--ingest-dicom-dir", type=str, help="DICOM已解压目录路径")
@@ -557,7 +558,13 @@ def main():
     if args.skip_llm:
         print("\n[跳过] 循证解读（--skip-llm）")
     else:
-        rc = run_step("⑥ 循证解读 (literature_interpreter)", "literature_interpreter", pid_arg, ts_env)
+        # 选择文献解读模式
+        if args.use_dspy:
+            print("\n[DSPy] 使用 DSPy 优化版本进行文献解读...")
+            rc = run_step("⑥ 循证解读 (literature_interpreter_dspy)", "literature_interpreter_dspy", pid_arg, ts_env, extra_args=["--use-dspy"])
+        else:
+            rc = run_step("⑥ 循证解读 (literature_interpreter)", "literature_interpreter", pid_arg, ts_env)
+        
         if rc != 0:
             print("[!] literature_interpreter 失败（非致命，继续）")
 
