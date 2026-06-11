@@ -33,3 +33,8 @@ data/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Pipeline runtime logs & debug artifacts
+*.log
+.ingest_log.json
+.ingest_debug.log
