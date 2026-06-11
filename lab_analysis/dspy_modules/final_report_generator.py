@@ -257,6 +257,8 @@ def run_dspy_final_report(patient_id: str, data_dir: Path,
     try:
         prompts_dir = data_dir / "04_reports" / "dspy_prompts"
         save_dspy_prompts(module, prompts_dir)
+        from .prompt_inspector import save_actual_dspy_prompt
+        save_actual_dspy_prompt("final_report_generator", prompts_dir)
     except Exception as e:
         print(f"  [警告] 保存 DSPy prompts 失败: {e}")
 

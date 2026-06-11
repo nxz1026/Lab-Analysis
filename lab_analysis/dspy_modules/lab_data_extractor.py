@@ -245,6 +245,8 @@ def run_dspy_extraction(image_path: Path, initial_ocr_text: str = ""):
         prompts_dir = Path("data/lab_extractor_dspy_prompts")
         prompts_dir.mkdir(parents=True, exist_ok=True)
         save_dspy_prompts(module, prompts_dir)
+        from .prompt_inspector import save_actual_dspy_prompt
+        save_actual_dspy_prompt("lab_data_extractor", prompts_dir)
         structured_data['prompts_dir'] = str(prompts_dir)
     except Exception as e:
         print(f"  [警告] 保存 DSPy prompts 失败: {e}")
