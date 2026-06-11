@@ -13,6 +13,7 @@ utils.py - 通用工具函数
 import json
 import os
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
@@ -32,6 +33,30 @@ except ImportError:
 
 # 工作区根目录
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+
+
+def is_windows() -> bool:
+    """检测当前操作系统是否为 Windows"""
+    return sys.platform == "win32"
+
+
+def fix_console_encoding():
+    """
+    修复 Windows 控制台编码，确保中文正常输出。
+
+    Windows 默认控制台编码为 GBK（代码页 936），Python 3.7+ 提供
+    ``reconfigure(encoding='utf-8')`` 方法安全地更改编码，无需替换流对象。
+    在 Linux/macOS 上无操作。
+    """
+    if not is_windows():
+        return
+    try:
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8')
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 
 def build_paths(patient_id: str) -> dict:

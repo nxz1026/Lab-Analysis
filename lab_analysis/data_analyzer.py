@@ -5,7 +5,7 @@ data_analyzer.py
 对指定病人的 lab_metrics.csv 进行统计分析和建模，输出 analysis_results.json + 4张图。
 
 用法：python data_analyzer.py --patient-id YOUR_PATIENT_ID
-依赖：~/wiki/.venv/bin/python (pandas, numpy, scipy, scikit-learn)
+依赖：pandas, numpy, scipy, scikit-learn（项目 .venv 中安装）
 """
 
 import os

@@ -194,8 +194,8 @@ def run_dspy_extraction(image_path: Path, initial_ocr_text: str = ""):
     import dspy
     from dotenv import load_dotenv
     
-    # 加载环境变量
     load_dotenv()
+    work_root = Path(os.environ.get("WORK_ROOT", Path.cwd()))
     
     # 配置 DSPy LM
     api_key = os.environ.get('ZHIPU_API_KEY') or os.environ.get('DEEPSEEK_API_KEY')
@@ -242,7 +242,7 @@ def run_dspy_extraction(image_path: Path, initial_ocr_text: str = ""):
 
     # 保存优化后的 prompt 信息 (可选手动指定输出目录)
     try:
-        prompts_dir = Path("data/lab_extractor_dspy_prompts")
+        prompts_dir = work_root / "data" / "lab_extractor_dspy_prompts"
         prompts_dir.mkdir(parents=True, exist_ok=True)
         save_dspy_prompts(module, prompts_dir)
         from .prompt_inspector import save_actual_dspy_prompt

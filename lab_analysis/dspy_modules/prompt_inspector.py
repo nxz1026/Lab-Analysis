@@ -8,6 +8,13 @@ DSPy Prompt 提取工具
 - 输入/输出字段描述
 - Few-shot 示例 (demos)
 - DSPy 内部生成的完整 prompt
+- 从 LM history 中捕获实际发送给 LLM 的完整 prompt
+
+保存的文件命名约定:
+  - ``{module}_dspy_prompts.json``       — Signature + 字段 + demos 结构信息
+  - ``{module}_dspy_prompts.md``          — 同上, Markdown 可读版
+  - ``{module}_dspy_actual_prompt.txt``   — 实际发送给 LLM 的完整 prompt 文本
+  - ``{module}_standard_prompt.txt``      — 标准模式 (非 DSPy) 的手写 prompt
 """
 
 from __future__ import annotations

@@ -121,7 +121,7 @@ if result.stderr:
 # 5. 运行对比工具
 print("\n[Step 3] Running comparison tool...")
 result = subprocess.run(
-    [sys.executable, "examples/dspy_prompt_comparison.py",
+    [sys.executable, str(WORK_ROOT / "examples" / "dspy_prompt_comparison.py"),
      "--data-dir", str(DATA_DIR)],
     cwd=str(WORK_ROOT),
     capture_output=True,
