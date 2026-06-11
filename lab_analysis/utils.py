@@ -57,6 +57,7 @@ def build_paths(patient_id: str) -> dict:
         "raw_lab": WORK_ROOT / "raw" / f"patient_{patient_id}" / "lab",
         "raw_imaging": WORK_ROOT / "raw" / f"patient_{patient_id}" / "imaging",
         "output_dir": data_dir,
+        "analyzed_dir": data_dir / "02_analyzed",  # 添加 analyzed_dir
     }
 
 

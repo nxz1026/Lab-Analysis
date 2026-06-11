@@ -155,7 +155,7 @@ def main():
     import sys
     for label, path in [("analysis_results", args.analysis), ("literature_results", args.lit)]:
         if path and not Path(path).exists():
-            print(f"❌ 前置文件不存在: [{label}] {path}")
+            print(f"[错误] 前置文件不存在: [{label}] {path}")
             sys.exit(1)
 
     print("构建 prompt...")
@@ -180,11 +180,11 @@ def main():
     md_content = f"# 循证医学解读报告\n\n**生成时间**: {output['generated']}\n**模型**: {output['model']}\n\n---\n\n{response}\n"
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(md_content)
-    print(f"\n✅ 文献解读完成 → {args.out}")
-    print(f"📄 Markdown 已保存: {md_path}")
-    print("\n" + "="*60)
-    print(response)
-    print("="*60)
+    print(f"\n[成功] 文献解读完成 → {args.out}")
+    print(f"[报告] Markdown 已保存: {md_path}")
+    # print("\n" + "="*60)
+    # print(response)  # 跳过打印，避免 Windows GBK 编码问题
+    # print("="*60)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ data_analyzer.py
 依赖：~/wiki/.venv/bin/python (pandas, numpy, scipy, scikit-learn)
 """
 
+import os
 import json
 import sys
 import argparse
@@ -751,7 +752,7 @@ def run(patient_id: str):
     print(f"  病人: {patient_id}")
 
     if not paths["metrics_csv"].exists():
-        print(f"❌ 找不到前置文件: {paths['metrics_csv']}")
+        print(f"[错误] 找不到前置文件: {paths['metrics_csv']}")
         print(f"   请先运行 data_loader.py --patient-id {patient_id}")
         sys.exit(1)
 
@@ -845,9 +846,9 @@ def run(patient_id: str):
     print(f"\nCV稳定性分析完成: {len(cv_results)} 个指标")
     high_cv = [(m, d) for m, d in cv_results.items() if d['risk_level'] == '高']
     if high_cv:
-        print(f"  ⚠️  高变异指标: {', '.join([m for m, _ in high_cv])}")
+        print(f"  [警告] 高变异指标: {', '.join([m for m, _ in high_cv])}")
     else:
-        print(f"  ✅ 所有指标稳定性良好")
+        print(f"  [成功] 所有指标稳定性良好")
 
     # ── 8. Z-score异常检测 ───────────────────────────────────
     zscore_results = zscore_outlier_detection(df, threshold=2.0)
@@ -858,7 +859,7 @@ def run(patient_id: str):
     if severe_outliers > 0:
         print(f"  🚨 发现 {severe_outliers} 个严重异常值 (|Z|>3)")
     if total_outliers > 0:
-        print(f"  ⚠️  发现 {total_outliers} 个轻度异常值 (|Z|>2)")
+        print(f"  [警告] 发现 {total_outliers} 个轻度异常值 (|Z|>2)")
     paths["analyzed_dir"].mkdir(parents=True, exist_ok=True)
     paths["reports_dir"].mkdir(parents=True, exist_ok=True)
     with open(paths["output_json"], "w", encoding="utf-8") as f:

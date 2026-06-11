@@ -70,7 +70,7 @@ def run_vision_extractor(image_path: Path, interactive: bool = False) -> dict:
         cmd.append("--interactive")
     
     print(f"\n{'='*60}")
-    print(f"🔍 正在识别: {image_path.name}")
+    print(f"[识别] 正在识别: {image_path.name}")
     print(f"{'='*60}")
     
     result = subprocess.run(cmd, cwd=str(project_root), capture_output=True, text=True)
@@ -105,7 +105,7 @@ def run_ingest_data(image_path: Path, patient_id: str, report_date: str, report_
         "--report-type", report_type
     ]
     
-    print(f"\n💾 正在存入: {image_path.name}")
+    print(f"\n[存入] 正在存入: {image_path.name}")
     print(f"   患者ID: {patient_id}")
     print(f"   日期: {report_date}")
     print(f"   类型: {report_type}")
@@ -130,23 +130,23 @@ def main():
     origin_data_dir = get_origin_data_dir()
     
     print("=" * 60)
-    print("🚀 批量 Vision 识别 + 数据摄入")
-    print(f"📂 数据源: {origin_data_dir}")
+    print("[批量] Vision 识别 + 数据摄入")
+    print(f"[目录] 数据源: {origin_data_dir}")
     if args.interactive:
-        print("📝 模式: 交互式（无效ID时将提示手动输入）")
+        print("[模式] 交互式（无效ID时将提示手动输入）")
     else:
-        print("📝 模式: 自动（无效ID将自动跳过）")
+        print("[模式] 自动（无效ID将自动跳过）")
     print("=" * 60)
     
     # 查找所有 lab_*.jpg 文件
     image_files = sorted(origin_data_dir.glob("lab_*.jpg"))
     
     if not image_files:
-        print(f"\n⚠️  未找到 lab_*.jpg 文件")
+        print(f"\n[警告] 未找到 lab_*.jpg 文件")
         print(f"   请将检验报告图片放入: {origin_data_dir}")
         return 0
-    
-    print(f"\n📷 找到 {len(image_files)} 张检验报告图片")
+        
+    print(f"\n[图片] 找到 {len(image_files)} 张检验报告图片")
     
     success_count = 0
     fail_count = 0
@@ -161,7 +161,7 @@ def main():
         # 步骤1: 识别图片
         result = run_vision_extractor(image_path, args.interactive)
         if not result:
-            print(f"❌ 识别失败，跳过")
+            print(f"[失败] 识别失败，跳过")
             fail_count += 1
             results.append({"file": image_path.name, "status": "识别失败"})
             continue
@@ -172,41 +172,35 @@ def main():
         
         # 步骤2: 验证患者ID
         if not patient_id or not validate_chinese_id(patient_id):
-            if args.interactive:
-                print(f"\n⚠️  识别的患者ID无效或为空")
-                print(f"   识别结果: patient_id={patient_id}, report_date={report_date}")
-                print("\n请选择:")
-                print("  1. 手动输入正确的身份证号")
-                print("  2. 跳过此图片")
-                
-                try:
-                    choice = input("请输入选择 (1/2): ").strip()
-                    if choice == "1":
-                        patient_id = input("请输入患者身份证号: ").strip()
-                        if not validate_chinese_id(patient_id):
-                            print(f"❌ 输入的ID仍然无效，跳过")
-                            skipped_count += 1
-                            results.append({"file": image_path.name, "status": "ID无效，用户放弃"})
-                            continue
-                    elif choice == "2":
-                        print("⏭️  用户选择跳过")
+            print(f"\n[警告] 识别的患者ID无效或为空")
+            print(f"   识别结果: patient_id={patient_id}, report_date={report_date}")
+            print("\n请选择:")
+            print("  1. 手动输入正确的身份证号")
+            print("  2. 跳过此图片")
+            
+            try:
+                choice = input("请输入选择 (1/2): ").strip()
+                if choice == "1":
+                    patient_id = input("请输入患者身份证号: ").strip()
+                    if not validate_chinese_id(patient_id):
+                        print(f"[失败] 输入的ID仍然无效，跳过")
                         skipped_count += 1
-                        results.append({"file": image_path.name, "status": "用户跳过"})
+                        results.append({"file": image_path.name, "status": "ID无效，用户放弃"})
                         continue
-                    else:
-                        print("❌ 无效选择，跳过")
-                        skipped_count += 1
-                        results.append({"file": image_path.name, "status": "无效选择"})
-                        continue
-                except (EOFError, KeyboardInterrupt):
-                    print("\n⏭️  用户中断，跳过")
+                elif choice == "2":
+                    print("[跳过] 用户选择跳过")
                     skipped_count += 1
-                    results.append({"file": image_path.name, "status": "用户中断"})
+                    results.append({"file": image_path.name, "status": "用户跳过"})
                     continue
-            else:
-                print(f"⏭️  ID无效，自动跳过")
+                else:
+                    print("❌ 无效选择，跳过")
+                    skipped_count += 1
+                    results.append({"file": image_path.name, "status": "无效选择"})
+                    continue
+            except (EOFError, KeyboardInterrupt):
+                print("\n[跳过] 用户中断，跳过")
                 skipped_count += 1
-                results.append({"file": image_path.name, "status": "ID无效，自动跳过"})
+                results.append({"file": image_path.name, "status": "用户中断"})
                 continue
         
         # 步骤3: 存入数据
@@ -218,11 +212,11 @@ def main():
     
     # 生成汇总报告
     print(f"\n{'='*60}")
-    print("📊 批量处理完成")
+    print("[汇总] 批量处理完成")
     print(f"{'='*60}")
-    print(f"✅ 成功: {success_count}")
-    print(f"❌ 失败: {fail_count}")
-    print(f"⏭️  跳过: {skipped_count}")
+    print(f"[成功] 成功: {success_count}")
+    print(f"[失败] 失败: {fail_count}")
+    print(f"[跳过] 跳过: {skipped_count}")
     
     # 保存汇总报告
     summary_file = origin_data_dir / "batch_extraction_summary.json"
@@ -235,7 +229,7 @@ def main():
         "results": results
     }
     summary_file.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\n📝 汇总报告已保存: {summary_file}")
+    print(f"\n[报告] 汇总报告已保存: {summary_file}")
     
     return 0
 

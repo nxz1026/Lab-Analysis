@@ -394,8 +394,8 @@ def main():
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"\n报告已保存: {output_path}")
-        print("\n" + "="*60)
-        print(content)
+        # print("\n" + "="*60)
+        # print(content)  # 跳过打印，避免 Windows GBK 编码问题
     else:
         print("[EMPTY CONTENT]")
         print(json.dumps(result, ensure_ascii=False)[:1000])
