@@ -33,6 +33,7 @@ Thumbs.db
 
 # Pipeline outputs (optional: remove the line below if you version test fixtures)
 data/
+local_upload/
 
 # Raw patient data (origin reports + ingested data) — contains PHI
 raw/
