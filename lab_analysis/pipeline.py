@@ -571,7 +571,13 @@ def main():
     if args.skip_imaging:
         print("\n[跳过] 影像分析（--skip-imaging）")
     else:
-        rc = run_step("⑦ 影像分析 (qwen_vl_report_check)", "qwen_vl_report_check", pid_arg, ts_env)
+        # 选择影像分析模式
+        if args.use_dspy:
+            print("\n[DSPy] 使用 DSPy 优化版本进行影像分析...")
+            rc = run_step("⑦ 影像分析 (qwen_vl_report_check_dspy)", "qwen_vl_report_check_dspy", pid_arg, ts_env, extra_args=["--use-dspy"])
+        else:
+            rc = run_step("⑦ 影像分析 (qwen_vl_report_check)", "qwen_vl_report_check", pid_arg, ts_env)
+        
         if rc != 0:
             print("[!] qwen_vl_report_check 失败（非致命，继续）")
 
