@@ -198,13 +198,14 @@ def run_dspy_mri_analysis(image_desc: str, report_findings: str,
         raise ValueError("未找到 DASHSCOPE_API_KEY 环境变量")
     
     print("[DSPy] 配置 LLM...")
+    # 使用 OpenAI 兼容模式 (DashScope 支持)
     lm = dspy.LM(
-        model='dashscope/qwen-vl-plus',  # 修正为 LiteLLM 格式
+        model='openai/qwen-vl-plus',
         api_key=api_key,
-        api_base='https://dashscope.aliyuncs.com/api/v1'
+        api_base='https://dashscope.aliyuncs.com/compatible-mode/v1'
     )
     dspy.configure(lm=lm)
-    print(f"[DSPy] LLM 已配置: qwen-vl-plus")
+    print(f"[DSPy] LLM 已配置: qwen-vl-plus (OpenAI 兼容模式)")
     
     # 加载或创建模块
     module = MRIAnalysisModule()
