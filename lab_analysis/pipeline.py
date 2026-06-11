@@ -37,8 +37,10 @@ def parse_args():
     parser.add_argument("--ingest-dicom-dir", type=str, help="DICOM已解压目录路径")
     parser.add_argument("--ingest-mri-report", type=str, help="MRI文字报告路径")
     parser.add_argument("--report-date", type=str, help="报告日期 YYYY-MM-DD（用于摄入）")
-    parser.add_argument("--report-type", type=str, choices=["outpatient", "inpatient"], 
+    parser.add_argument("--report-type", type=str, choices=["outpatient", "inpatient"],
                        help="报告类型 outpatient/inpatient（仅检验报告需要）")
+    parser.add_argument("--no-interactive", action="store_true",
+                       help="禁用于数据摄入的交互式 ID 确认（不一致时直接放弃该图片）")
     return parser.parse_args()
 
 
@@ -148,7 +150,7 @@ def check_patient_data(deid: str) -> bool:
     return True
 
 
-def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, report_type: str = None) -> bool:
+def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, report_type: str = None, no_interactive: bool = False) -> bool:
     """
     从 Origin_data 目录自动摄入数据
     
@@ -229,16 +231,16 @@ def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, repor
                 
                 # 调用 extract_lab_data 模块进行处理
                 from lab_analysis import extract_lab_data
-                
+
                 # 构建参数
-                args = argparse.Namespace(
+                args_lab = argparse.Namespace(
                     image=str(img_path),
                     patient_id=patient_id,
-                    no_interactive=False
+                    no_interactive=no_interactive
                 )
-                
+
                 # 执行提取
-                result = extract_lab_data.main_with_args(args)
+                result = extract_lab_data.main_with_args(args_lab)
                 
                 if result:
                     total_success += 1
@@ -472,7 +474,8 @@ def main():
         has_origin_data = auto_ingest_from_origin_data(
             patient_id=original_id,  # 使用原始ID进行摄入验证
             report_date=args.report_date,
-            report_type=args.report_type
+            report_type=args.report_type,
+            no_interactive=args.no_interactive
         )
             
         # 如果提供了手动摄入参数，也执行
