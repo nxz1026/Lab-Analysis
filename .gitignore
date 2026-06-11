@@ -25,6 +25,9 @@ Thumbs.db
 .env
 *.pem
 
+# Patient ID mapping (contains PHI linkage)
+.hermes/
+
 # Backup files
 *_backup.py
 
