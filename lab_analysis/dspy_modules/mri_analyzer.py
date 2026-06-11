@@ -199,8 +199,8 @@ def run_dspy_mri_analysis(image_desc: str, report_findings: str,
     import dspy
     from dotenv import load_dotenv
     
-    # 加载环境变量
     load_dotenv()
+    work_root = Path(os.environ.get("WORK_ROOT", Path.cwd()))
     
     # 配置 DSPy LM
     api_key = os.environ.get('DASHSCOPE_API_KEY')
@@ -247,7 +247,7 @@ def run_dspy_mri_analysis(image_desc: str, report_findings: str,
 
     # 保存优化后的 prompt 信息 (可选手动指定输出目录)
     try:
-        prompts_dir = Path("data/mri_dspy_prompts")
+        prompts_dir = work_root / "data" / "mri_dspy_prompts"
         prompts_dir.mkdir(parents=True, exist_ok=True)
         save_dspy_prompts(module, prompts_dir)
         from .prompt_inspector import save_actual_dspy_prompt

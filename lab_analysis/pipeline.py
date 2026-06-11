@@ -365,13 +365,13 @@ def auto_ingest_from_origin_data(patient_id: str, report_date: str = None, repor
 
 
 def pick_python_exe() -> str:
-    """优先使用 ~/wiki/.venv（Hermes 部署）；否则当前解释器。"""
-    unix_venv = WORK_ROOT / ".venv" / "bin" / "python"
+    """优先使用项目 .venv 中的 Python；否则当前解释器。"""
     win_venv = WORK_ROOT / ".venv" / "Scripts" / "python.exe"
-    if unix_venv.is_file():
-        return str(unix_venv)
+    unix_venv = WORK_ROOT / ".venv" / "bin" / "python"
     if win_venv.is_file():
         return str(win_venv)
+    if unix_venv.is_file():
+        return str(unix_venv)
     return sys.executable
 
 
