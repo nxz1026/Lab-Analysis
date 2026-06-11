@@ -396,7 +396,15 @@ def run_step(name: str, module: str, extra_args: list[str] | None = None, env: d
         full_env["PYTHONPATH"] = pp
     
     try:
-        result = subprocess.run(cmd, cwd=str(root), env=full_env, capture_output=True, text=True)
+        result = subprocess.run(
+            cmd,
+            cwd=str(root),
+            env=full_env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
         
         # 如果失败，记录错误日志
         if result.returncode != 0:
@@ -561,7 +569,7 @@ def main():
         # 选择文献解读模式
         if args.use_dspy:
             print("\n[DSPy] 使用 DSPy 优化版本进行文献解读...")
-            rc = run_step("⑥ 循证解读 (literature_interpreter_dspy)", "literature_interpreter_dspy", pid_arg, ts_env, extra_args=["--use-dspy"])
+            rc = run_step("⑥ 循证解读 (literature_interpreter_dspy)", "literature_interpreter_dspy", env=ts_env, extra_args=pid_arg + ["--use-dspy"])
         else:
             rc = run_step("⑥ 循证解读 (literature_interpreter)", "literature_interpreter", pid_arg, ts_env)
         
@@ -574,7 +582,7 @@ def main():
         # 选择影像分析模式
         if args.use_dspy:
             print("\n[DSPy] 使用 DSPy 优化版本进行影像分析...")
-            rc = run_step("⑦ 影像分析 (qwen_vl_report_check_dspy)", "qwen_vl_report_check_dspy", pid_arg, ts_env, extra_args=["--use-dspy"])
+            rc = run_step("⑦ 影像分析 (qwen_vl_report_check_dspy)", "qwen_vl_report_check_dspy", env=ts_env, extra_args=pid_arg + ["--use-dspy"])
         else:
             rc = run_step("⑦ 影像分析 (qwen_vl_report_check)", "qwen_vl_report_check", pid_arg, ts_env)
         
@@ -584,7 +592,7 @@ def main():
     # 生成最终报告
     if args.use_dspy:
         print("\n[DSPy] 使用 DSPy 优化版本生成最终报告...")
-        rc = run_step("⑧ 生成最终报告 (gen_final_report_dspy)", "gen_final_report_dspy", pid_arg, ts_env, extra_args=["--use-dspy"])
+        rc = run_step("⑧ 生成最终报告 (gen_final_report_dspy)", "gen_final_report_dspy", env=ts_env, extra_args=pid_arg + ["--use-dspy"])
     else:
         rc = run_step("⑧ 生成最终报告 (gen_final_report)", "gen_final_report", pid_arg, ts_env)
     
