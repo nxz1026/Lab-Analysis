@@ -540,17 +540,17 @@ def main():
     pid_arg = ["--patient-id", deid]
     ts_env = {"ANALYSIS_TS": ts}
 
-    rc = run_step("③ 数据加载 (data_loader)", "data_loader", pid_arg, ts_env)
+    rc = run_step("③ 数据加载 (data_loader)", "data_loader", extra_args=pid_arg, env=ts_env)
     if rc != 0:
         print("[!] data_loader 失败，退出")
         sys.exit(1)
 
-    rc = run_step("④ 数据分析 (data_analyzer)", "data_analyzer", pid_arg, ts_env)
+    rc = run_step("④ 数据分析 (data_analyzer)", "data_analyzer", extra_args=pid_arg, env=ts_env)
     if rc != 0:
         print("[!] data_analyzer 失败，退出")
         sys.exit(1)
 
-    rc = run_step("⑤ 文献检索 (literature_searcher)", "literature_searcher", pid_arg, ts_env)
+    rc = run_step("⑤ 文献检索 (literature_searcher)", "literature_searcher", extra_args=pid_arg, env=ts_env)
     if rc != 0:
         print("[!] literature_searcher 失败，退出")
         sys.exit(1)
@@ -561,31 +561,31 @@ def main():
         # 选择文献解读模式
         if args.use_dspy:
             print("\n[DSPy] 使用 DSPy 优化版本进行文献解读...")
-            rc = run_step("⑥ 循证解读 (literature_interpreter_dspy)", "literature_interpreter_dspy", pid_arg, ts_env, extra_args=["--use-dspy"])
+            rc = run_step("⑥ 循证解读 (literature_interpreter_dspy)", "literature_interpreter_dspy", extra_args=pid_arg + ["--use-dspy"], env=ts_env)
         else:
-            rc = run_step("⑥ 循证解读 (literature_interpreter)", "literature_interpreter", pid_arg, ts_env)
-        
+            rc = run_step("⑥ 循证解读 (literature_interpreter)", "literature_interpreter", extra_args=pid_arg, env=ts_env)
+
         if rc != 0:
             print("[!] literature_interpreter 失败（非致命，继续）")
 
     if args.skip_imaging:
         print("\n[跳过] 影像分析（--skip-imaging）")
     else:
-        rc = run_step("⑦ 影像分析 (qwen_vl_report_check)", "qwen_vl_report_check", pid_arg, ts_env)
+        rc = run_step("⑦ 影像分析 (qwen_vl_report_check)", "qwen_vl_report_check", extra_args=pid_arg, env=ts_env)
         if rc != 0:
             print("[!] qwen_vl_report_check 失败（非致命，继续）")
 
     # 生成最终报告
     if args.use_dspy:
         print("\n[DSPy] 使用 DSPy 优化版本生成最终报告...")
-        rc = run_step("⑧ 生成最终报告 (gen_final_report_dspy)", "gen_final_report_dspy", pid_arg, ts_env, extra_args=["--use-dspy"])
+        rc = run_step("⑧ 生成最终报告 (gen_final_report_dspy)", "gen_final_report_dspy", extra_args=pid_arg + ["--use-dspy"], env=ts_env)
     else:
-        rc = run_step("⑧ 生成最终报告 (gen_final_report)", "gen_final_report", pid_arg, ts_env)
+        rc = run_step("⑧ 生成最终报告 (gen_final_report)", "gen_final_report", extra_args=pid_arg, env=ts_env)
     
     if rc != 0:
         print("[!] gen_final_report 失败（非致命，继续）")
 
-    rc = run_step("⑨ 本地文件组织 (organize_local_files)", "organize_local_files", pid_arg, ts_env)
+    rc = run_step("⑨ 本地文件组织 (organize_local_files)", "organize_local_files", extra_args=pid_arg, env=ts_env)
     if rc != 0:
         print("[!] organize_local_files 失败（非致命，完成）")
 
