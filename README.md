@@ -31,6 +31,7 @@
 ### 3. 文献检索与解读
 - PubMed 自动检索
 - DeepSeek AI 循证解读
+- **DSPy 优化版本** - 自动优化的专业解读 (实验性)
 
 ### 4. 影像报告检查
 - Qwen-VL 模型验证 MRI 报告
@@ -39,6 +40,27 @@
 ### 5. 综合报告生成
 - 三源一致性评估
 - 结构化报告 + 本地归档
+
+## 🧠 DSPy 集成 (实验性)
+
+本项目已集成 **DSPy** 框架用于优化 LLM 驱动的医学分析流程。
+
+### 优势
+- ✅ 声明式编程,无需手动调试 prompts
+- ✅ 自动优化,提升输出质量
+- ✅ 可复现,系统化的版本控制
+
+### 使用 DSPy 版本
+
+```bash
+# 安装 DSPy
+pip install dspy-ai
+
+# 运行 DSPy 优化的文献解读
+python examples/dspy_quickstart.py
+```
+
+详细文档: [docs/DSPY_INTEGRATION.md](docs/DSPY_INTEGRATION.md)
 
 ## 🚀 快速开始
 
