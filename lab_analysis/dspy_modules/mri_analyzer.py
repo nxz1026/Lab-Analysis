@@ -12,6 +12,8 @@ import dspy
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
+
 
 class MRIAnalysisSignature(dspy.Signature):
     """MRI 影像分析的输入输出签名"""
@@ -172,6 +174,14 @@ def compile_mri_analyzer(train_data: List[Dict], dev_data: List[Dict]):
     return compiled_module
 
 
+def save_dspy_prompts(module, output_dir: Path):
+    """保存 DSPy 模块的优化 prompt 到磁盘"""
+    prompts_data = extract_module_prompts(module, "mri_analyzer")
+    json_path = save_prompts_to_json("mri_analyzer", prompts_data, output_dir)
+    md_path = save_prompts_to_markdown("mri_analyzer", prompts_data, output_dir)
+    return json_path, md_path
+
+
 def run_dspy_mri_analysis(image_desc: str, report_findings: str, 
                           clinical_context: str, model_path: str = None):
     """
@@ -232,9 +242,18 @@ def run_dspy_mri_analysis(image_desc: str, report_findings: str,
         'confidence_score': result.confidence_score,
         'mode': 'dspy_optimized'
     }
-    
+
     print(f"[成功] 分析完成 (置信度: {result.confidence_score:.2f})")
-    
+
+    # 保存优化后的 prompt 信息 (可选手动指定输出目录)
+    try:
+        prompts_dir = Path("data/mri_dspy_prompts")
+        prompts_dir.mkdir(parents=True, exist_ok=True)
+        save_dspy_prompts(module, prompts_dir)
+        output['prompts_dir'] = str(prompts_dir)
+    except Exception as e:
+        print(f"  [警告] 保存 DSPy prompts 失败: {e}")
+
     return output
 
 

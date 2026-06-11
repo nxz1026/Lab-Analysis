@@ -19,21 +19,32 @@ WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 def run_standard_mode(args):
     """运行标准 Prompt 工程模式"""
     from lab_analysis.literature_interpreter import build_prompt, call_deepseek
-    
+
     print("[标准] 构建 prompt...")
     prompt = build_prompt(args.analysis, args.lit)
-    
+
+    # 保存原始 prompt 到磁盘
+    prompts_dir = Path(args.out).parent / "dspy_prompts"
+    prompts_dir.mkdir(parents=True, exist_ok=True)
+    standard_prompt_path = prompts_dir / "literature_interpreter_standard_prompt.txt"
+    with open(standard_prompt_path, "w", encoding="utf-8") as f:
+        f.write(prompt)
+    print(f"[标准] 原始 prompt 已保存: {standard_prompt_path}")
+    print(f"[标准] prompt 长度: {len(prompt)} 字符")
+
     print("[标准] 调用 DeepSeek...")
     response = call_deepseek(prompt)
-    
+
     output = {
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "model": "deepseek-chat",
         "mode": "standard",
         "prompt_preview": prompt[:500] + "...",
+        "prompt_length": len(prompt),
+        "prompt_path": str(standard_prompt_path),
         "response": response,
     }
-    
+
     return output
 
 
@@ -82,7 +93,26 @@ def run_dspy_mode(args):
             analysis_results=analysis_results,
             literature_results=literature_results
         )
-        
+
+        print(f"[DSPy] 置信度: {result.confidence:.2f}")
+        print(f"[DSPy] 生成长度: {len(result.interpretation)} 字符")
+
+        # 保存优化后的 DSPy prompt 信息
+        prompts_dir = Path(args.out).parent / "dspy_prompts"
+        prompts_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            from lab_analysis.dspy_modules.prompt_inspector import (
+                extract_module_prompts,
+                save_prompts_to_json,
+                save_prompts_to_markdown,
+            )
+            prompts_data = extract_module_prompts(module, "literature_interpreter")
+            save_prompts_to_json("literature_interpreter", prompts_data, prompts_dir)
+            save_prompts_to_markdown("literature_interpreter", prompts_data, prompts_dir)
+            print(f"[DSPy] 优化 prompt 已保存: {prompts_dir}/literature_interpreter_dspy_prompts.{{json,md}}")
+        except Exception as e:
+            print(f"[警告] 保存 DSPy prompts 失败: {e}")
+
         output = {
             "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "model": "deepseek-chat (DSPy optimized)",
@@ -90,11 +120,9 @@ def run_dspy_mode(args):
             "patient_id": patient_id,
             "interpretation": result.interpretation,
             "confidence": result.confidence,
+            "prompts_dir": str(prompts_dir),
         }
-        
-        print(f"[DSPy] 置信度: {result.confidence:.2f}")
-        print(f"[DSPy] 生成长度: {len(result.interpretation)} 字符")
-        
+
         return output
         
     except ImportError as e:

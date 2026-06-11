@@ -38,24 +38,35 @@ def assess_three_source_consistency(data_dir: Path) -> str:
 def run_standard_mode(patient_id: str, data_dir: Path):
     """运行标准 Prompt 工程模式"""
     from lab_analysis.gen_final_report import build_prompt, call_deepseek
-    
+
     print("[标准] 构建 prompt...")
     prompt = build_prompt(patient_id, data_dir)
-    
+
+    # 保存原始 prompt 到磁盘
+    prompts_dir = data_dir / "04_reports" / "dspy_prompts"
+    prompts_dir.mkdir(parents=True, exist_ok=True)
+    standard_prompt_path = prompts_dir / "final_report_standard_prompt.txt"
+    with open(standard_prompt_path, "w", encoding="utf-8") as f:
+        f.write(prompt)
+    print(f"[标准] 原始 prompt 已保存: {standard_prompt_path}")
+    print(f"[标准] prompt 长度: {len(prompt)} 字符")
+
     print("[标准] 调用 DeepSeek...")
     DEEPSEEK_API_KEY = load_env_key("DEEPSEEK_API_KEY")
     if not DEEPSEEK_API_KEY:
         raise ValueError("未找到 DEEPSEEK_API_KEY")
-    
+
     response = call_deepseek(prompt, DEEPSEEK_API_KEY)
-    
+
     output = {
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "model": "deepseek-chat",
         "mode": "standard",
         "report_markdown": response,
+        "prompt_length": len(prompt),
+        "prompts_dir": str(prompts_dir),
     }
-    
+
     return output
 
 
@@ -138,7 +149,11 @@ def run_dspy_mode(patient_id: str, data_dir: Path):
             mri_analysis=mri_analysis,
             quality_control=quality_control
         )
-        
+
+        # 补充 prompts_dir 信息
+        if "prompts_dir" not in output:
+            output["prompts_dir"] = str(data_dir / "04_reports" / "dspy_prompts")
+
         return output
         
     except ImportError as e:

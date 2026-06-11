@@ -10,6 +10,8 @@ import dspy
 from pathlib import Path
 from typing import Dict, Optional
 
+from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
+
 
 class FinalReportSignature(dspy.Signature):
     """最终临床报告生成的输入输出签名"""
@@ -121,6 +123,14 @@ def compile_report_generator(train_data: list, dev_data: list):
     )
     
     return compiled_module
+
+
+def save_dspy_prompts(module, output_dir: Path):
+    """保存 DSPy 模块的优化 prompt 到磁盘"""
+    prompts_data = extract_module_prompts(module, "final_report_generator")
+    json_path = save_prompts_to_json("final_report_generator", prompts_data, output_dir)
+    md_path = save_prompts_to_markdown("final_report_generator", prompts_data, output_dir)
+    return json_path, md_path
 
 
 def run_dspy_final_report(patient_id: str, data_dir: Path, 
@@ -243,6 +253,13 @@ def run_dspy_final_report(patient_id: str, data_dir: Path,
 {result.section_9_prognosis}
 """
     
+    # 保存优化后的 prompt 信息到 04_reports 目录
+    try:
+        prompts_dir = data_dir / "04_reports" / "dspy_prompts"
+        save_dspy_prompts(module, prompts_dir)
+    except Exception as e:
+        print(f"  [警告] 保存 DSPy prompts 失败: {e}")
+
     return {
         "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "model": "deepseek-chat (DSPy optimized)",
@@ -250,6 +267,7 @@ def run_dspy_final_report(patient_id: str, data_dir: Path,
         "patient_id": patient_id,
         "confidence": result.confidence,
         "report_markdown": report_md,
+        "prompts_dir": str(prompts_dir) if 'prompts_dir' in dir() else None,
         "sections": {
             "title": result.report_title,
             "basic_info": result.section_1_basic_info,

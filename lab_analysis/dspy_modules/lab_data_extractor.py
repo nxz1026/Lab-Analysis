@@ -11,6 +11,8 @@ import dspy
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
+
 
 class LabDataExtractionSignature(dspy.Signature):
     """检验数据提取的输入输出签名"""
@@ -169,6 +171,14 @@ def compile_lab_extractor(train_data: list, dev_data: list):
     return compiled_module
 
 
+def save_dspy_prompts(module, output_dir: Path):
+    """保存 DSPy 模块的优化 prompt 到磁盘"""
+    prompts_data = extract_module_prompts(module, "lab_data_extractor")
+    json_path = save_prompts_to_json("lab_data_extractor", prompts_data, output_dir)
+    md_path = save_prompts_to_markdown("lab_data_extractor", prompts_data, output_dir)
+    return json_path, md_path
+
+
 def run_dspy_extraction(image_path: Path, initial_ocr_text: str = ""):
     """
     运行 DSPy 优化的检验数据提取
@@ -229,7 +239,16 @@ def run_dspy_extraction(image_path: Path, initial_ocr_text: str = ""):
     
     # 转换为结构化字典
     structured_data = module.to_structured_dict(result)
-    
+
+    # 保存优化后的 prompt 信息 (可选手动指定输出目录)
+    try:
+        prompts_dir = Path("data/lab_extractor_dspy_prompts")
+        prompts_dir.mkdir(parents=True, exist_ok=True)
+        save_dspy_prompts(module, prompts_dir)
+        structured_data['prompts_dir'] = str(prompts_dir)
+    except Exception as e:
+        print(f"  [警告] 保存 DSPy prompts 失败: {e}")
+
     return structured_data
 
 
