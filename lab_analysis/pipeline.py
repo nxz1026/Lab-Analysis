@@ -575,7 +575,13 @@ def main():
         if rc != 0:
             print("[!] qwen_vl_report_check 失败（非致命，继续）")
 
-    rc = run_step("⑧ 生成最终报告 (gen_final_report)", "gen_final_report", pid_arg, ts_env)
+    # 生成最终报告
+    if args.use_dspy:
+        print("\n[DSPy] 使用 DSPy 优化版本生成最终报告...")
+        rc = run_step("⑧ 生成最终报告 (gen_final_report_dspy)", "gen_final_report_dspy", pid_arg, ts_env, extra_args=["--use-dspy"])
+    else:
+        rc = run_step("⑧ 生成最终报告 (gen_final_report)", "gen_final_report", pid_arg, ts_env)
+    
     if rc != 0:
         print("[!] gen_final_report 失败（非致命，继续）")
 
