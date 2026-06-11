@@ -137,7 +137,7 @@ def main():
 
     # 前置检查：影像目录存在
     if not imaging_base.exists():
-        print(f"❌ 影像目录不存在: {imaging_base}")
+        print(f"[错误] 影像目录不存在: {imaging_base}")
         print(f"   预期路径: raw/patient_{{patient_id}}/imaging/seq_01~19/*.dcm")
         sys.exit(1)
 
@@ -151,24 +151,24 @@ def main():
     for seq_dir_name, seq_desc, analysis_focus in SEQ_SELECTIONS:
         seq_path = imaging_base / seq_dir_name
         if not seq_path.exists():
-            print(f"⚠️  目录不存在: {seq_dir_name}，跳过")
+            print(f"[警告] 目录不存在: {seq_dir_name}，跳过")
             continue
 
         # 选随机帧
         dcm_files = sorted(seq_path.glob("*.dcm"))
         if not dcm_files:
-            print(f"⚠️  {seq_dir_name} 无DICOM文件，跳过")
+            print(f"[警告] {seq_dir_name} 无DICOM文件，跳过")
             continue
 
         import random
         idx = random.randint(0, len(dcm_files) - 1)
         img_path = dcm_files[idx]
-        print(f"📷 选取: {seq_dir_name}/{img_path.name} ({seq_desc}) 第{idx+1}/{len(dcm_files)}帧")
+        print(f"[图片] 选取: {seq_dir_name}/{img_path.name} ({seq_desc}) 第{idx+1}/{len(dcm_files)}帧")
 
         try:
             b64 = load_dicom_image(img_path)
         except Exception as e:
-            print(f"  ❌ DICOM读取失败: {e}")
+            print(f"  [失败] DICOM读取失败: {e}")
             continue
 
         finding_text = f"【分析重点】{analysis_focus}。{REPORT_FINDINGS}"
@@ -176,10 +176,10 @@ def main():
         try:
             r = analyze_single(b64, seq_dir_name, seq_desc, finding_text)
             results.append(r)
-            print(f"  ✅ 完成")
+            print(f"  [成功] 完成")
         except Exception as e:
             results.append({"status": "error", "seq_name": seq_dir_name, "seq_desc": seq_desc, "error": str(e)})
-            print(f"  ❌ 失败: {e}")
+            print(f"  [失败] 失败: {e}")
 
         time.sleep(1)
 
@@ -193,7 +193,7 @@ def main():
             "results": results
         }, f, ensure_ascii=False, indent=2)
 
-    print(f"\n💾 结果已保存: {output_path}")
+    print(f"\n[保存] 结果已保存: {output_path}")
 
     # 生成 Markdown 版
     md_path = lit_dir / "mri_report_check_results.md"
@@ -211,18 +211,18 @@ def main():
                 f.write(analysis_text)
                 f.write("\n\n---\n\n")
             else:
-                f.write(f"## {r['seq_name']} — ❌ 失败: {r.get('error', '')}\n\n")
-    print(f"📄 Markdown 已保存: {md_path}")
+                f.write(f"## {r['seq_name']} — [失败] 失败: {r.get('error', '')}\n\n")
+    print(f"[报告] Markdown 已保存: {md_path}")
 
     print(f"\n" + "="*60)
-    print("📊 分析摘要")
+    print("[摘要] 分析摘要")
     print("="*60)
     for r in results:
         if r["status"] == "success":
-            print(f"\n✅ {r['seq_name']} ({r['seq_desc']})")
+            print(f"\n[成功] {r['seq_name']} ({r['seq_desc']})")
             print(f"   {r['analysis'][:300]}...")
         else:
-            print(f"\n❌ {r['seq_name']}: {r.get('error', '')}")
+            print(f"\n[失败] {r['seq_name']}: {r.get('error', '')}")
 
 
 if __name__ == "__main__":

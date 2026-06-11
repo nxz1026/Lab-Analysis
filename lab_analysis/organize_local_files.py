@@ -60,17 +60,17 @@ def create_local_folder(folder_path: Path) -> bool:
     """在本地创建文件夹"""
     try:
         folder_path.mkdir(parents=True, exist_ok=True)
-        print(f"  ✅ 创建文件夹: {folder_path}")
+        print(f"  [成功] 创建文件夹: {folder_path}")
         return True
     except Exception as e:
-        print(f"  ❌ 创建文件夹失败: {folder_path} - {e}")
+        print(f"  [失败] 创建文件夹失败: {folder_path} - {e}")
         return False
 
 
 def copy_file_to_folder(local_path: Path, target_folder: Path, rename: str = None) -> bool:
     """复制文件到目标文件夹"""
     if not local_path.exists():
-        print(f"  ⚠️  文件不存在，跳过: {local_path}")
+        print(f"  [警告] 文件不存在，跳过: {local_path}")
         return False
     
     target_name = rename or local_path.name
@@ -79,10 +79,10 @@ def copy_file_to_folder(local_path: Path, target_folder: Path, rename: str = Non
     try:
         shutil.copy2(local_path, target_path)
         size = target_path.stat().st_size
-        print(f"  ✅ {target_name} → {size} bytes")
+        print(f"  [成功] {target_name} → {size} bytes")
         return True
     except Exception as e:
-        print(f"  ❌ 复制失败: {local_path} - {e}")
+        print(f"  [失败] 复制失败: {local_path} - {e}")
         return False
 
 
@@ -93,9 +93,9 @@ def main():
     data_dir = paths["data"]
 
     print(f"\n{'='*60}")
-    print(f"📅 当天日期: {TODAY}")
-    print(f"👤 病人ID: {patient_id}")
-    print(f"📂 本地上传根目录: {LOCAL_UPLOAD_ROOT}")
+    print(f"[日期] 当天日期: {TODAY}")
+    print(f"[患者] 病人ID: {patient_id}")
+    print(f"[目录] 本地上传根目录: {LOCAL_UPLOAD_ROOT}")
     print(f"{'='*60}\n")
 
     # 动态构建文件清单，文件名加病人ID前缀
@@ -130,9 +130,9 @@ def main():
     day_folder = LOCAL_UPLOAD_ROOT / TODAY
     print(f"① 创建当天文件夹: {day_folder}")
     if not create_local_folder(day_folder):
-        print("  ❌ 当天文件夹创建失败，退出")
+        print("  [失败] 当天文件夹创建失败，退出")
         return
-    print(f"  ✅ 当天文件夹: {day_folder}")
+    print(f"  [成功] 当天文件夹: {day_folder}")
 
     # Step 2: 创建四个子文件夹
     subfolders = {}
@@ -142,7 +142,7 @@ def main():
         if create_local_folder(sf_path):
             subfolders[sf_name] = sf_path
         else:
-            print(f"  ❌ {sf_name} 创建失败")
+            print(f"  [失败] {sf_name} 创建失败")
 
     # Step 3: 复制所有文件
     print(f"\n③ 复制所有文件")
@@ -150,7 +150,7 @@ def main():
     skipped_count = 0
     for local_path, subfolder, rename in upload_map:
         if not local_path.exists():
-            print(f"  ⚠️  文件不存在，跳过: {local_path}")
+            print(f"  [警告] 文件不存在，跳过: {local_path}")
             skipped_count += 1
             continue
         
@@ -160,7 +160,7 @@ def main():
         else:
             target_folder = subfolders.get(subfolder)
             if not target_folder:
-                print(f"  ⚠️  子文件夹 {subfolder} 未创建成功，跳过: {local_path}")
+                print(f"  [警告] 子文件夹 {subfolder} 未创建成功，跳过: {local_path}")
                 skipped_count += 1
                 continue
         
@@ -170,10 +170,10 @@ def main():
             skipped_count += 1
 
     print(f"\n{'='*60}")
-    print(f"🎉 全部完成！")
-    print(f"   ✅ 成功复制: {copied_count} 个文件")
-    print(f"   ⚠️  跳过: {skipped_count} 个文件")
-    print(f"   📂 本地路径: {day_folder}")
+    print(f"[完成] 全部完成！")
+    print(f"   [成功] 成功复制: {copied_count} 个文件")
+    print(f"   [警告] 跳过: {skipped_count} 个文件")
+    print(f"   [目录] 本地路径: {day_folder}")
     print(f"{'='*60}\n")
 
 
