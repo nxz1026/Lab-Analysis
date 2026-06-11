@@ -7,6 +7,7 @@ DSPy 版本的 MRI 影像分析模块
 提高解剖定位准确性、所见描述规范性和印证评价可靠性
 """
 
+import os
 import dspy
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -198,7 +199,7 @@ def run_dspy_mri_analysis(image_desc: str, report_findings: str,
     
     print("[DSPy] 配置 LLM...")
     lm = dspy.LM(
-        model='qwen/qwen-vl-plus',
+        model='dashscope/qwen-vl-plus',  # 修正为 LiteLLM 格式
         api_key=api_key,
         api_base='https://dashscope.aliyuncs.com/api/v1'
     )
