@@ -10,6 +10,8 @@ import dspy
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
+
 
 class LiteratureInterpretationSignature(dspy.Signature):
     """文献解读的输入输出签名"""
@@ -101,6 +103,14 @@ def compile_interpreter(train_data: List[Dict], dev_data: List[Dict]):
     return compiled_module
 
 
+def save_dspy_prompts(module, output_dir: Path):
+    """保存 DSPy 模块的优化 prompt 到磁盘"""
+    prompts_data = extract_module_prompts(module, "literature_interpreter")
+    json_path = save_prompts_to_json("literature_interpreter", prompts_data, output_dir)
+    md_path = save_prompts_to_markdown("literature_interpreter", prompts_data, output_dir)
+    return json_path, md_path
+
+
 def run_dspy_interpretation(patient_id: str, data_dir: Path):
     """
     运行 DSPy 版本的文献解读
@@ -145,7 +155,15 @@ def run_dspy_interpretation(patient_id: str, data_dir: Path):
     output_path = data_dir / "03_literature" / "literature_interpretation_dspy.json"
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    
+
+    # 保存优化后的 prompt 信息到 03_literature 目录
+    try:
+        prompts_dir = data_dir / "03_literature" / "dspy_prompts"
+        save_dspy_prompts(interpreter, prompts_dir)
+        output["prompts_dir"] = str(prompts_dir)
+    except Exception as e:
+        print(f"  [警告] 保存 DSPy prompts 失败: {e}")
+
     return output
 
 

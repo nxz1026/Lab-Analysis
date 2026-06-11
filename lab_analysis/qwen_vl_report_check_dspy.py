@@ -91,6 +91,10 @@ def load_dicom_image(path: Path) -> str:
 
 def analyze_single_standard(image_b64: str, seq_name: str, seq_desc: str, finding: str) -> dict:
     """标准模式: 直接调用 Qwen-VL API"""
+    prompt = PROMPT_TEMPLATE.format(
+        report_finding=finding,
+        seq_name=f"{seq_name} — {seq_desc}",
+    )
     payload = {
         "model": "qwen-vl-plus",
         "input": {
@@ -99,10 +103,7 @@ def analyze_single_standard(image_b64: str, seq_name: str, seq_desc: str, findin
                     "role": "user",
                     "content": [
                         {"image": f"data:image/jpeg;base64,{image_b64}"},
-                        {"text": PROMPT_TEMPLATE.format(
-                            report_finding=finding,
-                            seq_name=f"{seq_name} — {seq_desc}",
-                        )}
+                        {"text": prompt}
                     ]
                 }
             ]
@@ -116,11 +117,12 @@ def analyze_single_standard(image_b64: str, seq_name: str, seq_desc: str, findin
     data = resp.json()
     content = data.get("output", {}).get("choices", [{}])[0].get("message", {}).get("content", "")
     return {
-        "status": "success", 
-        "seq_name": seq_name, 
-        "seq_desc": seq_desc, 
+        "status": "success",
+        "seq_name": seq_name,
+        "seq_desc": seq_desc,
         "analysis": content,
-        "mode": "standard"
+        "mode": "standard",
+        "prompt_length": len(prompt),
     }
 
 
@@ -252,6 +254,20 @@ def main():
             "analyzed_count": len([r for r in results if r["status"] == "success"]),
             "results": results
         }, f, ensure_ascii=False, indent=2)
+
+    # 保存 prompts 到独立目录
+    prompts_dir = lit_dir / "dspy_prompts"
+    prompts_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1) 保存标准模式的 prompt 模板
+    standard_prompt_path = prompts_dir / "mri_analyzer_standard_prompt.txt"
+    with open(standard_prompt_path, "w", encoding="utf-8") as f:
+        f.write(PROMPT_TEMPLATE)
+    print(f"[保存] 标准 prompt 已保存: {standard_prompt_path}")
+
+    # 2) 如果使用了 DSPy 模式，确保 DSPy 优化 prompt 已被保存
+    if args.use_dspy:
+        print(f"[保存] DSPy 优化 prompt 保存位置: data/mri_dspy_prompts/")
 
     print(f"\n[摘要] 分析摘要")
     print(f"  总序列数: {len(SEQ_SELECTIONS)}")
