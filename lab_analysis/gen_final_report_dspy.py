@@ -37,15 +37,15 @@ def assess_three_source_consistency(data_dir: Path) -> str:
 
 def run_standard_mode(patient_id: str, data_dir: Path):
     """运行标准 Prompt 工程模式"""
-    from lab_analysis.gen_final_report import build_prompt, call_deepseek
+    from lab_analysis.gen_final_report import build_prompt
 
     print("[标准] 构建 prompt...")
-    prompt = build_prompt(patient_id, data_dir)
+    prompt = build_prompt(data_dir, patient_id)
 
     # 保存原始 prompt 到磁盘
     prompts_dir = data_dir / "04_reports" / "dspy_prompts"
     prompts_dir.mkdir(parents=True, exist_ok=True)
-    standard_prompt_path = prompts_dir / "final_report_standard_prompt.txt"
+    standard_prompt_path = prompts_dir / "final_report_generator_standard_prompt.txt"
     with open(standard_prompt_path, "w", encoding="utf-8") as f:
         f.write(prompt)
     print(f"[标准] 原始 prompt 已保存: {standard_prompt_path}")
@@ -56,7 +56,27 @@ def run_standard_mode(patient_id: str, data_dir: Path):
     if not DEEPSEEK_API_KEY:
         raise ValueError("未找到 DEEPSEEK_API_KEY")
 
-    response = call_deepseek(prompt, DEEPSEEK_API_KEY)
+    import requests
+    resp = requests.post(
+        "https://api.deepseek.com/chat/completions",
+        headers={
+            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": "deepseek-chat",
+            "messages": [
+                {"role": "system", "content": "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"},
+                {"role": "user", "content": prompt},
+            ],
+            "max_tokens": 5000,
+            "temperature": 0.3,
+        },
+        timeout=180,
+    )
+    result = resp.json()
+    response = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+    print(f"HTTP: {resp.status_code}  content length: {len(response)}")
 
     output = {
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

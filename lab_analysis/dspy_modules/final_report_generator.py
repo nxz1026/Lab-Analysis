@@ -175,7 +175,7 @@ def run_dspy_final_report(patient_id: str, data_dir: Path,
     print(f"[DSPy] LLM 已配置: deepseek-chat")
     
     # 尝试加载编译后的模型
-    compiled_model_path = Path(__file__).parent.parent / "models" / "dspy" / "final_report_compiled.json"
+    compiled_model_path = Path(__file__).parent.parent.parent / "models" / "dspy" / "final_report_generator_compiled.json"
     
     if compiled_model_path.exists():
         print(f"[DSPy] 加载编译后的模型: {compiled_model_path}")

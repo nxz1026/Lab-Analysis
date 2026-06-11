@@ -166,7 +166,7 @@ def compile_mri_analyzer(train_data: List[Dict], dev_data: List[Dict]):
     compiled_module = optimizer.compile(
         MRIAnalysisModule(),
         trainset=train_data,
-        valset=dev_data
+        # DSPy 3.x 不再需要 valset 参数
     )
     
     print("[成功] 模块编译完成")

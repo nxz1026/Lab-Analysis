@@ -134,11 +134,15 @@ def analyze_single_dspy(image_b64: str, seq_name: str, seq_desc: str, finding: s
         # 构建临床背景
         clinical_context = "男，38岁，胰管支架置入后复查，腹痛待查，检查编号Y00002207707"
         
+        # 编译模型路径
+        model_path = str(Path(__file__).parent.parent / "models" / "dspy" / "mri_analyzer_compiled.json")
+        
         # 运行 DSPy 分析
         result = run_dspy_mri_analysis(
             image_desc=f"{seq_name} — {seq_desc}",
             report_findings=finding,
-            clinical_context=clinical_context
+            clinical_context=clinical_context,
+            model_path=model_path,
         )
         
         # 格式化输出

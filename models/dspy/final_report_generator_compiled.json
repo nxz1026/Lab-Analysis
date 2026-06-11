@@ -1,0 +1,129 @@
+{
+  "generate.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "patient_info": {
+          "name": "患者",
+          "age_sex": "男,38岁",
+          "exam_id": "Y00002207707"
+        },
+        "lab_summary": "最新检验: WBC=11.5, NEUT%=85, CRP=85, hs-CRP=12.5",
+        "analysis_results": {
+          "abnormal_indicators": [
+            {
+              "name": "WBC",
+              "value": 11.5,
+              "status": "偏高"
+            },
+            {
+              "name": "CRP",
+              "value": 85,
+              "status": "显著升高"
+            }
+          ]
+        },
+        "literature_interpretation": "急性胆道感染,符合 Charcot 三联征。",
+        "mri_analysis": "肝右后叶感染性病变较前缩小。",
+        "quality_control": "三源数据一致。",
+        "report_title": "肝胆胰综合临床报告",
+        "section_1_basic_info": "男,38岁,因腹痛就诊,有胰管支架置入史。",
+        "section_2_lab_analysis": "WBC、CRP 显著升高,提示急性炎症反应。",
+        "section_3_mri_analysis": "肝右后叶感染性病变较前明显缩小,提示治疗有效。",
+        "section_4_multidisciplinary": "消化内科、肝胆外科、感染科多学科会诊意见一致。",
+        "section_5_diagnosis": "急性胆管炎恢复期。",
+        "section_6_consistency": "检验、影像、文献证据三源一致。",
+        "section_7_action_plan": "🟡 重要:继续抗生素治疗 1 周;🟢 常规:定期复查肝功。",
+        "section_8_followup": "2 周后复查血常规、肝功、CRP。",
+        "section_9_prognosis": "预后良好,需警惕复发。",
+        "confidence": 0.85
+      }
+    ],
+    "signature": {
+      "instructions": "最终临床报告生成的输入输出签名",
+      "fields": [
+        {
+          "prefix": "Patient Info:",
+          "description": "患者基本信息 (name, age_sex, exam_id)"
+        },
+        {
+          "prefix": "Lab Summary:",
+          "description": "检验数据摘要，包含关键指标时序变化"
+        },
+        {
+          "prefix": "Analysis Results:",
+          "description": "统计分析结果，包含异常指标、相关性分析等"
+        },
+        {
+          "prefix": "Literature Interpretation:",
+          "description": "循证医学解读文本"
+        },
+        {
+          "prefix": "Mri Analysis:",
+          "description": "MRI影像AI分析结果（可选）"
+        },
+        {
+          "prefix": "Quality Control:",
+          "description": "三源一致性评估质控段落"
+        },
+        {
+          "prefix": "Reasoning:",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Report Title:",
+          "description": "报告标题"
+        },
+        {
+          "prefix": "Section 1 Basic Info:",
+          "description": "一、患者基本信息与就诊背景"
+        },
+        {
+          "prefix": "Section 2 Lab Analysis:",
+          "description": "二、检验数据与炎症状态综合分析"
+        },
+        {
+          "prefix": "Section 3 Mri Analysis:",
+          "description": "三、MRI影像学综合分析"
+        },
+        {
+          "prefix": "Section 4 Multidisciplinary:",
+          "description": "四、多学科联合诊断意见"
+        },
+        {
+          "prefix": "Section 5 Diagnosis:",
+          "description": "五、核心诊断结论与鉴别诊断"
+        },
+        {
+          "prefix": "Section 6 Consistency:",
+          "description": "六、结论一致性评估"
+        },
+        {
+          "prefix": "Section 7 Action Plan:",
+          "description": "七、行动计划（紧急🔴 / 重要🟡 / 常规🟢）"
+        },
+        {
+          "prefix": "Section 8 Followup:",
+          "description": "八、随访与监测计划"
+        },
+        {
+          "prefix": "Section 9 Prognosis:",
+          "description": "九、预后评估"
+        },
+        {
+          "prefix": "Confidence:",
+          "description": "报告可信度评分 (0.0-1.0)"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.14",
+      "dspy": "3.2.1",
+      "cloudpickle": "3.1"
+    }
+  }
+}
