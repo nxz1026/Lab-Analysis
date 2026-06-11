@@ -160,6 +160,8 @@ def run_dspy_interpretation(patient_id: str, data_dir: Path):
     try:
         prompts_dir = data_dir / "03_literature" / "dspy_prompts"
         save_dspy_prompts(interpreter, prompts_dir)
+        from .prompt_inspector import save_actual_dspy_prompt
+        save_actual_dspy_prompt("literature_interpreter", prompts_dir)
         output["prompts_dir"] = str(prompts_dir)
     except Exception as e:
         print(f"  [警告] 保存 DSPy prompts 失败: {e}")

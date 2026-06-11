@@ -250,6 +250,8 @@ def run_dspy_mri_analysis(image_desc: str, report_findings: str,
         prompts_dir = Path("data/mri_dspy_prompts")
         prompts_dir.mkdir(parents=True, exist_ok=True)
         save_dspy_prompts(module, prompts_dir)
+        from .prompt_inspector import save_actual_dspy_prompt
+        save_actual_dspy_prompt("mri_analyzer", prompts_dir)
         output['prompts_dir'] = str(prompts_dir)
     except Exception as e:
         print(f"  [警告] 保存 DSPy prompts 失败: {e}")

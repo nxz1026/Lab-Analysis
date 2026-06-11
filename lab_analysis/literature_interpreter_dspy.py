@@ -114,11 +114,14 @@ def run_dspy_mode(args):
                 extract_module_prompts,
                 save_prompts_to_json,
                 save_prompts_to_markdown,
+                save_actual_dspy_prompt,
             )
             prompts_data = extract_module_prompts(module, "literature_interpreter")
             save_prompts_to_json("literature_interpreter", prompts_data, prompts_dir)
             save_prompts_to_markdown("literature_interpreter", prompts_data, prompts_dir)
+            save_actual_dspy_prompt("literature_interpreter", prompts_dir)
             print(f"[DSPy] 优化 prompt 已保存: {prompts_dir}/literature_interpreter_dspy_prompts.{{json,md}}")
+            print(f"[DSPy] 完整 prompt 已保存: {prompts_dir}/literature_interpreter_dspy_actual_prompt.txt")
         except Exception as e:
             print(f"[警告] 保存 DSPy prompts 失败: {e}")
 

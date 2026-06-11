@@ -283,3 +283,106 @@ def save_prompts_to_markdown(module_name: str, prompts_data: Dict, output_dir: P
         f.write("\n".join(lines))
 
     return output_path
+
+
+def get_actual_dspy_prompt() -> str:
+    """
+    从 DSPy LM 历史中捕获最近一次调用的完整 Prompt。
+
+    DSPy 内部将 Signature instructions + ChainOfThought 推理指令 + Few-shot demos
+    组装为完整 prompt 后发送给 LLM，该完整 prompt 保存在 LM 的 history 中。
+    此函数从 history[-1] 提取该完整 prompt。
+
+    Returns:
+        完整 prompt 文本；若无法获取则返回以 "[错误]" 开头的描述。
+    """
+    try:
+        import dspy
+    except ImportError:
+        return "[错误] DSPy 未安装"
+
+    try:
+        lm = getattr(dspy.settings, 'lm', None)
+        if lm is None:
+            return "[错误] DSPy LM 未配置，请先调用 dspy.configure(lm=...)"
+
+        history = getattr(lm, 'history', [])
+        if not history:
+            return "[错误] DSPy LM 历史为空，尚未执行任何推理调用"
+
+        last_call = history[-1]  # 最近一次 LLM 调用
+
+        # DSPy 3.x 中 history 条目的可能结构：
+        #   {'prompt': str}                    — 普通模式
+        #   {'messages': [{role, content}, ..]} — chat 模式
+        #   {'kwargs': {..., 'messages': [...]}} — 旧版本
+        prompt_sources = []
+
+        # 字段1: prompt
+        if 'prompt' in last_call:
+            val = last_call['prompt']
+            if isinstance(val, str):
+                prompt_sources.append(val)
+            elif isinstance(val, (list, dict)):
+                prompt_sources.append(json.dumps(val, ensure_ascii=False, indent=2))
+
+        # 字段2: messages（chat 模式下的完整消息列表）
+        if 'messages' in last_call:
+            msgs = last_call['messages']
+            prompt_sources.append(
+                json.dumps(msgs, ensure_ascii=False, indent=2)
+            )
+
+        # 字段3: kwargs 中可能嵌套 messages
+        if 'kwargs' in last_call and isinstance(last_call['kwargs'], dict):
+            msgs = last_call['kwargs'].get('messages', [])
+            if msgs:
+                prompt_sources.append(
+                    json.dumps(msgs, ensure_ascii=False, indent=2)
+                )
+
+        if prompt_sources:
+            # 拼接所有来源，去重
+            seen = set()
+            parts = []
+            for s in prompt_sources:
+                key = s[:200]
+                if key not in seen:
+                    seen.add(key)
+                    parts.append(s)
+            return "\n\n======= 分隔线 =======\n\n".join(parts)
+
+        # 兜底：序列化整个 call 记录
+        return json.dumps(last_call, ensure_ascii=False, indent=2, default=str)
+
+    except Exception as e:
+        return f"[错误] 获取 DSPy prompt 时发生异常: {type(e).__name__}: {e}"
+
+
+def save_actual_dspy_prompt(module_name: str, output_dir: Path) -> Optional[Path]:
+    """
+    保存 DSPy 最近一次调用的完整 Prompt 到文本文件。
+
+    保存位置: ``{output_dir}/{module_name}_dspy_actual_prompt.txt``
+
+    Args:
+        module_name: 模块名称（用于文件名，如 ``literature_interpreter``）
+        output_dir:   prompt 保存目录
+
+    Returns:
+        保存的文件路径；失败返回 None
+    """
+    try:
+        prompt_text = get_actual_dspy_prompt()
+        if prompt_text.startswith("[错误]"):
+            print(f"  [警告] {prompt_text}")
+            return None
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / f"{module_name}_dspy_actual_prompt.txt"
+        output_path.write_text(prompt_text, encoding='utf-8')
+        print(f"  [保存] 完整 DSPy prompt 已保存 ({len(prompt_text)} 字符): {output_path}")
+        return output_path
+    except Exception as e:
+        print(f"  [警告] 保存实际 DSPy prompt 失败: {e}")
+        return None
