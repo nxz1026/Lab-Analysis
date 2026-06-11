@@ -31,6 +31,9 @@ Thumbs.db
 # Pipeline outputs (optional: remove the line below if you version test fixtures)
 data/
 
+# Raw patient data (origin reports + ingested data) — contains PHI
+raw/
+
 # Jupyter
 .ipynb_checkpoints/
 

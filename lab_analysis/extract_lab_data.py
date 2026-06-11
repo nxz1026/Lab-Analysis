@@ -43,6 +43,46 @@ def validate_patient_id(patient_id: str, extracted_id: str = None, interactive: 
     """
     # 优先级1：命令行提供的有效身份证号
     if patient_id and is_valid_id_card(patient_id):
+        # 额外校验：与 OCR 提取的 ID 比对一致性，防止命令行 ID 与图片实际病历号不符
+        if extracted_id and is_valid_id_card(extracted_id):
+            if extracted_id == patient_id:
+                # 完全一致 → 通过
+                return patient_id
+            # 不一致 → 警告并进入交互选择
+            print(f"[WARNING] 命令行 ID 与图片中识别的 ID 不一致！")
+            print(f"  命令行传入: {patient_id}")
+            print(f"  图片识别:   {extracted_id}")
+            if interactive:
+                print("\n请选择使用哪个 ID:")
+                print(f"  1. 使用命令行 ID ({patient_id})")
+                print(f"  2. 使用图片识别 ID ({extracted_id})")
+                print("  3. 手动输入其他 ID")
+                print("  4. 放弃此数据")
+                try:
+                    choice = input("请输入选择 (1/2/3/4): ").strip()
+                    if choice == "1":
+                        return patient_id
+                    elif choice == "2":
+                        return extracted_id
+                    elif choice == "3":
+                        new_id = input("请输入正确的身份证号: ").strip()
+                        if is_valid_id_card(new_id):
+                            return new_id
+                        else:
+                            print(f"[ERROR] 输入的 ID '{new_id}' 无效，放弃此数据")
+                            return None
+                    else:
+                        print("[INFO] 用户选择放弃此数据")
+                        return None
+                except (EOFError, KeyboardInterrupt):
+                    print("\n[ERROR] 无法读取输入（非交互环境），放弃此数据")
+                    return None
+            else:
+                # 非交互模式：安全起见放弃数据，避免错归患者
+                print(f"[ERROR] 命令行与 OCR ID 不一致且非交互模式，放弃此数据")
+                print(f"[HINT] 请在交互模式运行或显式确认正确的 ID")
+                return None
+        # 没有 OCR ID 或 OCR ID 无效 → 直接用命令行
         return patient_id
     
     # 优先级2：AI提取的有效身份证号
