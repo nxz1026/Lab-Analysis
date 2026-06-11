@@ -153,7 +153,7 @@ def main():
             print(f"  [警告] 文件不存在，跳过: {local_path}")
             skipped_count += 1
             continue
-        
+
         if subfolder is None:
             # 根目录
             target_folder = day_folder
@@ -163,15 +163,48 @@ def main():
                 print(f"  [警告] 子文件夹 {subfolder} 未创建成功，跳过: {local_path}")
                 skipped_count += 1
                 continue
-        
+
         if copy_file_to_folder(local_path, target_folder, rename):
             copied_count += 1
         else:
             skipped_count += 1
 
+    # Step 4: 合并 DSPy prompts 目录到 中间结果/dspy_prompts/
+    print(f"\n④ 合并 DSPy prompts 目录")
+    dspy_target = subfolders.get("中间结果") / "dspy_prompts"
+    dspy_target.mkdir(parents=True, exist_ok=True)
+    dspy_sources = [
+        lit_dir / "dspy_prompts",                       # 03_literature/dspy_prompts
+        reports_dir / "dspy_prompts",                   # 04_reports/dspy_prompts
+        WORK_ROOT / "data" / "mri_dspy_prompts",         # 散落: mri_analyzer 旧产物
+        WORK_ROOT / "data" / "lab_extractor_dspy_prompts",  # 散落: lab_data_extractor 旧产物
+    ]
+    dspy_merged = 0
+    for src in dspy_sources:
+        if not src.exists() or not src.is_dir():
+            continue
+        for item in src.iterdir():
+            dest = dspy_target / item.name
+            try:
+                if item.is_file():
+                    shutil.copy2(item, dest)
+                elif item.is_dir():
+                    if dest.exists():
+                        shutil.rmtree(dest)
+                    shutil.copytree(item, dest)
+                dspy_merged += 1
+                print(f"  [成功] {src.name}/{item.name} -> 中间结果/dspy_prompts/{item.name}")
+            except Exception as e:
+                print(f"  [失败] 合并 {item.name} 失败: {e}")
+    if dspy_merged == 0:
+        print("  [警告] 未找到任何 DSPy prompts 源目录")
+    else:
+        print(f"  [完成] 共合并 {dspy_merged} 个 DSPy 产物")
+
     print(f"\n{'='*60}")
     print(f"[完成] 全部完成！")
     print(f"   [成功] 成功复制: {copied_count} 个文件")
+    print(f"   [DSPy] 合并: {dspy_merged} 个 DSPy 产物")
     print(f"   [警告] 跳过: {skipped_count} 个文件")
     print(f"   [目录] 本地路径: {day_folder}")
     print(f"{'='*60}\n")

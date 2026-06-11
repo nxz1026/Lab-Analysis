@@ -1,0 +1,77 @@
+{
+  "predictor.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "image_description": "DWI序列,肝右后叶区域",
+        "report_findings": "肝右后叶异常信号,DWI 略受限",
+        "clinical_context": "男,38岁,胰管支架置入后复查,腹痛待查",
+        "anatomical_localization": "肝右后叶",
+        "imaging_findings": "DWI 序列肝右后叶见一小片状高信号区,ADC 图略低,提示弥散轻度受限。",
+        "consistency_evaluation": "一致。DWI 高信号与 T2 高信号部位吻合,符合活动性感染后遗改变。",
+        "additional_findings": "无显著补充发现。",
+        "confidence_score": 0.88
+      },
+      {
+        "image_description": "T2WI横断面,肝右后叶层面",
+        "report_findings": "肝右后叶上段:长径约 2.2cm 异常信号影,T1 稍低、T2 及 STIR 稍高,增强少许点片状弱强化,考虑感染性病变,较前明显缩小",
+        "clinical_context": "男,38岁,胰管支架置入后复查,腹痛待查",
+        "anatomical_localization": "肝右后叶上段",
+        "imaging_findings": "T2WI 见肝右后叶上段一异常信号结节,长径约 2.2cm,呈稍高信号,边界尚清,DWI 略受限,增强后弱强化。",
+        "consistency_evaluation": "一致。影像所见与纸质报告描述的部位、大小、信号特征基本吻合,符合感染性病变恢复期表现。",
+        "additional_findings": "无显著补充发现。",
+        "confidence_score": 0.92
+      }
+    ],
+    "signature": {
+      "instructions": "MRI 影像分析的输入输出签名",
+      "fields": [
+        {
+          "prefix": "Image Description:",
+          "description": "影像的文字描述或序列信息 (如: T2WI横断面，代表层面)"
+        },
+        {
+          "prefix": "Report Findings:",
+          "description": "纸质放射科报告的关键发现段落"
+        },
+        {
+          "prefix": "Clinical Context:",
+          "description": "临床背景信息 (患者年龄、性别、检查指征等)"
+        },
+        {
+          "prefix": "Reasoning:",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Anatomical Localization:",
+          "description": "解剖定位：明确指出这张图片大约在哪个层面（肝脏？胰腺？肾脏？其他？）"
+        },
+        {
+          "prefix": "Imaging Findings:",
+          "description": "影像所见：详细描述可见的结构和信号特征，使用专业医学术语"
+        },
+        {
+          "prefix": "Consistency Evaluation:",
+          "description": "印证评价：对照纸质报告描述，判断该影像表现是否与报告一致？选择：一致/不一致/补充，并说明理由"
+        },
+        {
+          "prefix": "Additional Findings:",
+          "description": "补充发现：纸质报告未提及但影像可见的异常（如无则写'无显著补充发现'）"
+        },
+        {
+          "prefix": "Confidence Score:",
+          "description": "置信度评分 (0.0-1.0)，反映分析的确定性程度"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.14",
+      "dspy": "3.2.1",
+      "cloudpickle": "3.1"
+    }
+  }
+}

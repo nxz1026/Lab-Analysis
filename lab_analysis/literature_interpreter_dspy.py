@@ -87,6 +87,15 @@ def run_dspy_mode(args):
         print(f"[DSPy] 创建模块实例 (患者ID: {patient_id})...")
         module = LiteratureInterpreterModule()
         
+        # 自动加载编译后的模型
+        compiled_model_path = Path(__file__).parent.parent / "models" / "dspy" / "literature_interpreter_compiled.json"
+        if compiled_model_path.exists():
+            print(f"[DSPy] 加载编译模型: {compiled_model_path}")
+            module.load(compiled_model_path)
+            print(f"[DSPy] 模型加载成功")
+        else:
+            print(f"[DSPy] 未找到编译模型, 使用未编译版本")
+        
         print("[DSPy] 执行推理...")
         result = module(
             patient_id=patient_id,
