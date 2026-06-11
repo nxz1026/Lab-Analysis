@@ -6,6 +6,7 @@ DSPy 模块包
 
 from .literature_interpreter import LiteratureInterpreterModule, compile_interpreter, run_dspy_interpretation
 from .final_report_generator import FinalReportGenerator, compile_report_generator, run_dspy_final_report
+from .lab_data_extractor import LabDataExtractor, compile_lab_extractor, run_dspy_extraction
 
 __all__ = [
     'LiteratureInterpreterModule',
@@ -13,5 +14,8 @@ __all__ = [
     'run_dspy_interpretation',
     'FinalReportGenerator',
     'compile_report_generator',
-    'run_dspy_final_report'
+    'run_dspy_final_report',
+    'LabDataExtractor',
+    'compile_lab_extractor',
+    'run_dspy_extraction'
 ]
