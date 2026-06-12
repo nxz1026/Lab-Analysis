@@ -36,7 +36,7 @@ def test_dspy_imports():
             MRIAnalysisModule
         )
         
-        print("✅ 所有 DSPy 模块导入成功")
+        print("[OK] 所有 DSPy 模块导入成功")
         print(f"   - LiteratureInterpreterModule")
         print(f"   - FinalReportGenerator")
         print(f"   - LabDataExtractor")
@@ -45,7 +45,7 @@ def test_dspy_imports():
         return True
         
     except ImportError as e:
-        print(f"❌ 模块导入失败: {e}")
+        print(f"[FAIL] 模块导入失败: {e}")
         return False
 
 
@@ -63,10 +63,10 @@ def test_dspy_configuration():
         dashscope_key = os.environ.get('DASHSCOPE_API_KEY')
         
         if not deepseek_key and not dashscope_key:
-            print("❌ 未找到 API Key (DEEPSEEK_API_KEY 或 DASHSCOPE_API_KEY)")
+            print("[FAIL] 未找到 API Key (DEEPSEEK_API_KEY 或 DASHSCOPE_API_KEY)")
             return False
         
-        print(f"✅ API Key 已配置")
+        print(f"[OK] API Key 已配置")
         if deepseek_key:
             print(f"   - DeepSeek: {deepseek_key[:20]}...")
         if dashscope_key:
@@ -79,7 +79,7 @@ def test_dspy_configuration():
                 api_key=deepseek_key,
                 api_base='https://api.deepseek.com/v1'
             )
-            print(f"✅ DeepSeek LM 配置成功")
+            print(f"[OK] DeepSeek LM 配置成功")
         
         # 配置 Qwen-VL (用于影像分析)
         if dashscope_key:
@@ -88,12 +88,12 @@ def test_dspy_configuration():
                 api_key=dashscope_key,
                 api_base='https://dashscope.aliyuncs.com/api/v1'
             )
-            print(f"✅ Qwen-VL LM 配置成功")
+            print(f"[OK] Qwen-VL LM 配置成功")
         
         return True
         
     except Exception as e:
-        print(f"❌ LLM 配置失败: {e}")
+        print(f"[FAIL] LLM 配置失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -117,7 +117,7 @@ def test_literature_interpreter_dspy():
         lit_file = project_root / "data" / patient_id / ts / "03_literature" / "literature_results.json"
         
         if not (analysis_file.exists() and lit_file.exists()):
-            print(f"⚠️  测试数据不存在,跳过此测试")
+            print(f"[WARN]  测试数据不存在,跳过此测试")
             print(f"   需要运行完整 Pipeline 生成数据")
             return True  # 不算失败
         
@@ -139,7 +139,7 @@ def test_literature_interpreter_dspy():
         result = run_dspy_mode(args)
         
         if result:
-            print(f"✅ 文献解读成功")
+            print(f"[OK] 文献解读成功")
             output_path = result.get('output_path', '')
             if output_path and output_path != '.':
                 output_file = Path(output_path)
@@ -151,11 +151,11 @@ def test_literature_interpreter_dspy():
                     print(f"   输出文件: {output_file}")
             return True
         else:
-            print(f"❌ 文献解读失败")
+            print(f"[FAIL] 文献解读失败")
             return False
         
     except Exception as e:
-        print(f"❌ 测试失败: {e}")
+        print(f"[FAIL] 测试失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -185,16 +185,16 @@ def test_mri_analyzer_dspy():
         )
         
         if result:
-            print(f"✅ MRI 分析成功")
+            print(f"[OK] MRI 分析成功")
             print(f"   解剖定位: {result['anatomical_localization'][:50]}...")
             print(f"   置信度: {result['confidence_score']:.2f}")
             return True
         else:
-            print(f"❌ MRI 分析失败")
+            print(f"[FAIL] MRI 分析失败")
             return False
         
     except Exception as e:
-        print(f"❌ 测试失败: {e}")
+        print(f"[FAIL] 测试失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -223,7 +223,7 @@ def test_final_report_dspy():
         
         missing_files = [f for f in required_files if not f.exists()]
         if missing_files:
-            print(f"⚠️  部分前置文件缺失,跳过此测试")
+            print(f"[WARN]  部分前置文件缺失,跳过此测试")
             for f in missing_files:
                 print(f"   缺失: {f}")
             return True  # 不算失败
@@ -240,14 +240,14 @@ def test_final_report_dspy():
         result = run_dspy_mode(args)
         
         if result:
-            print(f"✅ 报告生成成功")
+            print(f"[OK] 报告生成成功")
             return True
         else:
-            print(f"❌ 报告生成失败")
+            print(f"[FAIL] 报告生成失败")
             return False
         
     except Exception as e:
-        print(f"❌ 测试失败: {e}")
+        print(f"[FAIL] 测试失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -264,7 +264,7 @@ def test_pipeline_integration():
         pipeline_file = project_root / "lab_analysis" / "pipeline.py"
         
         if not pipeline_file.exists():
-            print(f"❌ pipeline.py 不存在")
+            print(f"[FAIL] pipeline.py 不存在")
             return False
         
         content = pipeline_file.read_text(encoding='utf-8')
@@ -279,22 +279,22 @@ def test_pipeline_integration():
         all_passed = True
         for keyword, description in checks:
             if keyword in content:
-                print(f"✅ {description}")
+                print(f"[OK] {description}")
             else:
-                print(f"❌ {description} - 未找到 '{keyword}'")
+                print(f"[FAIL] {description} - 未找到 '{keyword}'")
                 all_passed = False
         
         return all_passed
         
     except Exception as e:
-        print(f"❌ 检查失败: {e}")
+        print(f"[FAIL] 检查失败: {e}")
         return False
 
 
 def generate_test_report(results: dict):
     """生成测试报告"""
     print("\n" + "=" * 60)
-    print("📊 DSPy 端到端测试报告")
+    print("[STATS] DSPy 端到端测试报告")
     print("=" * 60)
     
     total = len(results)
@@ -302,13 +302,13 @@ def generate_test_report(results: dict):
     failed = total - passed
     
     print(f"\n总计: {total} 个测试")
-    print(f"通过: {passed} ✅")
-    print(f"失败: {failed} ❌")
+    print(f"通过: {passed} [OK]")
+    print(f"失败: {failed} [FAIL]")
     print(f"成功率: {passed/total*100:.1f}%")
     
     print("\n详细结果:")
     for test_name, result in results.items():
-        status = "✅ 通过" if result else "❌ 失败"
+        status = "[OK] 通过" if result else "[FAIL] 失败"
         print(f"  {test_name}: {status}")
     
     # 保存报告
@@ -334,9 +334,9 @@ def generate_test_report(results: dict):
 
 def main():
     """主函数"""
-    print("\n" + "🧪" * 30)
+    print("\n" + "[TEST]" * 30)
     print("DSPy 端到端集成测试")
-    print("🧪" * 30 + "\n")
+    print("[TEST]" * 30 + "\n")
     
     results = {}
     
@@ -353,13 +353,13 @@ def main():
     
     print("\n" + "=" * 60)
     if all_passed:
-        print("🎉 所有测试通过! DSPy 集成成功!")
+        print("[DONE] 所有测试通过! DSPy 集成成功!")
         print("\n下一步:")
         print("1. 运行完整 Pipeline: python -m lab_analysis --patient-id <ID> --use-dspy")
         print("2. 查看性能报告: reports/dspy_performance_report.json")
         print("3. 阅读使用文档: docs/DSPY_USAGE.md")
     else:
-        print("⚠️  部分测试失败,请检查上述错误信息")
+        print("[WARN]  部分测试失败,请检查上述错误信息")
         print("\n建议:")
         print("1. 确认 API Key 已正确配置")
         print("2. 检查网络连接")

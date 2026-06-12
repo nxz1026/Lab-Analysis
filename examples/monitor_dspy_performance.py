@@ -192,7 +192,7 @@ def generate_performance_report(results: Dict, output_file: Path):
     
     # 打印摘要
     print("\n" + "=" * 60)
-    print("📊 性能对比摘要")
+    print("[STATS] 性能对比摘要")
     print("=" * 60)
     
     std = results.get('standard_stats', {})
@@ -220,9 +220,9 @@ def generate_performance_report(results: Dict, output_file: Path):
 
 def main():
     """主函数"""
-    print("\n" + "🔍" * 30)
+    print("\n" + "[SEARCH]" * 30)
     print("DSPy 性能监控工具")
-    print("🔍" * 30 + "\n")
+    print("[SEARCH]" * 30 + "\n")
     
     # 1. 加载训练样本
     print("[步骤 1] 加载训练样本...")
@@ -239,7 +239,7 @@ def main():
     generate_performance_report(results, output_file)
     
     print("\n" + "=" * 60)
-    print("🎉 性能监控完成!")
+    print("[DONE] 性能监控完成!")
     print("=" * 60)
     print(f"\n报告位置: {output_file}")
     print("\n建议:")

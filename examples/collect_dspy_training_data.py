@@ -231,9 +231,9 @@ def save_training_data(samples: List[Dict], output_file: Path):
 
 def main():
     """主函数"""
-    print("\n" + "📊" * 30)
+    print("\n" + "[STATS]" * 30)
     print("DSPy 训练数据收集工具")
-    print("📊" * 30 + "\n")
+    print("[STATS]" * 30 + "\n")
     
     all_samples = []
     
@@ -254,7 +254,7 @@ def main():
     save_training_data(all_samples, output_file)
     
     print("\n" + "=" * 60)
-    print("🎉 训练数据收集完成!")
+    print("[DONE] 训练数据收集完成!")
     print("=" * 60)
     print(f"\n下一步:")
     print(f"1. 检查数据质量: {output_file}")

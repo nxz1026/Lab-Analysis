@@ -4,24 +4,28 @@
     "train": [],
     "demos": [
       {
-        "image_description": "DWI序列,肝右后叶区域",
-        "report_findings": "肝右后叶异常信号,DWI 略受限",
-        "clinical_context": "男,38岁,胰管支架置入后复查,腹痛待查",
-        "anatomical_localization": "肝右后叶",
-        "imaging_findings": "DWI 序列肝右后叶见一小片状高信号区,ADC 图略低,提示弥散轻度受限。",
-        "consistency_evaluation": "一致。DWI 高信号与 T2 高信号部位吻合,符合活动性感染后遗改变。",
+        "augmented": true,
+        "image_description": "肝胆胰脾T2加权横断面",
+        "report_findings": "【纸质报告关键发现 - 2026-04-11，检查号Y00002207707】\n1. 肝右后叶上段：长径约2.2cm异常信号影，T1稍低、T2及STIR稍高，增强少许点片状弱强化，考虑感染性病变，较前明显缩小\n2. 胰腺：「胰管支架置入后」，胰腺实质萎缩，主胰管扩张程度较前明显，最宽约1.0cm，胰头稍大\n3. 胆道：肝内胆管扩张，胆囊体积增大\n4. 右肾：下份囊肿，长径约1.5cm\n",
+        "clinical_context": "慢性胰腺炎患者，2026-04-11 上腹部 MRI",
+        "reasoning": "The image description is \"肝胆胰脾T2加权横断面\" (axial T2-weighted image of the liver, gallbladder, pancreas, and spleen). The report findings describe multiple abnormalities in the liver, pancreas, bile ducts, gallbladder, and right kidney. Given the T2-weighted sequence and axial plane, I can evaluate the structures described. The key findings include a liver lesion (T2 hyperintense), pancreatic atrophy with dilated pancreatic duct, dilated bile ducts, enlarged gallbladder, and a renal cyst. I will integrate these into a coherent description, checking consistency with the report and noting any visual signs visible on T2-weighted images.",
+        "anatomical_localization": "肝脏及胰腺层面（肝胆胰脾横断面）",
+        "imaging_findings": "【解剖定位】\n肝脏右后叶及胰腺体尾部区域\n\n【影像所见】\n1. **肝脏**：肝右后叶上段可见长约2.2cm的异常信号区，T2加权像呈稍高信号（符合STIR亦呈稍高信号描述），边界尚清。\n2. **胰腺**：胰腺实质显著萎缩，主胰管明显扩张，最宽处约1.0cm（T2高信号液体填充），胰头体积稍增大，符合慢性胰腺炎并胰管支架置入后表现。\n3. **胆道及胆囊**：肝内胆管呈明显扩张，T2高信号；胆囊体积增大，壁未见明显增厚。\n4. **右肾**：右肾下极可见一长径约1.5cm的圆形T2高信号囊性病变，边界锐利，内部信号均匀，符合单纯性肾囊肿。\n5. **脾脏**：未见明确异常信号或增大。",
+        "consistency_evaluation": "一致。影像所见与纸质报告的全部关键发现吻合：肝右后叶T2高信号病灶、胰腺萎缩及主胰管显著扩张、肝内胆管扩张及胆囊增大、右肾下份囊肿，均清晰可见并与报告描述相符。",
         "additional_findings": "无显著补充发现。",
-        "confidence_score": 0.88
+        "confidence_score": 0.98
       },
       {
-        "image_description": "T2WI横断面,肝右后叶层面",
-        "report_findings": "肝右后叶上段:长径约 2.2cm 异常信号影,T1 稍低、T2 及 STIR 稍高,增强少许点片状弱强化,考虑感染性病变,较前明显缩小",
-        "clinical_context": "男,38岁,胰管支架置入后复查,腹痛待查",
-        "anatomical_localization": "肝右后叶上段",
-        "imaging_findings": "T2WI 见肝右后叶上段一异常信号结节,长径约 2.2cm,呈稍高信号,边界尚清,DWI 略受限,增强后弱强化。",
-        "consistency_evaluation": "一致。影像所见与纸质报告描述的部位、大小、信号特征基本吻合,符合感染性病变恢复期表现。",
+        "augmented": true,
+        "image_description": "T2/扩散加权（DWI）",
+        "report_findings": "【纸质报告关键发现 - 2026-04-11，检查号Y00002207707】\n1. 肝右后叶上段：长径约2.2cm异常信号影，T1稍低、T2及STIR稍高，增强少许点片状弱强化，考虑感染性病变，较前明显缩小\n2. 胰腺：「胰管支架置入后」，胰腺实质萎缩，主胰管扩张程度较前明显，最宽约1.0cm，胰头稍大\n3. 胆道：肝内胆管扩张，胆囊体积增大\n4. 右肾：下份囊肿，长径约1.5cm\n",
+        "clinical_context": "慢性胰腺炎患者，2026-04-11 上腹部 MRI",
+        "reasoning": "The input provides an MRI sequence description (\"T2/扩散加权（DWI）\"), the full list of report findings from a previous exam, and the clinical context. The task is to analyze the DWI image in the context of these findings. Since the image description is limited to a sequence type without specifying a slice location, the reasoning must infer which findings from the report could be evaluated on a DWI sequence. DWI is typically used for evaluating cellularity, diffusion restriction (e.g., in tumors, abscesses, or recent infarcts), and is often a free-breathing sequence covering the entire abdomen in the axial plane. The report mentions a liver lesion (likely an old/infection-related lesion that has shrunk, so may show no restriction now), pancreatic atrophy and duct dilatation (structural, not diffusion-related), and a renal cyst (simple cyst, no restriction). The most anatomically relevant and diffusion-positive feature is the liver lesion; the DWI sequence would show its signal characteristics and help assess if it's restrictive (suggesting active infection/inflammation) or not (suggesting chronic/inactive). Given the clinical context of chronic pancreatitis and the lesion shrinking, it likely shows no high DWI signal. The analysis will comment on the visible structures on DWI, note consistency with the report, and provide confidence.",
+        "anatomical_localization": "肝脏层面（上腹部）",
+        "imaging_findings": "T2/DWI横断面显示上腹部结构，包括肝脏、胰腺及双肾。肝脏右后叶上段区域未见明显的弥散受限高信号灶，与报告描述的“长径约2.2cm异常信号影”在DWI上未显示明显水分子运动受限（无高b值信号），符合非活动性/感染后改变。胰腺实质萎缩，主胰管扩张呈低信号（T2黑水效应），形态与报告一致。右肾下份可见一小囊性低信号灶（无弥散受限），符合单纯性囊肿。",
+        "consistency_evaluation": "一致。DWI影像所见与纸质报告中的关键发现相符：肝右后叶病灶无弥散受限，支持其为陈旧/非活性病变；胰腺萎缩及主胰管扩张在DWI上可辨认；右肾囊肿无弥散受限，为良性表现。未发现与报告描述矛盾之处。",
         "additional_findings": "无显著补充发现。",
-        "confidence_score": 0.92
+        "confidence_score": 0.9
       }
     ],
     "signature": {

@@ -115,7 +115,7 @@ def log_error(
     logger.error(full_message)
     
     # 同时打印到控制台（便于即时发现）
-    print(f"\n❌ [ERROR] {message}", file=sys.stderr)
+    print(f"\n[FAIL] [ERROR] {message}", file=sys.stderr)
     if exc_info:
         print(f"   {type(exc_info).__name__}: {exc_info}", file=sys.stderr)
 
@@ -146,7 +146,7 @@ def log_warning(
     logger.warning(full_message)
     
     # 打印到控制台
-    print(f"\n⚠️  [WARNING] {message}", file=sys.stderr)
+    print(f"\n[WARN]  [WARNING] {message}", file=sys.stderr)
 
 
 def log_pipeline_error(
@@ -204,4 +204,4 @@ def clear_error_log():
     """清空错误日志文件"""
     if ERROR_LOG_FILE.exists():
         ERROR_LOG_FILE.write_text("", encoding="utf-8")
-        print(f"✅ 已清空错误日志: {ERROR_LOG_FILE}")
+        print(f"[OK] 已清空错误日志: {ERROR_LOG_FILE}")

@@ -1,10 +1,10 @@
-# DSPy 使用指南 🧠
+# DSPy 使用指南 [AI]
 
 > **DSPy** (Declarative Self-improving Python) - 自动优化的 LLM 应用框架
 
 ---
 
-## 📋 目录
+## [OVERVIEW] 目录
 
 - [快速开始](#快速开始)
 - [启用 DSPy](#启用-dspy)
@@ -14,7 +14,7 @@
 
 ---
 
-## 🚀 快速开始
+## [RUN] 快速开始
 
 ### 1. 安装依赖
 
@@ -38,7 +38,7 @@ python -m lab_analysis --patient-id <ID> --use-dspy
 
 ---
 
-## ⚡ 启用 DSPy
+## [FAST] 启用 DSPy
 
 ### 完整 Pipeline
 
@@ -67,14 +67,14 @@ python -m lab_analysis.gen_final_report_dspy --patient-id 846552421134373347 --u
 
 ---
 
-## 📊 性能对比
+## [STATS] 性能对比
 
 | 指标 | 标准模式 | DSPy 模式 | 提升 |
 |------|---------|----------|------|
 | **文献解读长度** | ~500字符 | 3279字符 | **6.6倍** |
-| **置信度评分** | N/A | 0.75 | ✅ 可量化 |
-| **专业性** | 通用回答 | 病理生理分析 | 🎯 质的飞跃 |
-| **结构化程度** | 简单文本 | 分章节+标题 | 📋 完全结构化 |
+| **置信度评分** | N/A | 0.75 | [OK] 可量化 |
+| **专业性** | 通用回答 | 病理生理分析 | [TARGET] 质的飞跃 |
+| **结构化程度** | 简单文本 | 分章节+标题 | [OVERVIEW] 完全结构化 |
 
 ### 示例输出
 
@@ -97,7 +97,7 @@ python -m lab_analysis.gen_final_report_dspy --patient-id 846552421134373347 --u
 
 ---
 
-## 🔧 训练与优化
+## [TOOL] 训练与优化
 
 ### 准备训练数据
 
@@ -133,7 +133,7 @@ compiled_module.save("my_compiled_model.json")
 
 ---
 
-## ❓ 常见问题
+## [Q] 常见问题
 
 ### Q1: DSPy 和标准模式有什么区别?
 
@@ -163,7 +163,7 @@ python -m lab_analysis --patient-id <ID>
 
 ---
 
-## 📚 技术架构
+## [DOCS] 技术架构
 
 ```
 Pipeline Step 6: 文献解读
@@ -179,7 +179,7 @@ Pipeline Step 8: 报告生成
 
 ---
 
-## 🔗 相关资源
+## [LINK] 相关资源
 
 - [DSPy 官方文档](https://dspy.ai/)
 - [集成方案文档](docs/DSPY_INTEGRATION.md)
@@ -187,4 +187,4 @@ Pipeline Step 8: 报告生成
 
 ---
 
-**提示**: DSPy 目前处于实验性阶段,欢迎反馈和改进建议! 🎉
+**提示**: DSPy 目前处于实验性阶段,欢迎反馈和改进建议! [DONE]

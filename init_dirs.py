@@ -30,9 +30,9 @@ def create_directories():
     for dir_path in dirs_to_create:
         try:
             dir_path.mkdir(parents=True, exist_ok=True)
-            print(f"✓ 已创建: {dir_path}")
+            print(f"[OK] 已创建: {dir_path}")
         except Exception as e:
-            print(f"✗ 创建失败 {dir_path}: {e}")
+            print(f"[FAIL] 创建失败 {dir_path}: {e}")
     
     print("=" * 60)
     print("目录结构初始化完成！")

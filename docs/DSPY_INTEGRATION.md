@@ -1,6 +1,6 @@
 # DSPy 集成指南
 
-## 📋 目录
+## [OVERVIEW] 目录
 
 - [概述](#概述)
 - [安装](#安装)
@@ -27,12 +27,12 @@
 
 ### 适用场景
 
-✅ **推荐使用 DSPy 的步骤:**
+[OK] **推荐使用 DSPy 的步骤:**
 1. **文献解读** (`literature_interpreter.py`) - 生成循证医学解读
 2. **最终报告** (`gen_final_report.py`) - 综合多源数据生成报告
 3. **检验数据提取** (`extract_lab_data.py`) - 从图片提取结构化数据
 
-❌ **不推荐使用:**
+[FAIL] **不推荐使用:**
 - 纯数据处理步骤 (data_loader, data_analyzer)
 - 文件操作 (organize_local_files)
 

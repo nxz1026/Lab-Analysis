@@ -30,7 +30,7 @@ class FinalReportSignature(dspy.Signature):
     section_4_multidisciplinary: str = dspy.OutputField(desc="四、多学科联合诊断意见")
     section_5_diagnosis: str = dspy.OutputField(desc="五、核心诊断结论与鉴别诊断")
     section_6_consistency: str = dspy.OutputField(desc="六、结论一致性评估")
-    section_7_action_plan: str = dspy.OutputField(desc="七、行动计划（紧急🔴 / 重要🟡 / 常规🟢）")
+    section_7_action_plan: str = dspy.OutputField(desc="七、行动计划（紧急[URGENT] / 重要[IMPORTANT] / 常规[ROUTINE]）")
     section_8_followup: str = dspy.OutputField(desc="八、随访与监测计划")
     section_9_prognosis: str = dspy.OutputField(desc="九、预后评估")
     
@@ -240,7 +240,7 @@ def run_dspy_final_report(patient_id: str, data_dir: Path,
 
 {result.section_6_consistency}
 
-## 七、行动计划（紧急🔴 / 重要🟡 / 常规🟢）
+## 七、行动计划（紧急[URGENT] / 重要[IMPORTANT] / 常规[ROUTINE]）
 
 {result.section_7_action_plan}
 

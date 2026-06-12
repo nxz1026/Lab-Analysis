@@ -133,9 +133,9 @@ def save_training_data(samples: List[Dict], output_path: Path = None):
 
 def main():
     """主函数"""
-    print("\n" + "📊" * 30)
+    print("\n" + "[STATS]" * 30)
     print("DSPy 训练数据准备工具")
-    print("📊" * 30 + "\n")
+    print("[STATS]" * 30 + "\n")
     
     # 提取训练样本
     samples = extract_training_samples()
