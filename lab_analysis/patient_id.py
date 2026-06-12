@@ -37,4 +37,4 @@ if __name__ == "__main__":
     print(f"原始:  {raw}")
     print(f"脱敏:  {obf}")
     print(f"还原:  {restored}")
-    print(f"验证:  {'✅ 一致' if raw == restored else '❌ 失败'}")
+    print(f"验证:  {'[OK] 一致' if raw == restored else '[FAIL] 失败'}")

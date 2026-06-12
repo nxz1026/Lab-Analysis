@@ -36,7 +36,7 @@ def example_1_basic_usage():
         print(f"\n运行 DSPy 文献解读...")
         result = run_dspy_interpretation(patient_id, data_dir)
         
-        print(f"\n✅ 解读完成!")
+        print(f"\n[OK] 解读完成!")
         print(f"   可信度: {result['confidence']:.2f}")
         print(f"\n解读摘要:")
         print(result['interpretation'][:500] + "...")
@@ -104,7 +104,7 @@ def example_2_custom_module():
             context="患者反复发热,CRP-WBC分离现象"
         )
         
-        print(f"\n✅ 医学建议生成完成!")
+        print(f"\n[OK] 医学建议生成完成!")
         print(f"\n建议内容:")
         print(result.recommendations)
         
@@ -134,9 +134,9 @@ def example_3_comparison():
 
 def main():
     """主函数"""
-    print("\n" + "🔬" * 30)
+    print("\n" + "[LAB]" * 30)
     print("Lab-Analysis DSPy 快速开始")
-    print("🔬" * 30 + "\n")
+    print("[LAB]" * 30 + "\n")
     
     print("请选择要运行的示例:")
     print("1. 基本使用 - 运行 DSPy 文献解读")
@@ -154,7 +154,7 @@ def main():
         elif choice == "3":
             example_3_comparison()
         elif choice == "0":
-            print("\n再见! 👋")
+            print("\n再见! [HELLO]")
             return
         else:
             print("\n[错误] 无效选择")

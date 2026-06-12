@@ -535,7 +535,7 @@ def main():
                 if result.returncode != 0:
                     print(f"  [!] MRI报告摄入失败")
             
-            print("\n✅ 数据摄入完成，继续执行Pipeline...\n")
+            print("\n[OK] 数据摄入完成，继续执行Pipeline...\n")
 
     # ② 前置检查：验证病人数据
     print("② 前置检查：验证病人数据")

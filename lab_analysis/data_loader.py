@@ -290,14 +290,14 @@ def main():
 
     # 前置检查：原始数据目录存在
     if not paths["raw_papers"].exists():
-        print(f"❌ 原始数据目录不存在: {paths['raw_papers']}")
+        print(f"[FAIL] 原始数据目录不存在: {paths['raw_papers']}")
         print(f"   预期路径: raw/patient_{{patient_id}}/papers/lab_report_*/")
         print(f"   当前 patient_id: {args.patient_id}")
         sys.exit(1)
 
     reports = load_reports(paths["raw_papers"])
     if not reports:
-        print("❌ 未找到任何报告（lab_report_*/ 目录），退出")
+        print("[FAIL] 未找到任何报告（lab_report_*/ 目录），退出")
         sys.exit(1)
 
     print(f"[{datetime.now().isoformat()}] 数据加载开始...")

@@ -857,7 +857,7 @@ def run(patient_id: str):
     total_outliers = sum(d['outliers_mild']['count'] for d in zscore_results.values())
     severe_outliers = sum(d['outliers_severe']['count'] for d in zscore_results.values())
     if severe_outliers > 0:
-        print(f"  🚨 发现 {severe_outliers} 个严重异常值 (|Z|>3)")
+        print(f"  [ALERT] 发现 {severe_outliers} 个严重异常值 (|Z|>3)")
     if total_outliers > 0:
         print(f"  [警告] 发现 {total_outliers} 个轻度异常值 (|Z|>2)")
     paths["analyzed_dir"].mkdir(parents=True, exist_ok=True)
@@ -922,20 +922,20 @@ def run(patient_id: str):
     medium_risk = [(m, d) for m, d in cv_data.items() if d.get('risk_level') == '中']
     
     if high_risk:
-        md_lines.append("### ⚠️  高变异指标（需关注）\n")
+        md_lines.append("### [WARN]  高变异指标（需关注）\n")
         for metric, info in high_risk:
             cv = info.get('cv', 0)
             md_lines.append(f"- **{metric}**: CV={cv:.4f}（波动较大）\n")
     
     if medium_risk:
-        md_lines.append("\n### 🟡 中等变异指标\n")
+        md_lines.append("\n### [IMPORTANT] 中等变异指标\n")
         for metric, info in medium_risk:
             cv = info.get('cv', 0)
             md_lines.append(f"- {metric}: CV={cv:.4f}\n")
     
     stable = [(m, d) for m, d in cv_data.items() if d.get('risk_level') == '低']
     if stable:
-        md_lines.append(f"\n### ✅ 稳定指标（{len(stable)}个）\n")
+        md_lines.append(f"\n### [OK] 稳定指标（{len(stable)}个）\n")
         metrics_list = ", ".join([m for m, _ in stable[:5]])
         if len(stable) > 5:
             metrics_list += f" 等{len(stable)}个"
@@ -957,7 +957,7 @@ def run(patient_id: str):
             mild_outliers.append((metric, mild))
     
     if severe_outliers:
-        md_lines.append("### 🚨 严重异常值（|Z| > 3）\n")
+        md_lines.append("### [ALERT] 严重异常值（|Z| > 3）\n")
         for metric, info in severe_outliers:
             dates = ', '.join(info.get('dates', []))
             values = ', '.join([str(v) for v in info.get('values', [])])
@@ -968,13 +968,13 @@ def run(patient_id: str):
             md_lines.append(f"  - 最大偏离: Z={max_dev.get('z_score', 0):.2f} ({max_dev.get('date', '')})\n")
     
     if mild_outliers:
-        md_lines.append("\n### ⚠️  轻度异常值（|Z| > 2）\n")
+        md_lines.append("\n### [WARN]  轻度异常值（|Z| > 2）\n")
         for metric, info in mild_outliers:
             dates = ', '.join(info.get('dates', []))
             md_lines.append(f"- {metric}: {info['count']}次异常（{dates}）\n")
     
     if not severe_outliers and not mild_outliers:
-        md_lines.append("- ✅ 未发现统计学异常值\n")
+        md_lines.append("- [OK] 未发现统计学异常值\n")
 
     md_report_path = paths["report_md"]
     with open(md_report_path, "w", encoding="utf-8") as f:

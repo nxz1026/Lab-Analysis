@@ -23,11 +23,11 @@ def test_import():
     
     try:
         import dspy
-        print(f"✅ DSPy 导入成功")
+        print(f"[OK] DSPy 导入成功")
         print(f"   版本: {dspy.__version__}")
         return True
     except ImportError as e:
-        print(f"❌ DSPy 导入失败: {e}")
+        print(f"[FAIL] DSPy 导入失败: {e}")
         return False
 
 
@@ -46,13 +46,13 @@ def test_basic_signature():
             question: str = dspy.InputField(desc="问题")
             answer: str = dspy.OutputField(desc="答案")
         
-        print(f"✅ 签名创建成功")
+        print(f"[OK] 签名创建成功")
         print(f"   输入字段: question")
         print(f"   输出字段: answer")
         return True
         
     except Exception as e:
-        print(f"❌ 签名创建失败: {e}")
+        print(f"[FAIL] 签名创建失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -80,12 +80,12 @@ def test_module_creation():
                 return self.predict(question=question)
         
         module = TestModule()
-        print(f"✅ 模块创建成功")
+        print(f"[OK] 模块创建成功")
         print(f"   类型: {type(module).__name__}")
         return True
         
     except Exception as e:
-        print(f"❌ 模块创建失败: {e}")
+        print(f"[FAIL] 模块创建失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -101,17 +101,17 @@ def test_lab_analysis_module():
         from lab_analysis.dspy_modules import LiteratureInterpreterModule
         
         module = LiteratureInterpreterModule()
-        print(f"✅ LiteratureInterpreterModule 导入成功")
+        print(f"[OK] LiteratureInterpreterModule 导入成功")
         print(f"   模块类型: {type(module).__name__}")
         print(f"   包含组件: interpret (ChainOfThought)")
         return True
         
     except ImportError as e:
-        print(f"⚠️  模块导入失败 (可能需要先配置 LLM): {e}")
+        print(f"[WARN]  模块导入失败 (可能需要先配置 LLM): {e}")
         print(f"   这是正常的,因为还没有配置 API 密钥")
         return None  # 不算失败
     except Exception as e:
-        print(f"❌ 模块测试失败: {e}")
+        print(f"[FAIL] 模块测试失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -119,9 +119,9 @@ def test_lab_analysis_module():
 
 def main():
     """运行所有测试"""
-    print("\n" + "🧪" * 30)
+    print("\n" + "[TEST]" * 30)
     print("DSPy 基础功能测试")
-    print("🧪" * 30 + "\n")
+    print("[TEST]" * 30 + "\n")
     
     results = []
     
@@ -142,19 +142,19 @@ def main():
     
     for name, result in results:
         if result is True:
-            status = "✅ 通过"
+            status = "[OK] 通过"
         elif result is False:
-            status = "❌ 失败"
+            status = "[FAIL] 失败"
         else:
-            status = "⚠️  跳过"
+            status = "[WARN]  跳过"
         print(f"{status} - {name}")
     
     print(f"\n总计: {passed} 通过, {failed} 失败, {skipped} 跳过")
     
     if failed == 0:
-        print("\n🎉 所有核心测试通过! DSPy 已准备好使用!")
+        print("\n[DONE] 所有核心测试通过! DSPy 已准备好使用!")
     else:
-        print(f"\n⚠️  有 {failed} 个测试失败,请检查错误信息")
+        print(f"\n[WARN]  有 {failed} 个测试失败,请检查错误信息")
     
     print("\n下一步:")
     print("1. 配置 LLM API 密钥 (在 .env 文件中)")

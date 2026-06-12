@@ -9,16 +9,16 @@
 
 ---
 
-## 📋 项目概述
+## [OVERVIEW] 项目概述
 
 **Lab-Analysis** 是一个面向**慢性胰腺炎等慢性病临床数据分析**的多源整合工具,围绕 *检验数据 → 趋势分析 → 文献循证 → 影像印证 → 综合报告* 的完整临床路径,实现"一次摄入,自动产出结构化临床分析报告"。
 
 ### 适用场景
 
-- 🏥 **临床研究**: 慢性胰腺炎、肿瘤标志物等长期检验数据趋势分析
-- 🧪 **个案会诊**: 多源数据(检验 + 文献 + 影像)交叉印证
-- 📚 **教学/复盘**: 文献循证与临床数据的可解释关联
-- 🤖 **LLM 应用研究**: 医学 LLM 的 Prompt 工程与对比评测
+- [HOSPITAL] **临床研究**: 慢性胰腺炎、肿瘤标志物等长期检验数据趋势分析
+- [TEST] **个案会诊**: 多源数据(检验 + 文献 + 影像)交叉印证
+- [DOCS] **教学/复盘**: 文献循证与临床数据的可解释关联
+- [BOT] **LLM 应用研究**: 医学 LLM 的 Prompt 工程与对比评测
 
 ### 核心价值
 
@@ -33,7 +33,7 @@
 
 ---
 
-## ✨ 核心功能
+## [NEW] 核心功能
 
 ### 1. 数据摄入(检验 + 影像 + 文献预处理)
 - 检验报告图片 OCR 识别(智谱 GLM-4V)
@@ -49,17 +49,17 @@
 ### 3. 文献检索与循证解读
 - PubMed 自动检索(支持 MeSH + 自由词组合)
 - DeepSeek AI 循证解读
-- 🧠 **DSPy 优化**: 病理生理层级结构化分析,内置置信度评分
+- [AI] **DSPy 优化**: 病理生理层级结构化分析,内置置信度评分
 
 ### 4. 影像报告检查
 - Qwen-VL 模型验证 MRI 报告
 - 影像所见与检验数据一致性比对
-- 🧠 **DSPy 优化**: 结构化提取影像征象
+- [AI] **DSPy 优化**: 结构化提取影像征象
 
 ### 5. 综合报告生成
 - 三源一致性评估(检验 / 文献 / 影像)
 - 9 章节结构化临床诊断报告
-- 🧠 **DSPy 优化**: 自动组织章节、补充鉴别诊断
+- [AI] **DSPy 优化**: 自动组织章节、补充鉴别诊断
 
 ### 6. 本地归档与上传备份
 - 按日期组织的本地归档
@@ -67,7 +67,7 @@
 
 ---
 
-## 🧠 DSPy 增强特性
+## [AI] DSPy 增强特性
 
 本项目集成 **DSPy** (Declarative Self-improving Python) 框架,在 4 个 LLM 驱动的核心模块上实现"标准模式 + DSPy 优化模式"双轨运行,既保证稳定生产,又支持 LLM 提示词的自动化迭代。
 
@@ -145,7 +145,7 @@ python examples/test_dspy_prompt_e2e.py
 
 ---
 
-## 📂 项目结构
+## [FOLDER] 项目结构
 
 ```
 Lab-Analysis/
@@ -169,7 +169,7 @@ Lab-Analysis/
 │   ├── patient_id.py                 # 患者 ID 脱敏
 │   ├── error_logger.py               # 错误日志记录
 │   ├── utils.py                      # 通用工具(含 is_windows / fix_console_encoding 平台适配)
-│   └── dspy_modules/                 # 🧠 DSPy 优化模块
+│   └── dspy_modules/                 # [AI] DSPy 优化模块
 │       ├── __init__.py               # 包导出
 │       ├── literature_interpreter.py # DSPy 文献解读
 │       ├── mri_analyzer.py           # DSPy 影像分析
@@ -228,7 +228,7 @@ Lab-Analysis/
 
 ---
 
-## 🔁 Pipeline 完整流程
+## [LOOP] Pipeline 完整流程
 
 `python -m lab_analysis --patient-id <id>` 会自动依次执行以下 9 个步骤,任何步骤失败均有日志记录,关键步骤支持 `--skip-xxx` 跳过。
 
@@ -256,7 +256,7 @@ Lab-Analysis/
 
 ---
 
-## 🛠️ 安装与配置
+## [TOOLS] 安装与配置
 
 ### 环境要求
 
@@ -290,12 +290,12 @@ cp .env.example .env
 
 | 变量 | 必填 | 用途 | 提供方 |
 |------|------|------|--------|
-| `WORK_ROOT` | ✅ | 项目工作根目录(默认当前目录) | — |
-| `DEEPSEEK_API_KEY` | ✅ | 文献解读 / 报告生成 | DeepSeek |
-| `DASHSCOPE_API_KEY` | ✅ | 影像分析(Qwen-VL) | 阿里云百炼 |
-| `ZHIPU_API_KEY` | ⭕ | 检验报告 OCR | 智谱 AI |
-| `FEISHU_FOLDER_TOKEN` | ⭕ | 飞书云盘上传(实验性) | 飞书开放平台 |
-| `ANALYSIS_TS` | ⭕ | 指定时间戳(单步调试用) | — |
+| `WORK_ROOT` | [OK] | 项目工作根目录(默认当前目录) | — |
+| `DEEPSEEK_API_KEY` | [OK] | 文献解读 / 报告生成 | DeepSeek |
+| `DASHSCOPE_API_KEY` | [OK] | 影像分析(Qwen-VL) | 阿里云百炼 |
+| `ZHIPU_API_KEY` | [STEP] | 检验报告 OCR | 智谱 AI |
+| `FEISHU_FOLDER_TOKEN` | [STEP] | 飞书云盘上传(实验性) | 飞书开放平台 |
+| `ANALYSIS_TS` | [STEP] | 指定时间戳(单步调试用) | — |
 
 `.env` 示例:
 
@@ -309,7 +309,7 @@ FEISHU_FOLDER_TOKEN=xxxxxxxx
 
 ---
 
-## 🚀 运行示例
+## [RUN] 运行示例
 
 ### 一键运行完整 Pipeline
 
@@ -372,7 +372,7 @@ python examples/dspy_prompt_comparison.py --data-dir data/<id>/<ts>
 
 ---
 
-## 📊 输出文件说明
+## [STATS] 输出文件说明
 
 ### 目录结构
 
@@ -438,7 +438,7 @@ data/{patient_id}/{timestamp}/
 
 ---
 
-## 📚 进阶文档
+## [DOCS] 进阶文档
 
 - [docs/DSPY_INTEGRATION.md](docs/DSPY_INTEGRATION.md) — DSPy 集成技术细节
 - [docs/DSPY_USAGE.md](docs/DSPY_USAGE.md) — DSPy 使用指南
@@ -446,7 +446,7 @@ data/{patient_id}/{timestamp}/
 
 ---
 
-## 🛠️ 技术栈
+## [TOOLS] 技术栈
 
 | 领域 | 选型 |
 |------|------|
@@ -462,7 +462,7 @@ data/{patient_id}/{timestamp}/
 
 ---
 
-## 📝 开发指南
+## [NOTE] 开发指南
 
 ### 代码规范
 
@@ -487,7 +487,7 @@ pip install pip-tools               # 可选:生成锁定文件
 pip-compile pyproject.toml -o requirements.lock
 ```
 
-> ⚠️ 所有依赖在 `pyproject.toml` 中声明,请勿手动创建 `requirements.txt`。
+> [WARN] 所有依赖在 `pyproject.toml` 中声明,请勿手动创建 `requirements.txt`。
 
 ### 错误日志
 
@@ -513,7 +513,7 @@ ruff check lab_analysis/
 
 ---
 
-## 🤝 贡献
+## [TEAM] 贡献
 
 欢迎 Issue 与 PR!
 
@@ -525,19 +525,19 @@ ruff check lab_analysis/
 
 ---
 
-## 📄 许可证
+## [DOC] 许可证
 
 MIT License — 详见 [LICENSE](LICENSE)
 
 ---
 
-## 👤 作者
+## [USER] 作者
 
 **nxz1026** — [GitHub @nxz1026](https://github.com/nxz1026)
 
 ---
 
-## 🙏 致谢
+## [THANKS] 致谢
 
 - DeepSeek、智谱 AI、阿里云百炼(Qwen-VL)提供的 LLM 能力
 - Stanford NLP 的 [DSPy](https://dspy.ai/) 框架
@@ -545,4 +545,4 @@ MIT License — 详见 [LICENSE](LICENSE)
 
 ---
 
-⭐ 如果这个项目对您有帮助,请给个 Star!
+[STAR] 如果这个项目对您有帮助,请给个 Star!

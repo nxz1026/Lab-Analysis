@@ -9,16 +9,16 @@
 
 ---
 
-## 📋 Overview
+## [OVERVIEW] Overview
 
 **Lab-Analysis** is a multi-source integration tool designed for **chronic disease clinical data analysis** (chronic pancreatitis and similar), running the full clinical pathway: *lab tests → trend analysis → literature evidence → imaging verification → integrated report* — "ingest once, produce a structured clinical analysis report automatically".
 
 ### Use Cases
 
-- 🏥 **Clinical Research**: Long-term lab data trend analysis for chronic pancreatitis, tumor markers, etc.
-- 🧪 **Single Case Consultation**: Cross-validation of multi-source data (lab + literature + imaging)
-- 📚 **Teaching / Case Review**: Explainable linkage between literature evidence and clinical data
-- 🤖 **LLM Application Research**: Prompt engineering and comparative evaluation for medical LLMs
+- [HOSPITAL] **Clinical Research**: Long-term lab data trend analysis for chronic pancreatitis, tumor markers, etc.
+- [TEST] **Single Case Consultation**: Cross-validation of multi-source data (lab + literature + imaging)
+- [DOCS] **Teaching / Case Review**: Explainable linkage between literature evidence and clinical data
+- [BOT] **LLM Application Research**: Prompt engineering and comparative evaluation for medical LLMs
 
 ### Core Value
 
@@ -32,7 +32,7 @@
 
 ---
 
-## ✨ Core Features
+## [NEW] Core Features
 
 ### 1. Data Ingestion (Lab + Imaging + Literature Preprocessing)
 - Lab report image OCR (Zhipu GLM-4V)
@@ -48,17 +48,17 @@
 ### 3. Literature Search & Evidence-Based Interpretation
 - Automated PubMed search (MeSH + free-text combinations)
 - DeepSeek AI evidence-based interpretation
-- 🧠 **DSPy Optimized**: Hierarchical pathophysiology analysis with built-in confidence scoring
+- [AI] **DSPy Optimized**: Hierarchical pathophysiology analysis with built-in confidence scoring
 
 ### 4. Imaging Report Check
 - Qwen-VL model validates MRI reports
 - Cross-check imaging findings against lab data
-- 🧠 **DSPy Optimized**: Structured extraction of imaging signs
+- [AI] **DSPy Optimized**: Structured extraction of imaging signs
 
 ### 5. Integrated Report Generation
 - Three-source consistency assessment (lab / literature / imaging)
 - 9-section structured clinical diagnostic report
-- 🧠 **DSPy Optimized**: Automatic section organization, differential diagnosis supplementation
+- [AI] **DSPy Optimized**: Automatic section organization, differential diagnosis supplementation
 
 ### 6. Local Archive & Upload Backup
 - Date-organized local archive
@@ -66,7 +66,7 @@
 
 ---
 
-## 🧠 DSPy Enhancement
+## [AI] DSPy Enhancement
 
 This project integrates the **DSPy** (Declarative Self-improving Python) framework, implementing a "standard mode + DSPy optimized mode" dual-track on 4 LLM-driven core modules — both stable production and automated prompt iteration are supported.
 
@@ -137,7 +137,7 @@ python examples/test_dspy_prompt_e2e.py
 
 ---
 
-## 📂 Project Structure
+## [FOLDER] Project Structure
 
 ```
 Lab-Analysis/
@@ -161,7 +161,7 @@ Lab-Analysis/
 │   ├── patient_id.py                 # Patient ID de-identification
 │   ├── error_logger.py               # Error log recorder
 │   ├── utils.py                      # Common utilities
-│   └── dspy_modules/                 # 🧠 DSPy optimized modules
+│   └── dspy_modules/                 # [AI] DSPy optimized modules
 │       ├── __init__.py               # Package exports
 │       ├── literature_interpreter.py # DSPy literature interpretation
 │       ├── mri_analyzer.py           # DSPy imaging analysis
@@ -220,7 +220,7 @@ Lab-Analysis/
 
 ---
 
-## 🔁 Complete Pipeline Flow
+## [LOOP] Complete Pipeline Flow
 
 `python -m lab_analysis --patient-id <id>` will execute the following 9 steps in order. Failures at any step are logged; key steps support `--skip-xxx` to skip.
 
@@ -248,7 +248,7 @@ Lab-Analysis/
 
 ---
 
-## 🛠️ Installation & Configuration
+## [TOOLS] Installation & Configuration
 
 ### Requirements
 
@@ -282,12 +282,12 @@ cp .env.example .env
 
 | Variable | Required | Purpose | Provider |
 |------|------|------|--------|
-| `WORK_ROOT` | ✅ | Project working root (default: current dir) | — |
-| `DEEPSEEK_API_KEY` | ✅ | Literature interpretation / report generation | DeepSeek |
-| `DASHSCOPE_API_KEY` | ✅ | Imaging analysis (Qwen-VL) | Alibaba Cloud Bailian |
-| `ZHIPU_API_KEY` | ⭕ | Lab report OCR | Zhipu AI |
-| `FEISHU_FOLDER_TOKEN` | ⭕ | Feishu cloud upload (experimental) | Feishu Open Platform |
-| `ANALYSIS_TS` | ⭕ | Specify timestamp (for single-step debugging) | — |
+| `WORK_ROOT` | [OK] | Project working root (default: current dir) | — |
+| `DEEPSEEK_API_KEY` | [OK] | Literature interpretation / report generation | DeepSeek |
+| `DASHSCOPE_API_KEY` | [OK] | Imaging analysis (Qwen-VL) | Alibaba Cloud Bailian |
+| `ZHIPU_API_KEY` | [STEP] | Lab report OCR | Zhipu AI |
+| `FEISHU_FOLDER_TOKEN` | [STEP] | Feishu cloud upload (experimental) | Feishu Open Platform |
+| `ANALYSIS_TS` | [STEP] | Specify timestamp (for single-step debugging) | — |
 
 `.env` example:
 
@@ -301,7 +301,7 @@ FEISHU_FOLDER_TOKEN=xxxxxxxx
 
 ---
 
-## 🚀 Run Examples
+## [RUN] Run Examples
 
 ### Run the Full Pipeline with One Command
 
@@ -364,7 +364,7 @@ python examples/dspy_prompt_comparison.py --data-dir data/<id>/<ts>
 
 ---
 
-## 📊 Output File Description
+## [STATS] Output File Description
 
 ### Directory Structure
 
@@ -426,7 +426,7 @@ data/{patient_id}/{timestamp}/
 
 ---
 
-## 📚 Advanced Documentation
+## [DOCS] Advanced Documentation
 
 - [docs/DSPY_INTEGRATION.md](docs/DSPY_INTEGRATION.md) — DSPy integration technical details
 - [docs/DSPY_USAGE.md](docs/DSPY_USAGE.md) — DSPy usage guide
@@ -434,7 +434,7 @@ data/{patient_id}/{timestamp}/
 
 ---
 
-## 🛠️ Tech Stack
+## [TOOLS] Tech Stack
 
 | Domain | Choice |
 |------|------|
@@ -450,7 +450,7 @@ data/{patient_id}/{timestamp}/
 
 ---
 
-## 📝 Development Guide
+## [NOTE] Development Guide
 
 ### Code Standards
 
@@ -474,7 +474,7 @@ pip install pip-tools               # Optional: generate lock file
 pip-compile pyproject.toml -o requirements.lock
 ```
 
-> ⚠️ All dependencies are declared in `pyproject.toml`. Do not manually create `requirements.txt`.
+> [WARN] All dependencies are declared in `pyproject.toml`. Do not manually create `requirements.txt`.
 
 ### Error Logging
 
@@ -500,7 +500,7 @@ ruff check lab_analysis/
 
 ---
 
-## 🤝 Contributing
+## [TEAM] Contributing
 
 Issues and PRs are welcome!
 
@@ -512,19 +512,19 @@ Issues and PRs are welcome!
 
 ---
 
-## 📄 License
+## [DOC] License
 
 MIT License — see [LICENSE](LICENSE) for details
 
 ---
 
-## 👤 Author
+## [USER] Author
 
 **nxz1026** — [GitHub @nxz1026](https://github.com/nxz1026)
 
 ---
 
-## 🙏 Acknowledgments
+## [THANKS] Acknowledgments
 
 - DeepSeek, Zhipu AI, Alibaba Cloud Bailian (Qwen-VL) for LLM capabilities
 - Stanford NLP's [DSPy](https://dspy.ai/) framework
@@ -532,4 +532,4 @@ MIT License — see [LICENSE](LICENSE) for details
 
 ---
 
-⭐ If this project helps you, please give it a Star!
+[STAR] If this project helps you, please give it a Star!

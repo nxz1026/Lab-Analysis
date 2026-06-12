@@ -175,9 +175,9 @@ def test_compiled_module(compiled_module, examples):
 
 def main():
     """主函数"""
-    print("\n" + "🔧" * 30)
+    print("\n" + "[TOOL]" * 30)
     print("DSPy 模块编译工具")
-    print("🔧" * 30 + "\n")
+    print("[TOOL]" * 30 + "\n")
     
     try:
         # Step 1: 配置 DSPy

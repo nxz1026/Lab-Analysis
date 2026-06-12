@@ -82,7 +82,7 @@ def run_vision_extractor(image_path: Path, interactive: bool = False) -> dict:
         print(result.stderr)
     
     if result.returncode != 0:
-        print(f"❌ 识别失败")
+        print(f"[FAIL] 识别失败")
         return None
     
     # 读取输出JSON
@@ -113,11 +113,11 @@ def run_ingest_data(image_path: Path, patient_id: str, report_date: str, report_
     result = subprocess.run(cmd, cwd=str(project_root), capture_output=True, text=True)
     
     if result.returncode == 0:
-        print(f"✅ 存入成功")
+        print(f"[OK] 存入成功")
         if result.stdout:
             print(result.stdout)
     else:
-        print(f"❌ 存入失败")
+        print(f"[FAIL] 存入失败")
         if result.stderr:
             print(result.stderr)
 
@@ -193,7 +193,7 @@ def main():
                     results.append({"file": image_path.name, "status": "用户跳过"})
                     continue
                 else:
-                    print("❌ 无效选择，跳过")
+                    print("[FAIL] 无效选择，跳过")
                     skipped_count += 1
                     results.append({"file": image_path.name, "status": "无效选择"})
                     continue

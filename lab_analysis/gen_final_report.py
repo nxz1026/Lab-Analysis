@@ -149,25 +149,25 @@ def assess_three_source_consistency(data_dir: Path) -> str:
     support_count = sum(1 for _, s, _ in signals if s in ("SUPPORT", "NORMAL"))
 
     if acute_count > 0:
-        overall = "🔴 **结论一致性：检验/影像/文献三者指向急性炎症状态，建议尽快处理。**"
+        overall = "[URGENT] **结论一致性：检验/影像/文献三者指向急性炎症状态，建议尽快处理。**"
         detail = "患者处于急性炎症/感染状态，三源证据一致。"
     elif conflict_count > 0 and support_count > conflict_count:
-        overall = "⚠️  **结论一致性：检验/影像/文献存在部分矛盾，需结合临床综合判断。**"
+        overall = "[WARN]  **结论一致性：检验/影像/文献存在部分矛盾，需结合临床综合判断。**"
         detail = "三源证据中部分矛盾，建议进一步检查或短期复查后再评估。"
     elif conflict_count > 0:
-        overall = "🔴 **结论一致性：检验/影像/文献存在明显矛盾，报告可信度存疑。**"
+        overall = "[URGENT] **结论一致性：检验/影像/文献存在明显矛盾，报告可信度存疑。**"
         detail = "三源证据矛盾较多，建议复核原始数据后再发正式报告。"
     elif support_count >= 2:
-        overall = "✅  **结论一致性：检验/影像/文献三者支持，无显著矛盾。**"
+        overall = "[OK]  **结论一致性：检验/影像/文献三者支持，无显著矛盾。**"
         detail = "三源证据相互印证，报告可信度高。"
     else:
-        overall = "⚠️  **结论一致性：证据不充分，无法完整评估一致性。**"
+        overall = "[WARN]  **结论一致性：证据不充分，无法完整评估一致性。**"
         detail = "部分源数据缺失，建议补充检查后再出报告。"
 
     # ── 拼段落 ─────────────────────────────────────────────────
-    status_icon = {"ACUTE": "🔴", "ELEVATED": "⚠️", "NORMAL": "✅",
-                   "SUPPORT": "✅", "CONFLICT": "❌", "NEUTRAL": "⚠️",
-                   "UNKNOWN": "⚠️"}.get
+    status_icon = {"ACUTE": "[URGENT]", "ELEVATED": "[WARN]", "NORMAL": "[OK]",
+                   "SUPPORT": "[OK]", "CONFLICT": "[FAIL]", "NEUTRAL": "[WARN]",
+                   "UNKNOWN": "[WARN]"}.get
 
     lines = [
         "## 附：三源质控段落\n",
@@ -320,7 +320,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 ## 六、结论一致性评估
 > 将上方「三源质控段落」的核心结论原文引用或摘要写入本节。
 
-## 七、行动计划（紧急🔴 / 重要🟡 / 常规🟢）
+## 七、行动计划（紧急[URGENT] / 重要[IMPORTANT] / 常规[ROUTINE]）
 
 ## 八、随访与监测计划
 
@@ -339,7 +339,7 @@ def main():
 
     DEEPSEEK_API_KEY = load_env_key("DEEPSEEK_API_KEY")
     if not DEEPSEEK_API_KEY:
-        print("❌ 未找到 DEEPSEEK_API_KEY"); return
+        print("[FAIL] 未找到 DEEPSEEK_API_KEY"); return
 
     reports_dir = data_dir / "04_reports"
     output_path = reports_dir / "final_integrated_report.md"
@@ -353,7 +353,7 @@ def main():
     ]
     missing = [str(p) for p in required if not p.exists()]
     if missing:
-        print("⚠️  以下前置文件不存在，将使用内置默认数据：")
+        print("[WARN]  以下前置文件不存在，将使用内置默认数据：")
         for p in missing:
             print(f"   - {p}")
 
