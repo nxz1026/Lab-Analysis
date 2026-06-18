@@ -33,7 +33,7 @@ DEEPSEEK_API_KEY=sk-your-api-key
 ### 3. 运行 DSPy Pipeline
 
 ```bash
-python -m lab_analysis --patient-id <ID> --use-dspy
+python -m lab_analysis --use-dspy
 ```
 
 ---
@@ -43,11 +43,11 @@ python -m lab_analysis --patient-id <ID> --use-dspy
 ### 完整 Pipeline
 
 ```bash
-# 标准模式 (默认)
-python -m lab_analysis --patient-id 846552421134373347
+# 标准模式 (默认) — 运行时交互输入身份证号
+python -m lab_analysis
 
 # DSPy 优化模式
-python -m lab_analysis --patient-id 846552421134373347 --use-dspy
+python -m lab_analysis --use-dspy
 ```
 
 ### 单独测试模块
@@ -56,13 +56,13 @@ python -m lab_analysis --patient-id 846552421134373347 --use-dspy
 
 ```bash
 $env:ANALYSIS_TS="20260611_111343"
-python -m lab_analysis.literature_interpreter_dspy --patient-id 846552421134373347 --use-dspy
+python -m lab_analysis.literature_interpreter_dspy --id-card <deid> --use-dspy
 ```
 
 #### 报告生成
 
 ```bash
-python -m lab_analysis.gen_final_report_dspy --patient-id 846552421134373347 --use-dspy
+python -m lab_analysis.gen_final_report_dspy --id-card <deid> --use-dspy
 ```
 
 ---
@@ -158,7 +158,7 @@ compiled_module.save("my_compiled_model.json")
 **A:** 移除 `--use-dspy` 参数即可:
 
 ```bash
-python -m lab_analysis --patient-id <ID>
+python -m lab_analysis
 ```
 
 ---

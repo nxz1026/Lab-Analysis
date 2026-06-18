@@ -355,7 +355,7 @@ def main():
     if all_passed:
         print("[DONE] 所有测试通过! DSPy 集成成功!")
         print("\n下一步:")
-        print("1. 运行完整 Pipeline: python -m lab_analysis --patient-id <ID> --use-dspy")
+        print("1. 运行完整 Pipeline: python -m lab_analysis --use-dspy")
         print("2. 查看性能报告: reports/dspy_performance_report.json")
         print("3. 阅读使用文档: docs/DSPY_USAGE.md")
     else:

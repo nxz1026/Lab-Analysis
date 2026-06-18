@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 DSPy 版本的文献解读模块
@@ -175,20 +175,20 @@ if __name__ == "__main__":
     from pathlib import Path
     
     parser = argparse.ArgumentParser(description="DSPy 文献解读")
-    parser.add_argument("--patient-id", required=True, help="患者ID")
+    parser.add_argument("--id-card", required=True, help="患者ID")
     args = parser.parse_args()
     
     # 获取数据目录
     work_root = Path(os.environ.get("WORK_ROOT", Path.cwd()))
-    raw_ts = os.environ.get("ANALYSIS_TS", args.patient_id)
+    raw_ts = os.environ.get("ANALYSIS_TS", args.id_card)
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
-    data_dir = work_root / "data" / args.patient_id / ts
+    data_dir = work_root / "data" / args.id_card / ts
     
     print(f"[DSPy] 开始文献解读...")
-    print(f"  患者ID: {args.patient_id}")
+    print(f"  患者ID: {args.id_card}")
     print(f"  数据目录: {data_dir}")
     
-    result = run_dspy_interpretation(args.patient_id, data_dir)
+    result = run_dspy_interpretation(args.id_card, data_dir)
     
     print(f"\n[DSPy] 解读完成!")
     print(f"  可信度: {result['confidence']:.2f}")

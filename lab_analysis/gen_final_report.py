@@ -1,14 +1,19 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """生成最终综合临床报告 - 调用 DeepSeek API"""
 import json
-import requests
 import argparse
 import os
 import sys
 from pathlib import Path
 
+from lab_analysis.llm_client import call_chat, load_api_key
+
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+
+_FINAL_REPORT_SYSTEM_PROMPT = (
+    "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"
+)
 
 # ============================================================
 # 患者信息从数据中动态读取
@@ -34,21 +39,8 @@ def _load_patient_info(lab_path: Path) -> dict:
 
 def parse_args():
     parser = argparse.ArgumentParser(description="生成最终综合临床报告")
-    parser.add_argument("--patient-id", required=True, help="病人诊疗卡号")
+    parser.add_argument("--id-card", required=True, help="脱敏ID(由 pipeline 传入)")
     return parser.parse_args()
-
-
-def load_env_key(key: str) -> str:
-    val = os.environ.get(key, "")
-    if val:
-        return val
-    # 从项目根目录的 .env 文件加载
-    env_path = Path(__file__).parent.parent / ".env"
-    if env_path.exists():
-        for line in env_path.read_text(encoding="utf-8").splitlines():
-            if line.startswith(f"{key}="):
-                return line.split("=", 1)[1].strip()
-    return ""
 
 
 def assess_three_source_consistency(data_dir: Path) -> str:
@@ -332,12 +324,12 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 
 def main():
     args = parse_args()
-    patient_id = args.patient_id
+    patient_id = args.id_card
     import os
     raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id)
     data_dir = WORK_ROOT / "data" / patient_id / ts
 
-    DEEPSEEK_API_KEY = load_env_key("DEEPSEEK_API_KEY")
+    DEEPSEEK_API_KEY = load_api_key("DEEPSEEK_API_KEY", required=False)
     if not DEEPSEEK_API_KEY:
         print("[FAIL] 未找到 DEEPSEEK_API_KEY"); return
 
@@ -362,32 +354,16 @@ def main():
 
     USER_PROMPT = build_prompt(data_dir, patient_id)
 
-    resp = requests.post(
-        "https://api.deepseek.com/chat/completions",
-        headers={
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "model": "deepseek-chat",
-            "messages": [
-                {"role": "system",
-                 "content": "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"},
-                {"role": "user", "content": USER_PROMPT}
-            ],
-            "max_tokens": 5000,
-            "temperature": 0.3
-        },
-        timeout=180
+    content = call_chat(
+        "deepseek",
+        user_prompt=USER_PROMPT,
+        system_prompt=_FINAL_REPORT_SYSTEM_PROMPT,
+        max_tokens=5000,
+        temperature=0.3,
+        timeout=180,
+        api_key=DEEPSEEK_API_KEY,
     )
 
-    result = resp.json()
-    content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-    usage = result.get("usage", {})
-
-    print(f"HTTP: {resp.status_code}")
-    print(f"Tokens: {usage.get('total_tokens', 'N/A')} "
-          f"(in={usage.get('prompt_tokens','')}, out={usage.get('completion_tokens','')})")
     print(f"Content length: {len(content)}")
 
     if content:

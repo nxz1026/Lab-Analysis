@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 文献检索模块 — 对接 PubMed E-utilities
 用法: python literature_searcher.py [--topic TOPIC] [--n N] [--out JSON]
@@ -264,13 +264,13 @@ def main():
     parser.add_argument("--n", type=int, default=6, help="每策略返回 PMID 数")
     parser.add_argument("--years", type=int, default=5,
                         help="限制近 N 年内的文献（默认5，设为0则不过滤）")
-    parser.add_argument("--patient-id", default=None, help="诊疗卡号，设置后默认输出到 data/{patient-id}/")
+    parser.add_argument("--id-card", default=None, help="脱敏ID(由 pipeline 传入)")
     parser.add_argument("--out", default=None, help="输出 JSON 路径")
     args = parser.parse_args()
 
-    if args.patient_id:
+    if args.id_card:
         import os
-        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id); lit_dir = WORK_ROOT / "data" / args.patient_id / ts / "03_literature"
+        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card); lit_dir = WORK_ROOT / "data" / args.id_card / ts / "03_literature"
         args.out = args.out or str(lit_dir / "literature_results.json")
 
     all_topics = list(SEARCH_STRATEGIES.keys())

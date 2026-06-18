@@ -13,25 +13,12 @@ import argparse
 import base64
 import json
 import os
-import re
 import sys
 import time
 from pathlib import Path
 
-import requests
-
-from lab_analysis.utils import api_retry_decorator, validate_chinese_id
-from lab_analysis.patient_id import encode
-
-
-def get_api_key():
-    """从环境变量获取 API Key"""
-    api_key = os.environ.get("ZHIPU_API_KEY")
-    
-    if not api_key:
-        raise ValueError("未找到 ZHIPU_API_KEY，请配置在 .env 文件或环境变量中")
-    
-    return api_key
+from lab_analysis.llm_client import call_chat, strip_code_fence, parse_json_response, load_api_key
+from lab_analysis.patient_id import encode, validate_id_card
 
 
 def encode_image_to_base64(image_path: Path) -> str:
@@ -64,9 +51,10 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
         "confidence": 置信度 0-1
     }
     """
-    api_key = get_api_key()
+    api_key = load_api_key("ZHIPU_API_KEY")
     image_b64 = encode_image_to_base64(image_path)
-    
+    model_name = "glm-4v-flash"
+
     prompt = """你是医疗文档OCR专家。请从这张检验报告图片中提取以下关键信息：
 
 1. 患者ID/诊疗卡号（通常是数字，可能在"诊疗卡号"、"病历号"、"患者ID"等字段后）
@@ -84,93 +72,39 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
 如果某个字段无法确定，请用 null 表示。
 只返回JSON，不要其他文字。"""
 
-    # 使用智谱AI GLM-4V-Flash模型
-    model_name = "glm-4v-flash"
-    
     max_retries = 3
-    retry_count = 0
     last_error = None
-    
-    while retry_count < max_retries:
+    for attempt in range(max_retries):
+        if attempt > 0:
+            wait_time = 2 ** attempt
+            print(f"[Vision] 等待 {wait_time} 秒后重试...")
+            time.sleep(wait_time)
+
+        print(f"[Vision] 尝试使用模型: {model_name} (智谱AI) [尝试 {attempt + 1}/{max_retries}]")
         try:
-            if retry_count > 0:
-                wait_time = 2 ** retry_count  # 指数退避: 2s, 4s, 8s
-                print(f"[Vision] 等待 {wait_time} 秒后重试...")
-                import time
-                time.sleep(wait_time)
-            
-            print(f"[Vision] 尝试使用模型: {model_name} (智谱AI) [尝试 {retry_count + 1}/{max_retries}]")
-            
-            payload = {
-                "model": model_name,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}},
-                            {"type": "text", "text": prompt}
-                        ]
-                    }
-                ]
-            }
-            
-            # 使用智谱AI API
-            api_url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-            
-            resp = requests.post(
-                api_url,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json"
-                },
-                json=payload,
-                timeout=120
+            raw = call_chat(
+                "zhipu",
+                user_prompt=prompt,
+                image_b64=image_b64,
+                model=model_name,
+                api_key=api_key,
             )
-            resp.raise_for_status()
-            
-            data = resp.json()
-            # 智谱AI返回格式与OpenAI兼容
-            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            
+            result = parse_json_response(raw)
+            result["model_used"] = model_name
             print(f"[Vision] [OK] 模型 {model_name} 调用成功")
-            
-            # 解析JSON响应
-            try:
-                # 清理可能的markdown代码块标记
-                content = content.strip()
-                if content.startswith("```json"):
-                    content = content[7:]
-                if content.startswith("```"):
-                    content = content[3:]
-                if content.endswith("```"):
-                    content = content[:-3]
-                
-                result = json.loads(content.strip())
-                result['model_used'] = model_name  # 记录使用的模型
-                return result
-            except json.JSONDecodeError as e:
-                print(f"[ERROR] JSON解析失败: {e}")
-                print(f"原始响应: {content[:500]}")
-                last_error = f"JSON解析失败: {e}"
-                retry_count += 1
-                continue
-        
+            return result
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] JSON解析失败: {e}")
+            print(f"原始响应: {raw[:500]}")
+            last_error = f"JSON解析失败: {e}"
+            continue
         except Exception as e:
-            error_msg = str(e)
-            print(f"[ERROR] 模型调用失败: {error_msg}")
-            last_error = error_msg
-            
-            # 如果是429错误，等待更长时间
-            if "429" in error_msg:
+            print(f"[ERROR] 模型调用失败: {e}")
+            if "429" in str(e):
                 print(f"[WARNING] 遇到速率限制，将增加等待时间")
-            
-            retry_count += 1
-            if retry_count < max_retries:
-                continue
-            else:
-                break
-    
-    # 所有重试都失败
+            last_error = str(e)
+            continue
+
     print(f"[ERROR] 所有 {max_retries} 次尝试均失败。最后错误: {last_error}")
     return {
         "patient_id": None,
@@ -198,49 +132,23 @@ def main():
     
     result = extract_info_from_image(image_path)
     
-    # 验证患者ID是否为有效身份证号
-    patient_id = result.get('patient_id')
-    if not patient_id or (patient_id and not validate_chinese_id(patient_id)):
-        if not patient_id:
-            print(f"\n[WARNING] 未识别到患者ID")
-        else:
-            print(f"\n[WARNING] 识别到的患者ID '{patient_id}' 不是有效的身份证号格式")
-        print(f"   期望格式: 18位数字(最后一位可能是X) 或 15位数字")
-        
-        if args.interactive:
-            print(f"\n请选择操作:")
-            print(f"  1. 手动输入正确的患者ID")
-            print(f"  2. 放弃此数据")
-            choice = input(f"\n请输入选择 (1/2): ").strip()
-            
-            if choice == '1':
-                new_id = input("请输入患者身份证号: ").strip()
-                if validate_chinese_id(new_id):
-                    result['patient_id'] = new_id
-                    result['confidence'] = 1.0
-                    print(f"[OK] 已更新患者ID: {new_id}")
-                else:
-                    print(f"[ERROR] 输入的ID格式无效，放弃此数据")
-                    result['patient_id'] = None
-                    result['error'] = '用户输入的ID格式无效'
-            elif choice == '2':
-                print(f"[INFO] 用户选择放弃此数据")
-                result['patient_id'] = None
-                result['error'] = '用户放弃'
-            else:
-                print(f"[ERROR] 无效的选择，默认放弃此数据")
-                result['patient_id'] = None
-                result['error'] = '用户输入无效选项'
-        else:
-            # 非交互模式下，标记为无效
-            result['patient_id'] = None
-            result['error'] = f'识别的ID "{patient_id}" 不是有效的身份证号'
+    # 强制校验身份证号（OCR 识别值作为 extracted_id 传入统一校验函数）
+    raw_extracted = result.get('patient_id')
+    if not raw_extracted:
+        print("\n[WARNING] 未识别到身份证号")
+    final_id = validate_id_card(raw_extracted, raw_extracted, interactive=args.interactive)
+    if final_id:
+        result['patient_id'] = final_id
+        result['confidence'] = 1.0
+    else:
+        result['patient_id'] = None
+        result['error'] = '身份证号校验未通过'
     
     # 输出结果
     print("\n" + "=" * 60)
     print("识别结果:")
     print("=" * 60)
-    print(f"患者ID:     {result.get('patient_id', 'N/A')}")
+    print(f"身份证号:   {result.get('patient_id', 'N/A')}")
     if result.get('patient_id'):
         print(f"脱敏ID:     {encode(result['patient_id'])}")
     print(f"报告日期:   {result.get('report_date', 'N/A')}")

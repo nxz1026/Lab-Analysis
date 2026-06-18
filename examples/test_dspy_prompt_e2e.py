@@ -87,7 +87,7 @@ print(f"[OK] Created: {lit_path}")
 print("\n[Step 1] Running standard mode...")
 result = subprocess.run(
     [sys.executable, "-m", "lab_analysis.literature_interpreter_dspy",
-     "--patient-id", "846552421134373347",
+     "--id-card", "846552421134373347",
      "--analysis", str(analysis_path), "--lit", str(lit_path),
      "--out", str(LIT_DIR / "literature_interpretation.json")],
     cwd=str(WORK_ROOT),
@@ -104,7 +104,7 @@ if result.stderr:
 print("\n[Step 2] Running DSPy mode...")
 result = subprocess.run(
     [sys.executable, "-m", "lab_analysis.literature_interpreter_dspy",
-     "--patient-id", "846552421134373347", "--use-dspy",
+     "--id-card", "846552421134373347", "--use-dspy",
      "--analysis", str(analysis_path), "--lit", str(lit_path),
      "--out", str(LIT_DIR / "literature_interpretation_dspy.json")],
     cwd=str(WORK_ROOT),

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 本地文件组织脚本 — Pipeline 最终步骤
@@ -48,7 +48,7 @@ def build_paths(patient_id: str):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="本地文件组织 - Pipeline最终步骤")
-    parser.add_argument("--patient-id", required=True, help="病人诊疗卡号")
+    parser.add_argument("--id-card", required=True, help="脱敏ID(由 pipeline 传入)")
     return parser.parse_args()
 
 
@@ -88,7 +88,7 @@ def copy_file_to_folder(local_path: Path, target_folder: Path, rename: str = Non
 
 def main():
     args = parse_args()
-    patient_id = args.patient_id
+    patient_id = args.id_card
     paths = build_paths(patient_id)
     data_dir = paths["data"]
 

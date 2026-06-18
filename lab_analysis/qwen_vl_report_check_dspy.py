@@ -1,36 +1,26 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 上腹部MRI报告印证分析 - DSPy 增强版
 
 支持传统 API 调用和 DSPy 优化两种模式
-用法: python qwen_vl_report_check_dspy.py --patient-id <ID> [--use-dspy]
+用法: python qwen_vl_report_check_dspy.py --id-card <ID> [--use-dspy]
 """
 
 import base64
 import json
 import os
-import requests
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
 
+from lab_analysis.llm_client import call_dashscope_multimodal, load_api_key
+
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
-DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
-if not DASHSCOPE_API_KEY:
-    # 从项目根目录的 .env 文件加载
-    env_path = Path(__file__).parent.parent / ".env"
-    if env_path.exists():
-        for line in open(env_path, encoding='utf-8'):
-            if line.startswith("DASHSCOPE_API_KEY=") and not line.startswith("#"):
-                DASHSCOPE_API_KEY = line.strip().split("=", 1)[1].strip().strip("'\"")
-
-if not DASHSCOPE_API_KEY:
-    raise RuntimeError("DASHSCOPE_API_KEY 未设置")
-
-API_BASE = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+# 模块加载时即校验密钥（保持原「未设置则启动失败」的行为）
+load_api_key("DASHSCOPE_API_KEY")
 
 REPORT_FINDINGS = """【纸质报告关键发现 - 2026-04-11，检查号Y00002207707】
 1. 肝右后叶上段：长径约2.2cm异常信号影，T1稍低、T2及STIR稍高，增强少许点片状弱强化，考虑感染性病变，较前明显缩小
@@ -95,27 +85,11 @@ def analyze_single_standard(image_b64: str, seq_name: str, seq_desc: str, findin
         report_finding=finding,
         seq_name=f"{seq_name} — {seq_desc}",
     )
-    payload = {
-        "model": "qwen-vl-plus",
-        "input": {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"image": f"data:image/jpeg;base64,{image_b64}"},
-                        {"text": prompt}
-                    ]
-                }
-            ]
-        }
-    }
-    resp = requests.post(API_BASE, headers={
-        "Authorization": f"Bearer {DASHSCOPE_API_KEY}",
-        "Content-Type": "application/json"
-    }, json=payload, timeout=120)
-    resp.raise_for_status()
-    data = resp.json()
-    content = data.get("output", {}).get("choices", [{}])[0].get("message", {}).get("content", "")
+    content = call_dashscope_multimodal(
+        image_b64=image_b64,
+        text_prompt=prompt,
+        timeout=120,
+    )
     return {
         "status": "success",
         "seq_name": seq_name,
@@ -178,15 +152,15 @@ def analyze_single_dspy(image_b64: str, seq_name: str, seq_desc: str, finding: s
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="上腹部MRI报告印证分析 - DSPy 增强版")
-    parser.add_argument("--patient-id", required=True)
+    parser.add_argument("--id-card", required=True)
     parser.add_argument("--use-dspy", action="store_true", help="使用 DSPy 优化版本")
     args = parser.parse_args()
 
     # 使用 WORK_ROOT 而不是硬编码路径
-    imaging_base = WORK_ROOT / "raw" / f"patient_{args.patient_id}" / "imaging"
+    imaging_base = WORK_ROOT / "raw" / f"patient_{args.id_card}" / "imaging"
     raw_ts = os.environ.get("ANALYSIS_TS", "")
-    ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id)
-    lit_dir = WORK_ROOT / "data" / args.patient_id / ts / "03_literature"
+    ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
+    lit_dir = WORK_ROOT / "data" / args.id_card / ts / "03_literature"
     lit_dir.mkdir(parents=True, exist_ok=True)
 
     # 前置检查：影像目录存在
@@ -197,7 +171,7 @@ def main():
 
     mode_label = "[DSPy]" if args.use_dspy else "[标准]"
     print(f"\n[{datetime.now().isoformat()}] {mode_label} 上腹部MRI报告印证分析")
-    print(f"  病人: {args.patient_id}")
+    print(f"  病人: {args.id_card}")
     print(f"  影像目录: {imaging_base}")
     print(f"  共分析 {len(SEQ_SELECTIONS)} 个序列\n")
 
@@ -252,7 +226,7 @@ def main():
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump({
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "patient_id": args.patient_id,
+            "patient_id": args.id_card,
             "mode": "dspy_optimized" if args.use_dspy else "standard",
             "total_sequences": len(SEQ_SELECTIONS),
             "analyzed_count": len([r for r in results if r["status"] == "success"]),

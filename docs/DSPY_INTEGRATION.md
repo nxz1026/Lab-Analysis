@@ -125,7 +125,7 @@ export ANALYSIS_TS=20260611_113946
 
 # 运行 DSPy 文献解读
 python -m lab_analysis.dspy_modules.literature_interpreter \
-    --patient-id 846552421134373347
+    --id-card <deid>
 ```
 
 ### 方式 3: 集成到 Pipeline
@@ -302,10 +302,10 @@ A: 保留原版文件,通过命令行参数切换:
 
 ```bash
 # 使用原版
-python -m lab_analysis --patient-id XXX
+python -m lab_analysis
 
 # 使用 DSPy
-python -m lab_analysis --patient-id XXX --use-dspy
+python -m lab_analysis --use-dspy
 ```
 
 ### Q4: DSPy 支持哪些 LLM?

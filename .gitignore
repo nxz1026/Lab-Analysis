@@ -41,6 +41,9 @@ raw/
 # Jupyter
 .ipynb_checkpoints/
 
+# Windows reserved device name (created accidentally by cmd `2>nul` under bash)
+nul
+
 # Pipeline runtime logs & debug artifacts
 *.log
 .ingest_log.json

@@ -12,32 +12,32 @@ ingest_data.py — 统一数据摄入脚本
   # 检验报告图片
   python -m lab_analysis.ingest_data --type lab_image \
       --path "lab_2026-03-24.jpg" \
-      --patient-id "YOUR_PATIENT_ID" \
+      --id-card "YOUR_ID_CARD" \
       --report-date "2026-03-24" \
       --report-type "outpatient"
 
   # MRI DICOM ZIP文件
   python -m lab_analysis.ingest_data --type mri_dicom \
       --zip-path "export_part1.zip" \
-      --patient-id "YOUR_PATIENT_ID" \
+      --id-card "YOUR_ID_CARD" \
       --report-date "2026-04-11"
 
   # MRI DICOM 已解压目录
   python -m lab_analysis.ingest_data --type mri_dicom \
       --dicom-dir "dicom_temp/" \
-      --patient-id "YOUR_PATIENT_ID" \
+      --id-card "YOUR_ID_CARD" \
       --report-date "2026-04-11"
 
   # MRI 文字报告
   python -m lab_analysis.ingest_data --type mri_report \
       --path "mri_report.pdf" \
-      --patient-id "YOUR_PATIENT_ID" \
+      --id-card "YOUR_ID_CARD" \
       --report-date "2026-04-11"
 
 强制要求：
 - 所有数据必须提供有效的患者身份证号（18位或15位数字）
-- 如果无法识别患者ID → 交互式输入
-- 如果ID不是身份证号格式 → 交互式输入或放弃
+- 如果无法识别身份证号 → 交互式输入
+- 如果不是身份证号格式 → 交互式确认或放弃
 """
 import argparse
 import json
@@ -50,8 +50,8 @@ from datetime import datetime
 from pathlib import Path
 from zipfile import ZipFile
 
-from lab_analysis.patient_id import encode
-from lab_analysis.utils import validate_chinese_id as is_valid_id_card, print_progress
+from lab_analysis.patient_id import encode, validate_id_card
+from lab_analysis.utils import print_progress
 
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 INGEST_LOG = WORK_ROOT / ".ingest_log.json"
@@ -120,45 +120,6 @@ def process_batch(items: list, process_func: callable, batch_mode: bool, item_na
                 raise
     
     return success_count, fail_count
-
-
-def validate_patient_id(patient_id: str, interactive: bool = True) -> str:
-    """
-    验证患者ID，如果不是身份证号则要求用户输入或放弃
-    
-    Returns:
-        有效的患者ID，或者用户选择放弃时返回 None
-    """
-    if not patient_id:
-        print("[ERROR] 未提供患者ID")
-        if not interactive:
-            return None
-        patient_id = input("请输入患者身份证号（18位或15位）: ").strip()
-    
-    if not is_valid_id_card(patient_id):
-        print(f"[WARNING] 患者ID '{patient_id}' 不是有效的身份证号格式")
-        if not interactive:
-            print("[ERROR] 非交互模式下必须提供有效的身份证号")
-            return None
-        
-        print("\n请选择:")
-        print("  1. 重新输入正确的身份证号")
-        print("  2. 放弃此数据")
-        choice = input("请输入选择 (1/2): ").strip()
-        
-        if choice == "1":
-            patient_id = input("请输入患者身份证号: ").strip()
-            if not is_valid_id_card(patient_id):
-                print(f"[ERROR] 输入的ID '{patient_id}' 仍然无效，放弃此数据")
-                return None
-        elif choice == "2":
-            print("[INFO] 用户选择放弃此数据")
-            return None
-        else:
-            print("[ERROR] 无效的选择，默认放弃此数据")
-            return None
-    
-    return patient_id
 
 
 def save_image(image_path: Path, patient_id_obf: str, report_date: str, 
@@ -383,22 +344,22 @@ def main():
     parser.add_argument("--path", "-p", type=Path, nargs="*", help="文件路径列表（lab_image/mri_report，支持多个）")
     parser.add_argument("--zip-path", type=Path, nargs="*", help="DICOM ZIP文件路径列表（mri_dicom，支持多个）")
     parser.add_argument("--dicom-dir", type=Path, nargs="*", help="DICOM已解压目录路径列表（mri_dicom，支持多个）")
-    parser.add_argument("--patient-id", type=str, default=None, help="患者身份证号")
+    parser.add_argument("--id-card", type=str, default=None, help="患者身份证号(18位或15位)")
     parser.add_argument("--report-date", type=str, help="报告日期 YYYY-MM-DD")
     parser.add_argument("--report-type", type=str, choices=["outpatient", "inpatient"],
                        help="报告类型（仅lab_image需要）")
     parser.add_argument("--batch", action="store_true", help="批量处理模式（自动跳过失败项）")
     args = parser.parse_args()
     
-    # 验证患者ID
-    patient_id = validate_patient_id(args.patient_id, interactive=True)
+    # 验证身份证号（强制校验，无效则交互确认或放弃）
+    patient_id = validate_id_card(args.id_card, interactive=True)
     if patient_id is None:
         return 1
     
     logger.info(f"开始数据摄入: type={args.type}, patient_id={patient_id}")
     
     print(f"\n[Ingest] 数据类型: {args.type}")
-    print(f"[Ingest] 患者ID: {patient_id} -> {encode(patient_id)}")
+    print(f"[Ingest] 身份证号: {patient_id} -> {encode(patient_id)}")
     if args.report_date:
         print(f"[Ingest] 报告日期: {args.report_date}")
     print(f"[Ingest] 日志文件: {LOG_FILE}")
@@ -417,14 +378,14 @@ def main():
                 print('  # 单个文件')
                 print('  python -m lab_analysis.ingest_data --type lab_image \\')
                 print('      --path "lab_2026-03-24.jpg" \\')
-                print('      --patient-id "YOUR_PATIENT_ID" \\')
+                print('      --id-card "YOUR_ID_CARD" \\')
                 print('      --report-date "2026-03-24" \\')
                 print('      --report-type "outpatient"')
                 print()
                 print('  # 批量处理多个文件')
                 print('  python -m lab_analysis.ingest_data --type lab_image \\')
                 print('      --path "lab1.jpg" "lab2.jpg" "lab3.jpg" \\')
-                print('      --patient-id "YOUR_PATIENT_ID" \\')
+                print('      --id-card "YOUR_ID_CARD" \\')
                 print('      --report-date "2026-03-24" \\')
                 print('      --report-type "outpatient" \\')
                 print('      --batch')
@@ -465,20 +426,20 @@ def main():
                 print('  # 方式1: 单个ZIP文件')
                 print('  python -m lab_analysis.ingest_data --type mri_dicom \\')
                 print('      --zip-path "export_part1.zip" \\')
-                print('      --patient-id "YOUR_PATIENT_ID" \\')
+                print('      --id-card "YOUR_ID_CARD" \\')
                 print('      --report-date "2026-04-11"')
                 print()
                 print('  # 方式2: 批量处理多个ZIP文件')
                 print('  python -m lab_analysis.ingest_data --type mri_dicom \\')
                 print('      --zip-path "export1.zip" "export2.zip" \\')
-                print('      --patient-id "YOUR_PATIENT_ID" \\')
+                print('      --id-card "YOUR_ID_CARD" \\')
                 print('      --report-date "2026-04-11" \\')
                 print('      --batch')
                 print()
                 print('  # 方式3: 使用已解压目录')
                 print('  python -m lab_analysis.ingest_data --type mri_dicom \\')
                 print('      --dicom-dir "dicom_temp/" \\')
-                print('      --patient-id "YOUR_PATIENT_ID" \\')
+                print('      --id-card "YOUR_ID_CARD" \\')
                 print('      --report-date "2026-04-11"')
                 return 1
             
@@ -539,13 +500,13 @@ def main():
                 print('  # 单个文件')
                 print('  python -m lab_analysis.ingest_data --type mri_report \\')
                 print('      --path "mri_report.pdf" \\')
-                print('      --patient-id "YOUR_PATIENT_ID" \\')
+                print('      --id-card "YOUR_ID_CARD" \\')
                 print('      --report-date "2026-04-11"')
                 print()
                 print('  # 批量处理多个文件')
                 print('  python -m lab_analysis.ingest_data --type mri_report \\')
                 print('      --path "mri1.pdf" "mri2.pdf" \\')
-                print('      --patient-id "YOUR_PATIENT_ID" \\')
+                print('      --id-card "YOUR_ID_CARD" \\')
                 print('      --report-date "2026-04-11" \\')
                 print('      --batch')
                 return 1
