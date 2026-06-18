@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 DSPy 版本的最终综合临床诊断报告生成模块
@@ -290,17 +290,17 @@ if __name__ == "__main__":
     import json
     
     parser = argparse.ArgumentParser(description="DSPy 最终报告生成")
-    parser.add_argument("--patient-id", required=True, help="患者ID")
+    parser.add_argument("--id-card", required=True, help="患者ID")
     args = parser.parse_args()
     
     # 获取数据目录
     work_root = Path(os.environ.get("WORK_ROOT", Path.cwd()))
-    raw_ts = os.environ.get("ANALYSIS_TS", args.patient_id)
+    raw_ts = os.environ.get("ANALYSIS_TS", args.id_card)
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
-    data_dir = work_root / "data" / args.patient_id / ts
+    data_dir = work_root / "data" / args.id_card / ts
     
     print(f"[DSPy] 开始生成最终报告...")
-    print(f"  患者ID: {args.patient_id}")
+    print(f"  患者ID: {args.id_card}")
     print(f"  数据目录: {data_dir}")
     
     # TODO: 从数据目录加载必要的输入文件

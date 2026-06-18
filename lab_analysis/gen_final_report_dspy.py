@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 最终综合临床诊断报告生成 - DSPy 增强版
 
 支持传统 Prompt 工程和 DSPy 优化两种模式
-用法: python gen_final_report_dspy.py --patient-id <ID> [--use-dspy]
+用法: python gen_final_report_dspy.py --id-card <ID> [--use-dspy]
 """
 
 import json
@@ -13,20 +13,13 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+from lab_analysis.llm_client import call_chat, load_api_key
+
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
-
-def load_env_key(key: str) -> str:
-    """加载环境变量"""
-    val = os.environ.get(key, "")
-    if val:
-        return val
-    env_path = Path(__file__).parent.parent / ".env"
-    if env_path.exists():
-        for line in env_path.read_text(encoding="utf-8").splitlines():
-            if line.startswith(f"{key}="):
-                return line.split("=", 1)[1].strip()
-    return ""
+_FINAL_REPORT_SYSTEM_PROMPT = (
+    "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"
+)
 
 
 def assess_three_source_consistency(data_dir: Path) -> str:
@@ -52,31 +45,20 @@ def run_standard_mode(patient_id: str, data_dir: Path):
     print(f"[标准] prompt 长度: {len(prompt)} 字符")
 
     print("[标准] 调用 DeepSeek...")
-    DEEPSEEK_API_KEY = load_env_key("DEEPSEEK_API_KEY")
+    DEEPSEEK_API_KEY = load_api_key("DEEPSEEK_API_KEY", required=False)
     if not DEEPSEEK_API_KEY:
         raise ValueError("未找到 DEEPSEEK_API_KEY")
 
-    import requests
-    resp = requests.post(
-        "https://api.deepseek.com/chat/completions",
-        headers={
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": "deepseek-chat",
-            "messages": [
-                {"role": "system", "content": "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"},
-                {"role": "user", "content": prompt},
-            ],
-            "max_tokens": 5000,
-            "temperature": 0.3,
-        },
+    response = call_chat(
+        "deepseek",
+        user_prompt=prompt,
+        system_prompt=_FINAL_REPORT_SYSTEM_PROMPT,
+        max_tokens=5000,
+        temperature=0.3,
         timeout=180,
+        api_key=DEEPSEEK_API_KEY,
     )
-    result = resp.json()
-    response = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-    print(f"HTTP: {resp.status_code}  content length: {len(response)}")
+    print(f"content length: {len(response)}")
 
     output = {
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -190,11 +172,11 @@ def run_dspy_mode(patient_id: str, data_dir: Path):
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="最终报告生成 (DSPy 增强版)")
-    parser.add_argument("--patient-id", required=True, help="病人诊疗卡号")
+    parser.add_argument("--id-card", required=True, help="脱敏ID(由 pipeline 传入)")
     parser.add_argument("--use-dspy", action="store_true", help="使用 DSPy 优化版本")
     args = parser.parse_args()
     
-    patient_id = args.patient_id
+    patient_id = args.id_card
     raw_ts = os.environ.get("ANALYSIS_TS", "")
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id)
     data_dir = WORK_ROOT / "data" / patient_id / ts

@@ -9,10 +9,9 @@ REM   3. 激活项目 .venv
 REM   4. 调用 run_analysis.py
 REM
 REM 用法:
-REM   run.bat                                          # 交互模式
-REM   run.bat --patient-id 513229198801040014          # 指定患者
-REM   run.bat --patient-id xxx --use-dspy              # DSPy 模式
-REM   run.bat --no-interactive --use-dspy              # 静默 + DSPy
+REM   run.bat                                          # 交互模式（运行时输入身份证号）
+REM   run.bat --use-dspy                               # DSPy 模式
+REM   run.bat --no-interactive --use-dspy               # 静默 + DSPy
 REM ============================================================================
 
 REM 1. 切换到 UTF-8 代码页

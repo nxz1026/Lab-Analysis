@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 文献解读模块 — 结合统计分析结果 + PubMed 文献，给出循证医学综合解读
 用法: python literature_interpreter.py [--analysis JSON] [--lit JSON] [--out JSON]
@@ -11,9 +11,14 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from lab_analysis.utils import api_retry_decorator
+from lab_analysis.llm_client import call_chat_with_retry
 
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+
+_DEEPSEEK_SYSTEM_PROMPT = (
+    "你是一位专业的医学检验科和重症医学科临床顾问，"
+    "结合循证医学证据为患者的检验数据提供深入解读。"
+)
 
 def load_json(path: str, default=None):
     try:
@@ -88,41 +93,22 @@ def build_prompt(analysis_path: str, lit_path: str) -> str:
     return prompt
 
 
-@api_retry_decorator(max_attempts=3, min_wait=2.0, max_wait=30.0, description="DeepSeek API")
 def call_deepseek(prompt: str) -> str:
-    api_key = os.environ.get("DEEPSEEK_API_KEY", "")
-    if not api_key:
-        # 从项目根目录的 .env 文件加载
-        env_path = Path(__file__).parent.parent / ".env"
-        if env_path.exists():
-            for line in env_path.read_text(encoding="utf-8").splitlines():
-                if line.startswith("DEEPSEEK_API_KEY="):
-                    api_key = line.split("=", 1)[1].strip()
-    if not api_key:
-        return "错误：未设置 DEEPSEEK_API_KEY"
+    """调用 DeepSeek 进行文献循证解读（带指数退避重试）。
 
-    import requests
-    payload = {
-        "model": "deepseek-chat",
-        "messages": [
-            {"role": "system", "content": "你是一位专业的医学检验科和重症医学科临床顾问，结合循证医学证据为患者的检验数据提供深入解读。"},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.3,
-        "max_tokens": 4096,
-    }
-    resp = requests.post(
-        "https://api.deepseek.com/chat/completions",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "User-Agent": "Hermes-Lab-Analyzer/1.0",
-        },
-        json=payload,
-        timeout=60,
-    )
-    resp.raise_for_status()
-    result = resp.json()
-    return result["choices"][0]["message"]["content"]
+    已迁移至统一的 llm_client.call_chat_with_retry；此函数保留为薄封装，
+    维持向后兼容的对外签名。
+    """
+    try:
+        return call_chat_with_retry(
+            "deepseek",
+            user_prompt=prompt,
+            system_prompt=_DEEPSEEK_SYSTEM_PROMPT,
+            max_attempts=3, min_wait=2.0, max_wait=30.0,
+        )
+    except Exception as e:
+        # 密钥缺失 / 所有重试均失败时，返回错误说明（与原实现行为一致）
+        return f"错误：DeepSeek 调用失败 - {e}"
 
 
 def main():
@@ -135,14 +121,14 @@ def main():
                         help="literature_results.json 路径")
     parser.add_argument("--out", default=None,
                         help="输出 JSON 路径")
-    parser.add_argument("--patient-id", default=None, help="诊疗卡号，设置后自动推导路径")
+    parser.add_argument("--id-card", default=None, help="脱敏ID(由 pipeline 传入)")
     args = parser.parse_args()
 
     import os
     wiki_data = WORK_ROOT / "data"
-    if args.patient_id:
-        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id)
-        lit_dir = wiki_data / args.patient_id / ts / "03_literature"
+    if args.id_card:
+        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
+        lit_dir = wiki_data / args.id_card / ts / "03_literature"
         args.analysis = args.analysis or str(lit_dir.parent / "02_analyzed" / "analysis_results.json")
         args.lit = args.lit or str(lit_dir / "literature_results.json")
         args.out = args.out or str(lit_dir / "literature_interpretation.json")

@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 data_loader.py
 读取指定病人的 lab_report_*/metrics.md，提取数值写入 data/{patient_id}/lab_metrics.csv + lab_metrics.json
 
-用法：python data_loader.py --patient-id YOUR_PATIENT_ID
+用法：python data_loader.py --id-card <脱敏ID>
 """
 
 import re
@@ -283,16 +283,16 @@ def to_json(reports, output_path):
 def main():
     import os
     parser = argparse.ArgumentParser(description="数据加载：读取检验报告，生成结构化数据")
-    parser.add_argument("--patient-id", required=True, help="诊疗卡号，如 YOUR_PATIENT_ID")
+    parser.add_argument("--id-card", required=True, help="脱敏ID(由 pipeline 传入)")
     args = parser.parse_args()
 
-    paths = build_paths(args.patient_id)
+    paths = build_paths(args.id_card)
 
     # 前置检查：原始数据目录存在
     if not paths["raw_papers"].exists():
         print(f"[FAIL] 原始数据目录不存在: {paths['raw_papers']}")
         print(f"   预期路径: raw/patient_{{patient_id}}/papers/lab_report_*/")
-        print(f"   当前 patient_id: {args.patient_id}")
+        print(f"   当前 patient_id: {args.id_card}")
         sys.exit(1)
 
     reports = load_reports(paths["raw_papers"])
@@ -301,7 +301,7 @@ def main():
         sys.exit(1)
 
     print(f"[{datetime.now().isoformat()}] 数据加载开始...")
-    print(f"  病人: {args.patient_id}")
+    print(f"  病人: {args.id_card}")
     print(f"  原始数据: {paths['raw_papers']}")
     print(f"  输出目录: {paths['output_dir']}")
 

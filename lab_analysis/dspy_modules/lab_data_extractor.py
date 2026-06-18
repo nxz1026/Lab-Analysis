@@ -20,7 +20,7 @@ class LabDataExtractionSignature(dspy.Signature):
     image_description: str = dspy.InputField(desc="检验报告图片的文字描述或OCR初步结果")
     
     # 基本信息提取
-    patient_id: str = dspy.OutputField(desc="患者ID/诊疗卡号（纯数字，18位身份证号）")
+    patient_id: str = dspy.OutputField(desc="患者身份证号（18位数字，最后一位可能是X）")
     report_date: str = dspy.OutputField(desc="报告日期（格式：YYYY-MM-DD）")
     report_type: str = dspy.OutputField(desc="报告类型：outpatient(门诊) 或 inpatient(住院)")
     department: str = dspy.OutputField(desc="科室名称")

@@ -26,8 +26,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from lab_analysis.utils import WORK_ROOT, validate_chinese_id
-from lab_analysis.patient_id import encode
+from lab_analysis.utils import WORK_ROOT
+from lab_analysis.patient_id import encode, validate_id_card
 
 
 def get_origin_data_dir() -> Path:
@@ -100,13 +100,13 @@ def run_ingest_data(image_path: Path, patient_id: str, report_date: str, report_
         str(venv_python), "-m", "lab_analysis.ingest_data",
         "--type", "lab_image",
         "--path", str(image_path),
-        "--patient-id", patient_id,
+        "--id-card", patient_id,
         "--report-date", report_date,
         "--report-type", report_type
     ]
     
     print(f"\n[存入] 正在存入: {image_path.name}")
-    print(f"   患者ID: {patient_id}")
+    print(f"   身份证号: {patient_id}")
     print(f"   日期: {report_date}")
     print(f"   类型: {report_type}")
     
@@ -170,38 +170,14 @@ def main():
         report_date = result.get("report_date")
         report_type = result.get("report_type", "outpatient")
         
-        # 步骤2: 验证患者ID
-        if not patient_id or not validate_chinese_id(patient_id):
-            print(f"\n[警告] 识别的患者ID无效或为空")
-            print(f"   识别结果: patient_id={patient_id}, report_date={report_date}")
-            print("\n请选择:")
-            print("  1. 手动输入正确的身份证号")
-            print("  2. 跳过此图片")
-            
-            try:
-                choice = input("请输入选择 (1/2): ").strip()
-                if choice == "1":
-                    patient_id = input("请输入患者身份证号: ").strip()
-                    if not validate_chinese_id(patient_id):
-                        print(f"[失败] 输入的ID仍然无效，跳过")
-                        skipped_count += 1
-                        results.append({"file": image_path.name, "status": "ID无效，用户放弃"})
-                        continue
-                elif choice == "2":
-                    print("[跳过] 用户选择跳过")
-                    skipped_count += 1
-                    results.append({"file": image_path.name, "status": "用户跳过"})
-                    continue
-                else:
-                    print("[FAIL] 无效选择，跳过")
-                    skipped_count += 1
-                    results.append({"file": image_path.name, "status": "无效选择"})
-                    continue
-            except (EOFError, KeyboardInterrupt):
-                print("\n[跳过] 用户中断，跳过")
-                skipped_count += 1
-                results.append({"file": image_path.name, "status": "用户中断"})
-                continue
+        # 步骤2: 强制校验身份证号（OCR 识别值作为 extracted_id 传入统一校验函数）
+        validated = validate_id_card(patient_id, patient_id, interactive=True)
+        if not validated:
+            print(f"\n[跳过] 身份证号校验未通过，跳过此图片")
+            skipped_count += 1
+            results.append({"file": image_path.name, "status": "身份证号校验失败"})
+            continue
+        patient_id = validated
         
         # 步骤3: 存入数据
         run_ingest_data(image_path, patient_id, report_date, report_type)

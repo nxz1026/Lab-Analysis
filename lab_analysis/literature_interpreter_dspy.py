@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 文献解读模块 - DSPy 增强版
 
 支持传统 Prompt 工程和 DSPy 优化两种模式
-用法: python literature_interpreter_dspy.py --patient-id <ID> [--use-dspy]
+用法: python literature_interpreter_dspy.py --id-card <ID> [--use-dspy]
 """
 
 import json
@@ -82,7 +82,7 @@ def run_dspy_mode(args):
             literature_results = json.load(f)
         
         # 提取患者ID
-        patient_id = args.patient_id or "unknown"
+        patient_id = args.id_card or "unknown"
         
         print(f"[DSPy] 创建模块实例 (患者ID: {patient_id})...")
         module = LiteratureInterpreterModule()
@@ -157,18 +157,18 @@ def main():
                         help="literature_results.json 路径")
     parser.add_argument("--out", type=str, default=None,
                         help="输出 JSON 路径")
-    parser.add_argument("--patient-id", type=str, default=None, 
-                        help="诊疗卡号，设置后自动推导路径")
+    parser.add_argument("--id-card", type=str, default=None, 
+                        help="脱敏ID(由 pipeline 传入)")
     parser.add_argument("--use-dspy", action="store_true", 
                         help="使用 DSPy 优化版本")
     args = parser.parse_args()
     
     # 自动路径推断
     wiki_data = WORK_ROOT / "data"
-    if args.patient_id:
+    if args.id_card:
         raw_ts = os.environ.get("ANALYSIS_TS", "")
-        ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.patient_id)
-        lit_dir = wiki_data / args.patient_id / ts / "03_literature"
+        ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
+        lit_dir = wiki_data / args.id_card / ts / "03_literature"
         args.analysis = args.analysis or str(lit_dir.parent / "02_analyzed" / "analysis_results.json")
         args.lit = args.lit or str(lit_dir / "literature_results.json")  # 修正文件名
         args.out = args.out or str(lit_dir / "literature_interpretation.json")

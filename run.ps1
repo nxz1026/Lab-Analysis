@@ -8,15 +8,13 @@
 #   - 跨平台兼容 (PowerShell Core)
 #
 # 用法:
-#   .\run.ps1                                          # 交互模式
-#   .\run.ps1 -PatientId "513229198801040014"          # 指定患者
-#   .\run.ps1 -PatientId "xxx" -UseDspy                # DSPy 模式
+#   .\run.ps1                                          # 交互模式（运行时输入身份证号）
+#   .\run.ps1 -UseDspy                                # DSPy 模式
 #   .\run.ps1 -NoInteractive -UseDspy                  # 静默 + DSPy
 # ============================================================================
 
 [CmdletBinding()]
 param(
-    [string]$PatientId,
     [switch]$UseDspy,
     [switch]$NoInteractive,
     [switch]$UploadToFeishu,
@@ -81,7 +79,6 @@ Write-Host ""
 
 # 6. 构建参数列表
 $pythonArgs = @("-X", "utf8", "$ScriptDir\run_analysis.py")
-if ($PatientId)        { $pythonArgs += @("--patient-id", $PatientId) }
 if ($UseDspy)          { $pythonArgs += @("--use-dspy") }
 if ($NoInteractive)    { $pythonArgs += @("--no-interactive") }
 if ($UploadToFeishu)   { $pythonArgs += @("--upload-to-feishu") }
