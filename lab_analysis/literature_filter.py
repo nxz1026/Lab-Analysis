@@ -23,12 +23,12 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from lab_analysis.utils import WORK_ROOT
 from lab_analysis.evidence_grader import (
+    TOPIC_KEYWORDS,
     GradedPaper,
     ScenarioName,
-    TOPIC_KEYWORDS,
 )
+from lab_analysis.utils import WORK_ROOT
 
 
 def filter_literature(

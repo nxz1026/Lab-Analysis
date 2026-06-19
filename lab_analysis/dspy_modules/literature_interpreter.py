@@ -6,9 +6,10 @@ DSPy 版本的文献解读模块
 使用 DSPy 框架优化循证医学解读的生成质量
 """
 
-import dspy
 from pathlib import Path
 from typing import Dict, List
+
+import dspy
 
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
 

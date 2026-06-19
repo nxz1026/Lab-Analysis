@@ -7,9 +7,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from lab_analysis.utils import WORK_ROOT
+from lab_analysis.error_logger import log_error, log_pipeline_error
 from lab_analysis.patient_id import encode
-from lab_analysis.error_logger import log_pipeline_error, log_error
+from lab_analysis.utils import WORK_ROOT
 
 
 def extract_patient_id_from_reports() -> str | None:

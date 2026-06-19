@@ -2,25 +2,28 @@
 
 from pathlib import Path
 
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
 
 # 先导 _base 确保 matplotlib.use("Agg") 在 pyplot 导入前执行
 from ._base import (
-    setup_chinese, save_fig,
-    REF_RANGES, INFLAMMATION_COLORS,
+    INFLAMMATION_COLORS,
+    REF_RANGES,
+    save_fig,
+    setup_chinese,
 )
 
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.colors import LinearSegmentedColormap
+# 模块级一次性初始化中文字体，避免在每个图表函数中重复调用
+setup_chinese()
 
 
 def plot_trend_regression(df: pd.DataFrame, results: dict, output_path: Path):
     """① 趋势回归图：7个关键指标的时序折线 + 回归拟合线"""
-    setup_chinese()
     metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]
-    pd.to_datetime(df["report_date"])
+    metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]
     n       = len(metrics)
     cols    = 3
     rows    = (n + cols - 1) // cols
@@ -80,7 +83,6 @@ def plot_trend_regression(df: pd.DataFrame, results: dict, output_path: Path):
 
 def plot_correlation_heatmap(df: pd.DataFrame, output_path: Path):
     """② 相关性热力图：8个关键指标的 Pearson 相关系数"""
-    setup_chinese()
     metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "PCT", "PLT"]
     cols    = [m for m in metrics if m in df.columns]
     if len(cols) < 2:
@@ -111,7 +113,6 @@ def plot_correlation_heatmap(df: pd.DataFrame, output_path: Path):
 
 def plot_inflammation_status(df: pd.DataFrame, results: dict, output_path: Path):
     """③ 炎症分期柱状图：4次就诊的炎症状态颜色区分"""
-    setup_chinese()
     status_info = results.get("inflammation_classification", {})
     labels  = status_info.get("labels", [])
     dates_s = status_info.get("report_dates", [])
@@ -123,7 +124,7 @@ def plot_inflammation_status(df: pd.DataFrame, results: dict, output_path: Path)
     colors = [INFLAMMATION_COLORS.get(s, "#95a5a6") for s in labels]
     bars   = ax.bar(range(len(labels)), [1] * len(labels), color=colors,
                     width=0.55, edgecolor="white", linewidth=1.5)
-    for bar, label in zip(bars, labels):
+    for bar, label in zip(bars, labels, strict=True):
         ax.text(bar.get_x() + bar.get_width() / 2, 0.5, label,
                 ha="center", va="center", fontsize=12, fontweight="bold", color="white")
     ax.set_xticks(range(len(labels)))
@@ -138,7 +139,7 @@ def plot_inflammation_status(df: pd.DataFrame, results: dict, output_path: Path)
     ax.legend(handles=legend_patches, loc="upper right", fontsize=9,
               title="分期标准", title_fontsize=9)
     if "hs-CRP" in df.columns:
-        for i, (idx, row) in enumerate(df.iterrows()):
+        for i, (_idx, row) in enumerate(df.iterrows()):
             hs = row.get("hs-CRP")
             if pd.notna(hs):
                 ax.text(i, 1.1, f"hs-CRP\n{hs:.2f}", ha="center", va="bottom", fontsize=8, color="#2c3e50")
@@ -148,7 +149,6 @@ def plot_inflammation_status(df: pd.DataFrame, results: dict, output_path: Path)
 
 def plot_abnormal_indicators(df: pd.DataFrame, results: dict, output_path: Path):
     """④ 异常指标标注图：每次就诊各指标是否超出参考范围"""
-    setup_chinese()
     abnormal = results.get("abnormal_summary", {})
     if not abnormal:
         fig, ax = plt.subplots(figsize=(8, 4), facecolor="white")
@@ -194,7 +194,6 @@ def plot_abnormal_indicators(df: pd.DataFrame, results: dict, output_path: Path)
 
 def plot_moving_average(df: pd.DataFrame, results: dict, output_path: Path):
     """⑤ 移动平均趋势图：原始值 vs 平滑趋势"""
-    setup_chinese()
     ma_data = results.get("moving_average", {})
     if not ma_data:
         print("  [WARNING] 无移动平均数据，跳过")
@@ -249,7 +248,6 @@ def plot_moving_average(df: pd.DataFrame, results: dict, output_path: Path):
 
 def plot_cv_stability_heatmap(df: pd.DataFrame, results: dict, output_path: Path):
     """⑥ CV稳定性热力图：各指标变异系数"""
-    setup_chinese()
     cv_data = results.get("cv_stability", {})
     if not cv_data:
         print("  [WARNING] 无CV数据，跳过")
@@ -264,7 +262,7 @@ def plot_cv_stability_heatmap(df: pd.DataFrame, results: dict, output_path: Path
     fig, ax = plt.subplots(figsize=(10, len(metrics) * 0.6 + 2), facecolor="white")
     y_pos = np.arange(len(metrics))
     bars = ax.barh(y_pos, cv_values, color=colors, height=0.6, edgecolor='white', linewidth=1.5)
-    for bar, cv_val, risk in zip(bars, cv_values, risk_levels):
+    for bar, cv_val, risk in zip(bars, cv_values, risk_levels, strict=True):
         ax.text(cv_val + max(cv_values) * 0.02, bar.get_y() + bar.get_height() / 2,
                 f"CV={cv_val:.4f}", va='center', fontsize=9, fontweight='bold')
         ax.text(max(cv_values) * 0.5, bar.get_y() + bar.get_height() / 2, risk,
@@ -287,7 +285,6 @@ def plot_cv_stability_heatmap(df: pd.DataFrame, results: dict, output_path: Path
 
 def plot_zscore_distribution(df: pd.DataFrame, results: dict, output_path: Path):
     """⑦ Z-score分布图：Box plot + 异常值标记"""
-    setup_chinese()
     zscore_data = results.get("zscore_outliers", {})
     if not zscore_data:
         print("  [WARNING] 无Z-score数据，跳过")
@@ -313,7 +310,7 @@ def plot_zscore_distribution(df: pd.DataFrame, results: dict, output_path: Path)
     fig, ax = plt.subplots(figsize=(len(labels) * 1.5 + 2, 6), facecolor="white")
     bp = ax.boxplot(zscore_lists, labels=labels, patch_artist=True, widths=0.6, showfliers=True)
     colors_box = ['#3498db' if all(abs(z) < 2 for z in zs) else '#e74c3c' for zs in zscore_lists]
-    for patch, color in zip(bp['boxes'], colors_box):
+    for patch, color in zip(bp['boxes'], colors_box, strict=True):
         patch.set_facecolor(color)
         patch.set_alpha(0.6)
     ax.axhline(y=2,  color='#e74c3c', linestyle='--', linewidth=1.5, alpha=0.7, label='|Z|=2 (轻度异常)')

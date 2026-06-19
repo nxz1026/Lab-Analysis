@@ -4,8 +4,9 @@ Lab-Analysis: 慢性胰腺炎检验数据自动化分析 Pipeline（检验 + 文
 
 # 自动加载 .env 文件中的环境变量
 try:
-    from dotenv import load_dotenv
     from pathlib import Path
+
+    from dotenv import load_dotenv
     project_root = Path(__file__).resolve().parent.parent
     env_file = project_root / ".env"
     if env_file.exists():

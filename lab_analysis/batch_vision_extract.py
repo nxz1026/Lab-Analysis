@@ -26,8 +26,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from lab_analysis.utils import WORK_ROOT
 from lab_analysis.patient_id import encode, validate_id_card
+from lab_analysis.utils import WORK_ROOT
 
 
 def get_origin_data_dir() -> Path:

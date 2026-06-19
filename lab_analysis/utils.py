@@ -21,9 +21,9 @@ from typing import Callable
 try:
     from tenacity import (
         retry,
+        retry_if_exception_type,
         stop_after_attempt,
         wait_exponential,
-        retry_if_exception_type,
     )
     HAS_TENACITY = True
 except ImportError:
@@ -160,10 +160,7 @@ def append_to_json_log(log_file: Path, record: dict):
         log_file: 日志文件路径
         record: 要追加的记录
     """
-    if log_file.exists():
-        log = json.loads(log_file.read_text(encoding="utf-8"))
-    else:
-        log = {"records": []}
+    log = json.loads(log_file.read_text(encoding="utf-8")) if log_file.exists() else {"records": []}
     
     log["records"].append(record)
     log["last_updated"] = datetime.now().isoformat()

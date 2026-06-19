@@ -11,7 +11,6 @@ data_analyzer.py — 统计分析入口（薄 shim，代理到 lab_analysis.anal
 
 from lab_analysis.analysis.run import run
 
-
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="统计分析：生成分析结果 + 7 张图表")

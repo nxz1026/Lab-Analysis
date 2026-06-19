@@ -17,6 +17,7 @@ patient_id.py — 患者身份证号脱敏与校验
 from __future__ import annotations
 
 import base64
+import contextlib
 import hashlib
 import hmac
 import os
@@ -73,10 +74,8 @@ def _load_or_create_master_key() -> bytes:
     _KEY_FILE.write_text(
         base64.urlsafe_b64encode(new_key).decode("ascii"), encoding="utf-8"
     )
-    try:
+    with contextlib.suppress(OSError):
         os.chmod(_KEY_FILE, stat.S_IRUSR | stat.S_IWUSR)  # 0600，Windows 上为 no-op
-    except OSError:
-        pass
     print(
         f"[WARN] 已生成新的脱敏主密钥: {_KEY_FILE}\n"
         "       该文件包含还原身份证号的唯一凭证，切勿提交或外传。\n"

@@ -7,6 +7,8 @@
 - 边界条件（空字段、缺失字段）
 """
 
+from datetime import datetime
+
 import pytest
 
 from lab_analysis.evidence_grader import (
@@ -136,7 +138,6 @@ class TestScoreEvidenceLevel:
 # ---------------------------------------------------------------------------
 class TestScoreRecency:
     def test_current_year_top(self):
-        from datetime import datetime
         score, _ = score_recency({"year": str(datetime.now().year)})
         assert score == 1.0
 
@@ -292,6 +293,45 @@ class TestScenarioWeights:
         # 这是已知局限 — 见 grading_demo 的 "3 种 scenario 排序相同" 现象
         # 这里仅验证 weights 不同，scenario 区分度由 P0 任务调权重
         assert not all_same or len(set(map(tuple, scores_by_scenario.values()))) >= 1
+
+    def test_extreme_papers_rank_differently_across_scenarios(self):
+        """构造极端论文，验证 3 种 scenario 产生不同的分数向量"""
+        # 论文 A: 当年发表、主题高匹配、无摘要（证据等级低）
+        recent_but_weak = {
+            "pmid": "A1",
+            "title": "Novel procalcitonin biomarker for early sepsis diagnosis",
+            "abstract": "",
+            "year": str(datetime.now().year),
+            "journal": "New Journal",
+        }
+        # 论文 B: Meta-analysis、大样本、年代偏旧
+        old_meta_large = {
+            "pmid": "B1",
+            "title": "Meta-analysis of PCT and CRP in differential diagnosis of sepsis",
+            "abstract": ("BACKGROUND: meta-analysis. METHODS: "
+                         "We included 2500 patients from 20 RCTs."),
+            "year": "2018",
+            "journal": "Critical Care",
+        }
+        # 论文 C: 队列研究、超大样本、中等时效
+        cohort_large = {
+            "pmid": "C1",
+            "title": "Prospective cohort study of inflammatory biomarkers predicting prognosis in sepsis",
+            "abstract": ("We conducted a prospective cohort study of 5000 patients "
+                         "with sepsis evaluating PCT and CRP as prognostic markers."),
+            "year": "2021",
+            "journal": "Lancet",
+        }
+        papers = [recent_but_weak, old_meta_large, cohort_large]
+        # 同一篇论文在不同 scenario 下分数应不同（权重不同）
+        for paper in papers:
+            scores = set()
+            for sc in ["early_diagnosis", "differential_diagnosis", "prognosis"]:
+                g = grade_paper(paper, scenario=sc, topic="sepsis_gn_gp")
+                scores.add(round(g.score, 4))
+            assert len(scores) >= 2, (
+                f"论文 {paper['pmid']} 在三 scenario 下分数完全相同: {scores}"
+            )
 
 
 # ---------------------------------------------------------------------------

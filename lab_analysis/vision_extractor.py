@@ -16,14 +16,15 @@ import sys
 import time
 from pathlib import Path
 
-from lab_analysis.llm_client import call_chat, parse_json_response, load_api_key
+from lab_analysis.llm_client import call_chat, load_api_key, parse_json_response
 from lab_analysis.patient_id import encode, validate_id_card
 
 
 def encode_image_to_base64(image_path: Path) -> str:
     """将图片编码为 base64（自动转为RGB并压缩）"""
-    from PIL import Image
     from io import BytesIO
+
+    from PIL import Image
     img = Image.open(image_path).convert("RGB")
     # 压缩到宽2000以内，减少base64大小
     if max(img.size) > 2000:

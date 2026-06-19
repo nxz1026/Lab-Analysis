@@ -5,14 +5,14 @@
 """
 
 import json
-import sys
-import urllib.request
-import urllib.parse
-import time
+import os
 import re
+import sys
+import time
+import urllib.parse
+import urllib.request
 from datetime import datetime
 from pathlib import Path
-import os
 
 from lab_analysis.utils import api_retry_decorator
 

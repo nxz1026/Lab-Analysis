@@ -7,11 +7,12 @@
 用法: python gen_final_report_dspy.py --id-card <ID> [--use-dspy]
 """
 
+import contextlib
 import json
 import os
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 from lab_analysis.llm_client import call_chat, load_api_key
 
@@ -123,19 +124,15 @@ def run_dspy_mode(patient_id: str, data_dir: Path):
         literature_interpretation = ""
         interp_path = data_dir / "03_literature" / "literature_interpretation.md"
         if interp_path.exists():
-            try:
+            with contextlib.suppress(Exception):
                 literature_interpretation = interp_path.read_text(encoding='utf-8')
-            except Exception:
-                pass
         
         # 加载 MRI 分析
         mri_analysis = ""
         mri_path = data_dir / "05_imaging" / "mri_report_check_results.md"
         if mri_path.exists():
-            try:
+            with contextlib.suppress(Exception):
                 mri_analysis = mri_path.read_text(encoding='utf-8')
-            except Exception:
-                pass
         
         # 生成质控段落
         quality_control = assess_three_source_consistency(data_dir)

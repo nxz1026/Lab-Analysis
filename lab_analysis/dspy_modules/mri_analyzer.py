@@ -8,9 +8,10 @@ DSPy 版本的 MRI 影像分析模块
 """
 
 import os
-import dspy
 from pathlib import Path
 from typing import Dict, List
+
+import dspy
 
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
 
@@ -62,10 +63,7 @@ class MRIAnalysisSignature(dspy.Signature):
         
         # 检查置信度范围
         confidence = getattr(self, 'confidence_score', 0)
-        if not (0.0 <= confidence <= 1.0):
-            return False
-        
-        return True
+        return 0.0 <= confidence <= 1.0
 
 
 class MRIAnalysisModule(dspy.Module):

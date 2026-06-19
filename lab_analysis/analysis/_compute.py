@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 
-from ._base import NUMERIC_METRICS, ACUTE_THRESHOLD, REMISSION_THRESHOLD
+from ._base import ACUTE_THRESHOLD, NUMERIC_METRICS, REMISSION_THRESHOLD
 
 
 def classify_inflammation(hs_crp):
