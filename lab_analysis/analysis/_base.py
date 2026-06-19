@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -69,7 +70,14 @@ def build_paths(patient_id: str) -> dict:
 
 # ── 绘图工具 ──────────────────────────────────────────────────────────
 
+_chinese_initialized = False
+
+
 def setup_chinese():
+    global _chinese_initialized
+    if _chinese_initialized:
+        return
+    _chinese_initialized = True
     plt.rcParams["font.family"] = ["Microsoft YaHei", "SimHei", "DejaVu Sans"]
     plt.rcParams["axes.unicode_minus"] = False
 

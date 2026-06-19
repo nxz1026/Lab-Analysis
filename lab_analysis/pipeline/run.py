@@ -8,16 +8,16 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from lab_analysis.utils import WORK_ROOT
 from lab_analysis.patient_id import validate_id_card
-from lab_analysis.pipeline.cli import parse_args, get_deid
+from lab_analysis.pipeline.cli import get_deid, parse_args
+from lab_analysis.pipeline.ingest import auto_ingest_from_origin_data
 from lab_analysis.pipeline.steps import (
-    extract_patient_id_from_reports,
     check_patient_data,
+    extract_patient_id_from_reports,
     pick_python_exe,
     run_step,
 )
-from lab_analysis.pipeline.ingest import auto_ingest_from_origin_data
+from lab_analysis.utils import WORK_ROOT
 
 
 def main():

@@ -7,9 +7,10 @@ DSPy 版本的检验报告数据提取模块
 提高字段识别准确率和格式规范性
 """
 
-import dspy
 from pathlib import Path
 from typing import Optional
+
+import dspy
 
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
 
@@ -191,6 +192,7 @@ def run_dspy_extraction(image_path: Path, initial_ocr_text: str = ""):
         结构化的检验数据字典
     """
     import os
+
     import dspy
     from dotenv import load_dotenv
     

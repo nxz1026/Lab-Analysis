@@ -1,12 +1,11 @@
-﻿#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """生成最终综合临床报告 - 调用 DeepSeek API"""
-import json
 import argparse
+import json
 import os
 from pathlib import Path
 
 from lab_analysis.llm_client import call_chat, load_api_key
+from lab_analysis.report_schema import PROMPT_SECTION_TEMPLATES
 
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
@@ -296,26 +295,11 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 # 最终综合临床诊断报告
 **患者**：{patient_name} | {patient_age_sex} | 检查编号：{patient_exam_id}
 **报告日期**：{today}
-**数据来源**：MRI影像报告（2026-04-11）+ 检验数据（2026-03-24~04-14）
+**数据来源**：MRI影像报告 + 检验数据 + 文献证据
 
-## 一、患者基本信息与就诊背景
+{PROMPT_SECTION_TEMPLATES}
 
-## 二、检验数据与炎症状态综合分析
-
-## 三、MRI影像学综合分析
-
-## 四、多学科联合诊断意见
-
-## 五、核心诊断结论与鉴别诊断
-
-## 六、结论一致性评估
-> 将上方「三源质控段落」的核心结论原文引用或摘要写入本节。
-
-## 七、行动计划（紧急[URGENT] / 重要[IMPORTANT] / 常规[ROUTINE]）
-
-## 八、随访与监测计划
-
-## 九、预后评估
+> 对于「六、结论一致性评估」，请将上方「三源质控段落」的核心结论原文引用或摘要写入本节。
 
 要求：专业清晰，中文输出；不生成具体药物处方或手术建议；各部分内容充实"""
     return prompt
@@ -375,7 +359,6 @@ def main():
         # print(content)  # 跳过打印，避免 Windows GBK 编码问题
     else:
         print("[EMPTY CONTENT]")
-        print(content[:1000] if content else "(no content)")
 
 
 if __name__ == "__main__":

@@ -6,15 +6,21 @@ DSPy 版本的最终综合临床诊断报告生成模块
 使用 DSPy 框架优化多源数据整合和报告生成的质量
 """
 
-import dspy
+import datetime as dt
 import os
 from pathlib import Path
 
+import dspy
+
+from ..report_schema import REPORT_MD_TEMPLATE, REPORT_SECTIONS
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
 
 
 class FinalReportSignature(dspy.Signature):
-    """最终临床报告生成的输入输出签名"""
+    """最终临床报告生成的输入输出签名
+    
+    章节定义见 lab_analysis.report_schema.REPORT_SECTIONS。
+    """
     
     patient_info: dict = dspy.InputField(desc="患者基本信息 (name, age_sex, exam_id)")
     lab_summary: str = dspy.InputField(desc="检验数据摘要，包含关键指标时序变化")
@@ -24,15 +30,16 @@ class FinalReportSignature(dspy.Signature):
     quality_control: str = dspy.InputField(desc="三源一致性评估质控段落")
     
     report_title: str = dspy.OutputField(desc="报告标题")
-    section_1_basic_info: str = dspy.OutputField(desc="一、患者基本信息与就诊背景")
-    section_2_lab_analysis: str = dspy.OutputField(desc="二、检验数据与炎症状态综合分析")
-    section_3_mri_analysis: str = dspy.OutputField(desc="三、MRI影像学综合分析")
-    section_4_multidisciplinary: str = dspy.OutputField(desc="四、多学科联合诊断意见")
-    section_5_diagnosis: str = dspy.OutputField(desc="五、核心诊断结论与鉴别诊断")
-    section_6_consistency: str = dspy.OutputField(desc="六、结论一致性评估")
-    section_7_action_plan: str = dspy.OutputField(desc="七、行动计划（紧急[URGENT] / 重要[IMPORTANT] / 常规[ROUTINE]）")
-    section_8_followup: str = dspy.OutputField(desc="八、随访与监测计划")
-    section_9_prognosis: str = dspy.OutputField(desc="九、预后评估")
+    # 以下 9 个章节字段名/描述由 lab_analysis.report_schema.REPORT_SECTIONS 定义
+    section_1_basic_info: str = dspy.OutputField(desc=REPORT_SECTIONS[0][1])
+    section_2_lab_analysis: str = dspy.OutputField(desc=REPORT_SECTIONS[1][1])
+    section_3_mri_analysis: str = dspy.OutputField(desc=REPORT_SECTIONS[2][1])
+    section_4_multidisciplinary: str = dspy.OutputField(desc=REPORT_SECTIONS[3][1])
+    section_5_diagnosis: str = dspy.OutputField(desc=REPORT_SECTIONS[4][1])
+    section_6_consistency: str = dspy.OutputField(desc=REPORT_SECTIONS[5][1])
+    section_7_action_plan: str = dspy.OutputField(desc=REPORT_SECTIONS[6][1])
+    section_8_followup: str = dspy.OutputField(desc=REPORT_SECTIONS[7][1])
+    section_9_prognosis: str = dspy.OutputField(desc=REPORT_SECTIONS[8][1])
     
     confidence: float = dspy.OutputField(desc="报告可信度评分 (0.0-1.0)")
 
@@ -154,6 +161,7 @@ def run_dspy_final_report(patient_id: str, data_dir: Path,
         生成的报告字典
     """
     import os
+
     import dspy
     from dotenv import load_dotenv
     
@@ -203,55 +211,28 @@ def run_dspy_final_report(patient_id: str, data_dir: Path,
     
     print(f"[DSPy] 置信度: {result.confidence:.2f}")
     
-    # 组装完整报告
-    import datetime as dt
+    # 组装完整报告（使用 report_schema 共享模板）
     today = dt.date.today().strftime("%Y年%m月%d日")
     
-    report_md = f"""# {result.report_title}
-**患者**：{patient_info['name']} | {patient_info['age_sex']} | 检查编号：{patient_info['exam_id']}
-**报告日期**：{today}
-**数据来源**：MRI影像报告 + 检验数据 + 文献证据
-**生成模式**：DSPy 优化
-**可信度评分**：{result.confidence:.2f}
-
----
-
-## 一、患者基本信息与就诊背景
-
-{result.section_1_basic_info}
-
-## 二、检验数据与炎症状态综合分析
-
-{result.section_2_lab_analysis}
-
-## 三、MRI影像学综合分析
-
-{result.section_3_mri_analysis}
-
-## 四、多学科联合诊断意见
-
-{result.section_4_multidisciplinary}
-
-## 五、核心诊断结论与鉴别诊断
-
-{result.section_5_diagnosis}
-
-## 六、结论一致性评估
-
-{result.section_6_consistency}
-
-## 七、行动计划（紧急[URGENT] / 重要[IMPORTANT] / 常规[ROUTINE]）
-
-{result.section_7_action_plan}
-
-## 八、随访与监测计划
-
-{result.section_8_followup}
-
-## 九、预后评估
-
-{result.section_9_prognosis}
-"""
+    report_md = REPORT_MD_TEMPLATE.format(
+        report_title=result.report_title,
+        patient_name=patient_info['name'],
+        patient_age_sex=patient_info['age_sex'],
+        exam_id=patient_info['exam_id'],
+        report_date=today,
+        data_sources="MRI影像报告 + 检验数据 + 文献证据",
+        mode="DSPy 优化",
+        confidence=result.confidence,
+        section_1_basic_info=result.section_1_basic_info,
+        section_2_lab_analysis=result.section_2_lab_analysis,
+        section_3_mri_analysis=result.section_3_mri_analysis,
+        section_4_multidisciplinary=result.section_4_multidisciplinary,
+        section_5_diagnosis=result.section_5_diagnosis,
+        section_6_consistency=result.section_6_consistency,
+        section_7_action_plan=result.section_7_action_plan,
+        section_8_followup=result.section_8_followup,
+        section_9_prognosis=result.section_9_prognosis,
+    )
     
     # 保存优化后的 prompt 信息到 04_reports 目录
     try:

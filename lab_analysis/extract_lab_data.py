@@ -20,17 +20,17 @@ import sys
 import time
 from pathlib import Path
 
-from lab_analysis.llm_client import call_chat, parse_json_response, load_api_key
+from lab_analysis.llm_client import call_chat, load_api_key, parse_json_response
 from lab_analysis.patient_id import encode, validate_id_card
-
 
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 def encode_image_to_base64(image_path: Path) -> str:
     """将图片编码为 base64（自动转为RGB并压缩）"""
-    from PIL import Image
     from io import BytesIO
+
+    from PIL import Image
     img = Image.open(image_path).convert("RGB")
     if max(img.size) > 2000:
         ratio = 2000 / max(img.size)

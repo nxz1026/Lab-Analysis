@@ -7,15 +7,16 @@ data_loader.py
 用法：python data_loader.py --id-card <脱敏ID>
 """
 
-import re
+import argparse
 import csv
 import json
+import re
 import sys
-import argparse
 from datetime import datetime
 from pathlib import Path
 
-from lab_analysis.utils import build_paths as build_paths_utils, parse_metadata_table
+from lab_analysis.utils import build_paths as build_paths_utils
+from lab_analysis.utils import parse_metadata_table
 
 
 def build_paths(patient_id: str):

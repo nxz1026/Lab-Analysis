@@ -112,9 +112,9 @@ def run_dspy_mode(args):
         try:
             from lab_analysis.dspy_modules.prompt_inspector import (
                 extract_module_prompts,
+                save_actual_dspy_prompt,
                 save_prompts_to_json,
                 save_prompts_to_markdown,
-                save_actual_dspy_prompt,
             )
             prompts_data = extract_module_prompts(module, "literature_interpreter")
             save_prompts_to_json("literature_interpreter", prompts_data, prompts_dir)
@@ -189,10 +189,7 @@ def main():
     print(f"文献解读 - {mode_name} 模式")
     print(f"{'='*60}\n")
     
-    if args.use_dspy:
-        output = run_dspy_mode(args)
-    else:
-        output = run_standard_mode(args)
+    output = run_dspy_mode(args) if args.use_dspy else run_standard_mode(args)
     
     # 保存结果
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)

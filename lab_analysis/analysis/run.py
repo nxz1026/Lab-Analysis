@@ -1,53 +1,38 @@
 """lab_analysis.analysis.run — 统计分析编排器 + CLI"""
 
-import json
 import argparse
+import json
 from datetime import datetime
 
 import pandas as pd
 
 from ._base import (
+    NUMERIC_METRICS,
+    REF_RANGES,
     build_paths,
-    NUMERIC_METRICS, REF_RANGES,
 )
 from ._compute import (
     classify_inflammation,
-    linear_regression_trend,
     correlation_matrix_calc,
-    descriptive_stats,
-    moving_average_analysis,
     cv_stability_analysis,
+    descriptive_stats,
+    linear_regression_trend,
+    moving_average_analysis,
     zscore_outlier_detection,
 )
 from .charts import (
-    plot_trend_regression,
-    plot_correlation_heatmap,
-    plot_inflammation_status,
     plot_abnormal_indicators,
-    plot_moving_average,
+    plot_correlation_heatmap,
     plot_cv_stability_heatmap,
+    plot_inflammation_status,
+    plot_moving_average,
+    plot_trend_regression,
     plot_zscore_distribution,
 )
 
 
-def run(patient_id: str) -> dict:
-    paths = build_paths(patient_id)
-    print(f"[{datetime.now().isoformat()}] 开始数据分析...")
-    print(f"  病人: {patient_id}")
-
-    if not paths["metrics_csv"].exists():
-        raise FileNotFoundError(
-            f"找不到前置文件: {paths['metrics_csv']}\n"
-            f"   请先运行 data_loader.py --id-card {patient_id}"
-        )
-
-    df = pd.read_csv(paths["metrics_csv"])
-    df["report_date"] = pd.to_datetime(df["report_date"])
-    df = df.sort_values("report_date").reset_index(drop=True)
-
-    print(f"数据范围: {df['report_date'].min().date()} ~ {df['report_date'].max().date()}")
-    print(f"共 {len(df)} 份报告")
-
+def _compute_stats(df: pd.DataFrame) -> dict:
+    """纯计算：从 DataFrame 生成所有统计结果 dict。"""
     results = {
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "n_reports": len(df),
@@ -66,7 +51,7 @@ def run(patient_id: str) -> dict:
         "labels": inflammation_status,
         "report_dates": df["report_date"].dt.strftime("%Y-%m-%d").tolist(),
     }
-    print(f"炎症分类: {dict(zip(df['report_date'].dt.strftime('%m-%d'), inflammation_status))}")
+    print(f"炎症分类: {dict(zip(df['report_date'].dt.strftime('%m-%d'), inflammation_status, strict=True))}")
 
     # ── 2. 线性回归趋势 ──────────────────────────────────────
     trend_results = {}
@@ -146,18 +131,17 @@ def run(patient_id: str) -> dict:
     if total_outliers > 0:
         print(f"  [警告] 发现 {total_outliers} 个轻度异常值 (|Z|>2)")
 
-    paths["analyzed_dir"].mkdir(parents=True, exist_ok=True)
-    paths["reports_dir"].mkdir(parents=True, exist_ok=True)
-    with open(paths["output_json"], "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
-    print(f"JSON 已保存: {paths['output_json']}")
+    return results
 
-    # ── 生成 Markdown 报告 ──────────────────────────────────
+
+def _generate_md_report(results: dict, patient_id: str) -> str:
+    """从统计结果 dict 生成 Markdown 报告文本。"""
     md_lines = ["# 统计分析报告\n"]
     md_lines.append(
         f"**患者**: {patient_id}  **报告数**: {results['n_reports']}  "
         f"**日期范围**: {results['date_range']}\n"
     )
+
     # 炎症
     infl = results.get("inflammation_classification", {})
     if isinstance(infl, dict):
@@ -165,15 +149,17 @@ def run(patient_id: str) -> dict:
         dates = infl.get("report_dates", [])
         emoji_map = {"急性期": "🔴", "过渡期": "🟡", "缓解期": "🟢"}
         md_lines.append("## 炎症分期\n")
-        for date, cls in zip(dates, labels):
+        for date, cls in zip(dates, labels, strict=True):
             md_lines.append(f"- {date}: {emoji_map.get(cls, '[GRAY]')} {cls}\n")
+
     # 异常
     md_lines.append("\n## 异常指标\n")
     for metric, info in results.get("abnormal_summary", {}).items():
         n = info.get("n_abnormal", 0)
-        dates = info.get("abnormal_dates", [])
+        dt_list = info.get("abnormal_dates", [])
         ref = info.get("ref_range", "?")
-        md_lines.append(f"- **{metric}**: 异常 {n} 次（{', '.join(dates)}），参考区间 {ref}\n")
+        md_lines.append(f"- **{metric}**: 异常 {n} 次（{', '.join(dt_list)}），参考区间 {ref}\n")
+
     # 回归
     md_lines.append("\n## 指标趋势（线性回归）\n")
     for metric, reg in results.get("linear_regression", {}).items():
@@ -182,6 +168,7 @@ def run(patient_id: str) -> dict:
         trend = reg.get("trend", "平稳")
         arrow = "↑" if slope > 0 else "↓" if slope < 0 else "→"
         md_lines.append(f"- {metric}: slope={slope:.4f}, R²={r2:.3f}, {arrow} {trend}\n")
+
     # 相关
     md_lines.append("\n## 强相关性（|r| ≥ 0.9）\n")
     corr = results.get("correlation_matrix", {})
@@ -189,6 +176,7 @@ def run(patient_id: str) -> dict:
               if isinstance(r, (int, float)) and abs(r) >= 0.9]
     for pair, r in sorted(strong, key=lambda x: -abs(x[1])):
         md_lines.append(f"- {pair}: r={r:.3f}（{'正' if r>0 else '负'}相关）\n")
+
     # 移动平均
     md_lines.append("\n## 移动平均趋势分析\n")
     for metric, ma_info in results.get("moving_average", {}).items():
@@ -196,6 +184,7 @@ def run(patient_id: str) -> dict:
         window = ma_info.get("window", 2)
         arrow = "↑" if trend == "上升" else "↓" if trend == "下降" else "→"
         md_lines.append(f"- {metric}: {arrow} {trend}（窗口={window}次就诊）\n")
+
     # CV
     md_lines.append("\n## 指标稳定性分析（变异系数CV）\n")
     cv_data = results.get("cv_stability", {})
@@ -214,10 +203,11 @@ def run(patient_id: str) -> dict:
         md_lines.append(f"\n### 稳定指标（{len(stable)}个）\n")
         md_lines.append(f"- {', '.join([m for m,_ in stable[:5]])}"
                         f"{' 等'+str(len(stable))+'个' if len(stable)>5 else ''}\n")
+
     # Z-score
     md_lines.append("\n## Z-score异常检测结果\n")
     severe_items, mild_items = [], []
-    for metric, info in zscore_results.items():
+    for metric, info in results.get("zscore_outliers", {}).items():
         s = info.get('outliers_severe', {})
         m = info.get('outliers_mild', {})
         if s.get('count', 0) > 0:
@@ -227,11 +217,11 @@ def run(patient_id: str) -> dict:
     if severe_items:
         md_lines.append("### 🚨 严重异常值（|Z| > 3）\n")
         for metric, info in severe_items:
-            dates_str = ', '.join(info.get('dates', []))
-            vals_str = ', '.join([str(v) for v in info.get('values', [])])
+            dt_list = ', '.join(info.get('dates', []))
+            val_list = ', '.join([str(v) for v in info.get('values', [])])
             md_lines.append(f"- **{metric}**: {info['count']}次异常\n")
-            md_lines.append(f"  - 日期: {dates_str}\n")
-            md_lines.append(f"  - 数值: {vals_str}\n")
+            md_lines.append(f"  - 日期: {dt_list}\n")
+            md_lines.append(f"  - 数值: {val_list}\n")
     if mild_items:
         md_lines.append("\n### ⚠ 轻度异常值（|Z| > 2）\n")
         for metric, info in mild_items:
@@ -240,11 +230,11 @@ def run(patient_id: str) -> dict:
     if not severe_items and not mild_items:
         md_lines.append("- ✅ 未发现统计学异常值\n")
 
-    with open(paths["report_md"], "w", encoding="utf-8") as f:
-        f.writelines(md_lines)
-    print(f"Markdown 已保存: {paths['report_md']}")
+    return "".join(md_lines)
 
-    # ── 画图 ─────────────────────────────────────────────────
+
+def _generate_charts(df: pd.DataFrame, results: dict, paths: dict):
+    """生成所有统计图表。"""
     print("\n[CHARTS] 开始绘图...")
     plot_trend_regression(df, results, paths["fig_trend"])
     plot_correlation_heatmap(df, paths["fig_corr"])
@@ -254,6 +244,45 @@ def run(patient_id: str) -> dict:
     plot_moving_average(df, results, paths["fig_ma"])
     plot_cv_stability_heatmap(df, results, paths["fig_cv"])
     plot_zscore_distribution(df, results, paths["fig_zscore"])
+
+
+def run(patient_id: str) -> dict:
+    """统计分析入口：加载数据 → 计算 → JSON → Markdown → 图表。"""
+    paths = build_paths(patient_id)
+    print(f"[{datetime.now().isoformat()}] 开始数据分析...")
+    print(f"  病人: {patient_id}")
+
+    if not paths["metrics_csv"].exists():
+        raise FileNotFoundError(
+            f"找不到前置文件: {paths['metrics_csv']}\n"
+            f"   请先运行 data_loader.py --id-card {patient_id}"
+        )
+
+    df = pd.read_csv(paths["metrics_csv"])
+    df["report_date"] = pd.to_datetime(df["report_date"])
+    df = df.sort_values("report_date").reset_index(drop=True)
+
+    print(f"数据范围: {df['report_date'].min().date()} ~ {df['report_date'].max().date()}")
+    print(f"共 {len(df)} 份报告")
+
+    # 1. 纯计算
+    results = _compute_stats(df)
+
+    # 2. 保存 JSON
+    paths["analyzed_dir"].mkdir(parents=True, exist_ok=True)
+    paths["reports_dir"].mkdir(parents=True, exist_ok=True)
+    with open(paths["output_json"], "w", encoding="utf-8") as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
+    print(f"JSON 已保存: {paths['output_json']}")
+
+    # 3. 生成 & 保存 Markdown 报告
+    md_report = _generate_md_report(results, patient_id)
+    with open(paths["report_md"], "w", encoding="utf-8") as f:
+        f.write(md_report)
+    print(f"Markdown 已保存: {paths['report_md']}")
+
+    # 4. 绘图
+    _generate_charts(df, results, paths)
 
     print(f"[{datetime.now().isoformat()}] 数据分析完成")
     return results
