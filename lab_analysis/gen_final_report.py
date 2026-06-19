@@ -4,7 +4,6 @@
 import json
 import argparse
 import os
-import sys
 from pathlib import Path
 
 from lab_analysis.llm_client import call_chat, load_api_key
@@ -326,12 +325,14 @@ def main():
     args = parse_args()
     patient_id = args.id_card
     import os
-    raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id)
+    raw_ts = os.environ.get("ANALYSIS_TS", "")
+    ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id)
     data_dir = WORK_ROOT / "data" / patient_id / ts
 
     DEEPSEEK_API_KEY = load_api_key("DEEPSEEK_API_KEY", required=False)
     if not DEEPSEEK_API_KEY:
-        print("[FAIL] 未找到 DEEPSEEK_API_KEY"); return
+        print("[FAIL] 未找到 DEEPSEEK_API_KEY")
+        return
 
     reports_dir = data_dir / "04_reports"
     output_path = reports_dir / "final_integrated_report.md"
@@ -374,7 +375,7 @@ def main():
         # print(content)  # 跳过打印，避免 Windows GBK 编码问题
     else:
         print("[EMPTY CONTENT]")
-        print(json.dumps(result, ensure_ascii=False)[:1000])
+        print(content[:1000] if content else "(no content)")
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ def plot_trend_regression(df: pd.DataFrame, results: dict, output_path: Path):
     """① 趋势回归图：7个关键指标的时序折线 + 回归拟合线"""
     setup_chinese()
     metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]
-    dates   = pd.to_datetime(df["report_date"])
+    pd.to_datetime(df["report_date"])
     n       = len(metrics)
     cols    = 3
     rows    = (n + cols - 1) // cols
@@ -134,7 +134,7 @@ def plot_inflammation_status(df: pd.DataFrame, results: dict, output_path: Path)
     ax.set_xlim(-0.7, len(labels) - 0.3)
     ax.set_ylim(0, 1.3)
 
-    legend_patches = [mpatches.Patch(color=c, label=l) for l, c in INFLAMMATION_COLORS.items() if l in labels]
+    legend_patches = [mpatches.Patch(color=c, label=name) for name, c in INFLAMMATION_COLORS.items() if name in labels]
     ax.legend(handles=legend_patches, loc="upper right", fontsize=9,
               title="分期标准", title_fontsize=9)
     if "hs-CRP" in df.columns:
@@ -259,7 +259,7 @@ def plot_cv_stability_heatmap(df: pd.DataFrame, results: dict, output_path: Path
     cv_values = [cv_data[m]['cv'] for m in metrics]
     risk_levels = [cv_data[m]['risk_level'] for m in metrics]
     color_map = {'低': '#27ae60', '中': '#f39c12', '高': '#e74c3c'}
-    colors = [color_map.get(l, '#95a5a6') for l in risk_levels]
+    colors = [color_map.get(level, '#95a5a6') for level in risk_levels]
 
     fig, ax = plt.subplots(figsize=(10, len(metrics) * 0.6 + 2), facecolor="white")
     y_pos = np.arange(len(metrics))

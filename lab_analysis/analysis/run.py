@@ -1,18 +1,14 @@
 """lab_analysis.analysis.run — 统计分析编排器 + CLI"""
 
 import json
-import sys
 import argparse
 from datetime import datetime
-from pathlib import Path
 
 import pandas as pd
-import numpy as np
 
 from ._base import (
     build_paths,
     NUMERIC_METRICS, REF_RANGES,
-    ACUTE_THRESHOLD, REMISSION_THRESHOLD, INFLAMMATION_COLORS,
 )
 from ._compute import (
     classify_inflammation,

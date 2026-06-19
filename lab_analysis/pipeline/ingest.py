@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import traceback
-from pathlib import Path
 
 from lab_analysis.utils import WORK_ROOT
 

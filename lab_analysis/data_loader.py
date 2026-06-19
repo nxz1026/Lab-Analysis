@@ -281,7 +281,6 @@ def to_json(reports, output_path):
 
 
 def main():
-    import os
     parser = argparse.ArgumentParser(description="数据加载：读取检验报告，生成结构化数据")
     parser.add_argument("--id-card", required=True, help="脱敏ID(由 pipeline 传入)")
     args = parser.parse_args()
@@ -291,7 +290,7 @@ def main():
     # 前置检查：原始数据目录存在
     if not paths["raw_papers"].exists():
         print(f"[FAIL] 原始数据目录不存在: {paths['raw_papers']}")
-        print(f"   预期路径: raw/patient_{{patient_id}}/papers/lab_report_*/")
+        print("   预期路径: raw/patient_{patient_id}/papers/lab_report_*/")
         print(f"   当前 patient_id: {args.id_card}")
         sys.exit(1)
 

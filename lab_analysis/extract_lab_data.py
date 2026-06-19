@@ -18,7 +18,6 @@ import json
 import os
 import sys
 import time
-from datetime import datetime
 from pathlib import Path
 
 from lab_analysis.llm_client import call_chat, parse_json_response, load_api_key
@@ -209,7 +208,6 @@ def save_structured_report(data: dict, patient_id: str) -> str:
     返回：保存的目录路径
     """
     # 导入患者ID脱敏函数
-    from lab_analysis.patient_id import encode
     patient_id_obf = encode(patient_id)
     
     report_date = data.get('report_date', '').replace('-', '')

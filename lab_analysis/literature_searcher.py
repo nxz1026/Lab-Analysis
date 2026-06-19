@@ -270,7 +270,9 @@ def main():
 
     if args.id_card:
         import os
-        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card); lit_dir = WORK_ROOT / "data" / args.id_card / ts / "03_literature"
+        raw_ts = os.environ.get("ANALYSIS_TS", "")
+        ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
+        lit_dir = WORK_ROOT / "data" / args.id_card / ts / "03_literature"
         args.out = args.out or str(lit_dir / "literature_results.json")
 
     all_topics = list(SEARCH_STRATEGIES.keys())

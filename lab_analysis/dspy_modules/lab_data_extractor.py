@@ -9,7 +9,7 @@ DSPy 版本的检验报告数据提取模块
 
 import dspy
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
 

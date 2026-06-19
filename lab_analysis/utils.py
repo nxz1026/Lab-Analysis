@@ -16,7 +16,7 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 try:
     from tenacity import (
@@ -24,8 +24,6 @@ try:
         stop_after_attempt,
         wait_exponential,
         retry_if_exception_type,
-        before_log,
-        after_log,
     )
     HAS_TENACITY = True
 except ImportError:

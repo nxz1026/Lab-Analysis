@@ -166,7 +166,7 @@ def main():
     # 前置检查：影像目录存在
     if not imaging_base.exists():
         print(f"[错误] 影像目录不存在: {imaging_base}")
-        print(f"   预期路径: raw/patient_{{patient_id}}/imaging/seq_01~19/*.dcm")
+        print("   预期路径: raw/patient_{patient_id}/imaging/seq_01~19/*.dcm")
         sys.exit(1)
 
     mode_label = "[DSPy]" if args.use_dspy else "[标准]"
