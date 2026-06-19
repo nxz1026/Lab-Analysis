@@ -7,8 +7,8 @@ DSPy 版本的最终综合临床诊断报告生成模块
 """
 
 import dspy
+import os
 from pathlib import Path
-from typing import Dict, Optional
 
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
 
@@ -287,7 +287,6 @@ def run_dspy_final_report(patient_id: str, data_dir: Path,
 
 if __name__ == "__main__":
     import argparse
-    import json
     
     parser = argparse.ArgumentParser(description="DSPy 最终报告生成")
     parser.add_argument("--id-card", required=True, help="患者ID")

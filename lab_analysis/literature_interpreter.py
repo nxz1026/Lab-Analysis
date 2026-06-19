@@ -7,7 +7,6 @@
 import json
 import os
 import sys
-import time
 from datetime import datetime
 from pathlib import Path
 
@@ -34,7 +33,7 @@ def build_prompt(analysis_path: str, lit_path: str) -> str:
 
     # 提取关键统计发现
     corr = analysis.get("correlation_matrix", {})
-    regression = analysis.get("linear_regression", {})
+    analysis.get("linear_regression", {})
     abnormal = analysis.get("abnormal_summary", {})
 
     # 收集异常指标（按 metric 分组）
@@ -127,7 +126,8 @@ def main():
     import os
     wiki_data = WORK_ROOT / "data"
     if args.id_card:
-        raw_ts = os.environ.get("ANALYSIS_TS", ""); ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
+        raw_ts = os.environ.get("ANALYSIS_TS", "")
+        ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
         lit_dir = wiki_data / args.id_card / ts / "03_literature"
         args.analysis = args.analysis or str(lit_dir.parent / "02_analyzed" / "analysis_results.json")
         args.lit = args.lit or str(lit_dir / "literature_results.json")
@@ -138,7 +138,6 @@ def main():
         args.out = args.out or str(wiki_data / "literature_interpretation.json")
 
     # 前置检查
-    import sys
     for label, path in [("analysis_results", args.analysis), ("literature_results", args.lit)]:
         if path and not Path(path).exists():
             print(f"[错误] 前置文件不存在: [{label}] {path}")

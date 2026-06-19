@@ -19,7 +19,6 @@ evidence_grader.py — 论文证据等级打分模块
 
 from __future__ import annotations
 
-import math
 import re
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
@@ -103,7 +102,7 @@ def score_topic_match(paper: dict, topic: str = "sepsis_gn_gp") -> tuple[float, 
     keywords = TOPIC_KEYWORDS.get(topic, TOPIC_KEYWORDS["sepsis_gn_gp"])
     text = f"{paper.get('title', '')} {paper.get('abstract', '')}".lower()
     hits = sum(1 for kw in keywords if kw in text)
-    ratio = hits / len(keywords) if keywords else 0.0
+    hits / len(keywords) if keywords else 0.0
     # 至少 2 个关键词命中才算相关
     if hits == 0:
         return 0.0, f"主题关键词 0 命中 ({len(keywords)} 关键词库)"
@@ -197,12 +196,16 @@ def score_parse_quality(paper: dict) -> tuple[float, str]:
     abstract = bool(paper.get('abstract', '').strip())
     journal = bool(paper.get('journal', '').strip())
     year = bool(paper.get('year', '').strip())
-    score = (title * 0.4 + abstract * 0.3 + journal * 0.15 + year * 0.15)
+    (title * 0.4 + abstract * 0.3 + journal * 0.15 + year * 0.15)
     missing = []
-    if not title: missing.append("标题")
-    if not abstract: missing.append("摘要")
-    if not journal: missing.append("期刊")
-    if not year: missing.append("年份")
+    if not title:
+        missing.append("标题")
+    if not abstract:
+        missing.append("摘要")
+    if not journal:
+        missing.append("期刊")
+    if not year:
+        missing.append("年份")
     if not missing:
         return 1.0, "四要素齐全"
     if len(missing) == 1:

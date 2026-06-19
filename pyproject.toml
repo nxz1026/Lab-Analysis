@@ -43,4 +43,8 @@ filterwarnings = ["ignore::DeprecationWarning"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-fixable = ["I"]
+
+[tool.ruff.lint]
+# Migrated from top-level [tool.ruff] (ruff 0.15+ requirement)
+# fixable: enable auto-fix for I/F/E rules (F401/F841/E702/E741)
+fixable = ["ALL"]

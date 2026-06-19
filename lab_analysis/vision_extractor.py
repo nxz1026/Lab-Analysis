@@ -12,12 +12,11 @@ vision_extractor.py — Vision 模块：从检验报告图片中提取患者ID�
 import argparse
 import base64
 import json
-import os
 import sys
 import time
 from pathlib import Path
 
-from lab_analysis.llm_client import call_chat, strip_code_fence, parse_json_response, load_api_key
+from lab_analysis.llm_client import call_chat, parse_json_response, load_api_key
 from lab_analysis.patient_id import encode, validate_id_card
 
 

@@ -28,7 +28,6 @@ from lab_analysis.evidence_grader import (
     GradedPaper,
     ScenarioName,
     TOPIC_KEYWORDS,
-    rank_papers,
 )
 
 

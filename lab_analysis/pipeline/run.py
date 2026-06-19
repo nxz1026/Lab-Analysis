@@ -123,13 +123,16 @@ def main():
 
     rc = run_step("③ 数据加载", "data_loader", pid_arg, ts_env)
     if rc != 0:
-        print("[!] data_loader 失败，退出"); sys.exit(1)
+        print("[!] data_loader 失败，退出")
+        sys.exit(1)
     rc = run_step("④ 数据分析", "data_analyzer", pid_arg, ts_env)
     if rc != 0:
-        print("[!] data_analyzer 失败，退出"); sys.exit(1)
+        print("[!] data_analyzer 失败，退出")
+        sys.exit(1)
     rc = run_step("⑤ 文献检索", "literature_searcher", pid_arg, ts_env)
     if rc != 0:
-        print("[!] literature_searcher 失败，退出"); sys.exit(1)
+        print("[!] literature_searcher 失败，退出")
+        sys.exit(1)
 
     # ⑤b 文献二次筛选（evidence-grading 可选增强）
     if args.skip_lit_filter:
