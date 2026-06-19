@@ -310,12 +310,12 @@ def main():
     # 生成 Markdown 版
     md_path = str(Path(out_path).with_suffix(".md"))
     with open(md_path, "w", encoding="utf-8") as f:
-        f.write(f"# 文献检索结果\n\n")
+        f.write("# 文献检索结果\n\n")
         f.write(f"**检索时间**: {results['generated']}  |  **唯一文献数**: {results['total_unique_papers']}\n\n")
-        f.write(f"## 检索策略\n\n")
+        f.write("## 检索策略\n\n")
         for sr in results["searches"]:
             f.write(f"- **[{sr['strategy']}]** {sr['total_results']} total → {sr['pmids_returned']} returned\n")
-        f.write(f"\n## 文献列表\n\n")
+        f.write("\n## 文献列表\n\n")
         for i, p in enumerate(results["all_papers"], 1):
             f.write(f"### {i}. {p['title']}\n\n")
             f.write(f"- **PMID**: {p['pmid']}  |  **Year**: {p.get('year','N/A')}  |  **Journal**: {p.get('journal','N/A')}\n")

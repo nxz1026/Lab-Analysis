@@ -241,10 +241,10 @@ def save_prompts_to_markdown(module_name: str, prompts_data: Dict, output_dir: P
         lines.append(f"### Signature: `{sig.get('signature_name', 'Unknown')}`")
         lines.append("")
         if sig.get("docstring"):
-            lines.append(f"**Docstring**:")
-            lines.append(f"```")
+            lines.append("**Docstring**:")
+            lines.append("```")
             lines.append(sig.get("docstring", ""))
-            lines.append(f"```")
+            lines.append("```")
             lines.append("")
 
         if sig.get("instructions"):
@@ -278,9 +278,9 @@ def save_prompts_to_markdown(module_name: str, prompts_data: Dict, output_dir: P
                     if k.startswith('_'):
                         continue
                     lines.append(f"**{k}**:")
-                    lines.append(f"```")
+                    lines.append("```")
                     lines.append(str(v))
-                    lines.append(f"```")
+                    lines.append("```")
                     lines.append("")
 
         lines.append("---")

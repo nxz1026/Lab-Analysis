@@ -163,8 +163,8 @@ def assess_three_source_consistency(data_dir: Path) -> str:
 
     lines = [
         "## 附：三源质控段落\n",
-        f"| 证据来源 | 内容摘要 |",
-        f"|---------|---------|",
+        "| 证据来源 | 内容摘要 |",
+        "|---------|---------|",
         f"| 检验数据 | {lab_summary} |",
         f"| 影像印证 | {mri_summary} |",
         f"| 文献证据 | {lit_summary} |",

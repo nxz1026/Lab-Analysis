@@ -209,7 +209,7 @@ def run_dspy_extraction(image_path: Path, initial_ocr_text: str = ""):
         api_base='https://api.deepseek.com/v1'
     )
     dspy.configure(lm=lm)
-    print(f"[DSPy] LLM 已配置: deepseek-chat")
+    print("[DSPy] LLM 已配置: deepseek-chat")
     
     # 尝试加载编译后的模型
     compiled_model_path = Path(__file__).parent.parent / "models" / "dspy" / "lab_extractor_compiled.json"
@@ -264,13 +264,13 @@ if __name__ == "__main__":
     
     image_path = Path(args.image)
     
-    print(f"[DSPy] 开始提取检验数据...")
+    print("[DSPy] 开始提取检验数据...")
     print(f"  图片: {image_path}")
     
     result = run_dspy_extraction(image_path, args.ocr_text)
     
-    print(f"\n[DSPy] 提取完成!")
+    print("\n[DSPy] 提取完成!")
     print(f"  患者ID: {result['patient_id']}")
     print(f"  报告日期: {result['report_date']}")
     print(f"  指标数量: {len(result['metrics'])}")
-    print(f"  结果已保存")
+    print("  结果已保存")

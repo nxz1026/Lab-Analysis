@@ -136,7 +136,7 @@ def main():
 
     # Step 2: 创建四个子文件夹
     subfolders = {}
-    print(f"\n② 创建四个子文件夹")
+    print("\n② 创建四个子文件夹")
     for sf_name in SUBFOLDER_NAMES:
         sf_path = day_folder / sf_name
         if create_local_folder(sf_path):
@@ -145,7 +145,7 @@ def main():
             print(f"  [失败] {sf_name} 创建失败")
 
     # Step 3: 复制所有文件
-    print(f"\n③ 复制所有文件")
+    print("\n③ 复制所有文件")
     copied_count = 0
     skipped_count = 0
     for local_path, subfolder, rename in upload_map:
@@ -170,7 +170,7 @@ def main():
             skipped_count += 1
 
     # Step 4: 合并 DSPy prompts 目录到 中间结果/dspy_prompts/
-    print(f"\n④ 合并 DSPy prompts 目录")
+    print("\n④ 合并 DSPy prompts 目录")
     dspy_target = subfolders.get("中间结果") / "dspy_prompts"
     dspy_target.mkdir(parents=True, exist_ok=True)
     dspy_sources = [
@@ -202,7 +202,7 @@ def main():
         print(f"  [完成] 共合并 {dspy_merged} 个 DSPy 产物")
 
     print(f"\n{'='*60}")
-    print(f"[完成] 全部完成！")
+    print("[完成] 全部完成！")
     print(f"   [成功] 成功复制: {copied_count} 个文件")
     print(f"   [DSPy] 合并: {dspy_merged} 个 DSPy 产物")
     print(f"   [警告] 跳过: {skipped_count} 个文件")

@@ -69,7 +69,7 @@ def run_dspy_mode(args):
             api_base='https://api.deepseek.com/v1'
         )
         dspy.configure(lm=lm)
-        print(f"[DSPy] LLM 已配置: deepseek-chat")
+        print("[DSPy] LLM 已配置: deepseek-chat")
         
         from lab_analysis.dspy_modules import LiteratureInterpreterModule
         
@@ -92,9 +92,9 @@ def run_dspy_mode(args):
         if compiled_model_path.exists():
             print(f"[DSPy] 加载编译模型: {compiled_model_path}")
             module.load(compiled_model_path)
-            print(f"[DSPy] 模型加载成功")
+            print("[DSPy] 模型加载成功")
         else:
-            print(f"[DSPy] 未找到编译模型, 使用未编译版本")
+            print("[DSPy] 未找到编译模型, 使用未编译版本")
         
         print("[DSPy] 执行推理...")
         result = module(

@@ -155,7 +155,7 @@ def extract_lab_metrics(image_path: Path) -> dict:
         except Exception as e:
             print(f"[ERROR] 模型调用失败: {e}")
             if "429" in str(e):
-                print(f"[WARNING] 遇到速率限制，将增加等待时间")
+                print("[WARNING] 遇到速率限制，将增加等待时间")
             last_error = str(e)
             continue
 
@@ -305,7 +305,7 @@ def main_with_args(args) -> bool:
         print(f"报告日期: {data.get('report_date')}")
         print(f"报告类型: {data.get('report_type')}")
         print(f"提取指标数: {len(data.get('metrics', {}))}")
-        print(f"\n主要指标:")
+        print("\n主要指标:")
         for key in ['WBC', 'RBC', 'HGB', 'PLT', 'CRP', 'hs-CRP']:
             if key in data.get('metrics', {}):
                 info = data['metrics'][key]
@@ -377,7 +377,7 @@ def main():
     print(f"报告日期: {data.get('report_date')}")
     print(f"报告类型: {data.get('report_type')}")
     print(f"提取指标数: {len(data.get('metrics', {}))}")
-    print(f"\n主要指标:")
+    print("\n主要指标:")
     for key in ['WBC', 'RBC', 'HGB', 'PLT', 'CRP', 'hs-CRP']:
         if key in data.get('metrics', {}):
             info = data['metrics'][key]

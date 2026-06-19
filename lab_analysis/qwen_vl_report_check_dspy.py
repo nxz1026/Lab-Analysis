@@ -245,9 +245,9 @@ def main():
 
     # 2) 如果使用了 DSPy 模式，确保 DSPy 优化 prompt 已被保存
     if args.use_dspy:
-        print(f"[保存] DSPy 优化 prompt 保存位置: data/mri_dspy_prompts/")
+        print("[保存] DSPy 优化 prompt 保存位置: data/mri_dspy_prompts/")
 
-    print(f"\n[摘要] 分析摘要")
+    print("\n[摘要] 分析摘要")
     print(f"  总序列数: {len(SEQ_SELECTIONS)}")
     print(f"  成功分析: {len([r for r in results if r['status'] == 'success'])}")
     print(f"  失败: {len([r for r in results if r['status'] == 'error'])}")

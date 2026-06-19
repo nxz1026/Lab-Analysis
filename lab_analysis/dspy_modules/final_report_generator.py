@@ -172,7 +172,7 @@ def run_dspy_final_report(patient_id: str, data_dir: Path,
         api_base='https://api.deepseek.com/v1'
     )
     dspy.configure(lm=lm)
-    print(f"[DSPy] LLM 已配置: deepseek-chat")
+    print("[DSPy] LLM 已配置: deepseek-chat")
     
     # 尝试加载编译后的模型
     compiled_model_path = Path(__file__).parent.parent.parent / "models" / "dspy" / "final_report_generator_compiled.json"
@@ -299,12 +299,12 @@ if __name__ == "__main__":
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
     data_dir = work_root / "data" / args.id_card / ts
     
-    print(f"[DSPy] 开始生成最终报告...")
+    print("[DSPy] 开始生成最终报告...")
     print(f"  患者ID: {args.id_card}")
     print(f"  数据目录: {data_dir}")
     
     # TODO: 从数据目录加载必要的输入文件
     # 这里需要根据实际的 Pipeline 数据结构来调整
     
-    print(f"\n[DSPy] 报告生成完成!")
+    print("\n[DSPy] 报告生成完成!")
     print(f"  结果已保存: {data_dir / '04_reports' / 'final_integrated_report_dspy.md'}")
