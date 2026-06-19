@@ -101,7 +101,7 @@ def extract_info_from_image(image_path: Path, use_free_model: bool = True) -> di
         except Exception as e:
             print(f"[ERROR] 模型调用失败: {e}")
             if "429" in str(e):
-                print(f"[WARNING] 遇到速率限制，将增加等待时间")
+                print("[WARNING] 遇到速率限制，将增加等待时间")
             last_error = str(e)
             continue
 
@@ -128,7 +128,7 @@ def main():
         return 1
     
     print(f"[Vision] 正在分析图片: {image_path.name}")
-    print(f"[Vision] 调用 Qwen-VL API...")
+    print("[Vision] 调用 Qwen-VL API...")
     
     result = extract_info_from_image(image_path)
     

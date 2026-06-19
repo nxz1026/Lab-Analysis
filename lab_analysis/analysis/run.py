@@ -137,7 +137,7 @@ def run(patient_id: str) -> dict:
     if high_cv:
         print(f"  [警告] 高变异指标: {', '.join([m for m, _ in high_cv])}")
     else:
-        print(f"  [成功] 所有指标稳定性良好")
+        print("  [成功] 所有指标稳定性良好")
 
     # ── 8. Z-score异常检测 ───────────────────────────────────
     zscore_results = zscore_outlier_detection(df, threshold=2.0)

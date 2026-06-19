@@ -215,7 +215,7 @@ def run_dspy_mri_analysis(image_desc: str, report_findings: str,
         api_base='https://dashscope.aliyuncs.com/compatible-mode/v1'
     )
     dspy.configure(lm=lm)
-    print(f"[DSPy] LLM 已配置: qwen-vl-plus (OpenAI 兼容模式)")
+    print("[DSPy] LLM 已配置: qwen-vl-plus (OpenAI 兼容模式)")
     
     # 加载或创建模块
     module = MRIAnalysisModule()

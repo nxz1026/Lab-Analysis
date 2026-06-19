@@ -184,12 +184,12 @@ if __name__ == "__main__":
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
     data_dir = work_root / "data" / args.id_card / ts
     
-    print(f"[DSPy] 开始文献解读...")
+    print("[DSPy] 开始文献解读...")
     print(f"  患者ID: {args.id_card}")
     print(f"  数据目录: {data_dir}")
     
     result = run_dspy_interpretation(args.id_card, data_dir)
     
-    print(f"\n[DSPy] 解读完成!")
+    print("\n[DSPy] 解读完成!")
     print(f"  可信度: {result['confidence']:.2f}")
     print(f"  结果已保存: {data_dir / '03_literature' / 'literature_interpretation_dspy.json'}")

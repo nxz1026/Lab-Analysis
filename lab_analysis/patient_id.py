@@ -79,8 +79,8 @@ def _load_or_create_master_key() -> bytes:
         pass
     print(
         f"[WARN] 已生成新的脱敏主密钥: {_KEY_FILE}\n"
-        f"       该文件包含还原身份证号的唯一凭证，切勿提交或外传。\n"
-        f"       生产环境建议改用环境变量 LAB_DEID_KEY 注入。",
+        "       该文件包含还原身份证号的唯一凭证，切勿提交或外传。\n"
+        "       生产环境建议改用环境变量 LAB_DEID_KEY 注入。",
         file=sys.stderr,
     )
     return new_key

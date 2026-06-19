@@ -177,12 +177,12 @@ def extract_dicom_from_zip(zip_path: Path, temp_dir: Path) -> Path:
         logger.error(f"权限错误: {e}")
         raise PermissionError(
             f"无法写入临时目录 {temp_dir}。\n"
-            f"可能原因：\n"
-            f"  1. 在沙箱环境中运行，需要外部路径访问权限\n"
-            f"  2. 临时目录权限不足\n"
-            f"解决方案：\n"
-            f"  - 在沙箱外运行此命令（设置 required_permissions='all'）\n"
-            f"  - 或手动解压ZIP文件后使用 --dicom-dir 参数"
+            "可能原因：\n"
+            "  1. 在沙箱环境中运行，需要外部路径访问权限\n"
+            "  2. 临时目录权限不足\n"
+            "解决方案：\n"
+            "  - 在沙箱外运行此命令（设置 required_permissions='all'）\n"
+            "  - 或手动解压ZIP文件后使用 --dicom-dir 参数"
         ) from e
     
     # 查找所有.dcm文件
@@ -191,7 +191,7 @@ def extract_dicom_from_zip(zip_path: Path, temp_dir: Path) -> Path:
         logger.error(f"ZIP文件中未找到.dcm文件: {zip_path}")
         raise FileNotFoundError(
             f"ZIP文件中未找到.dcm文件: {zip_path}\n"
-            f"请确认ZIP文件格式正确，包含DICOM序列数据"
+            "请确认ZIP文件格式正确，包含DICOM序列数据"
         )
     
     logger.info(f"找到 {len(dcm_files)} 个DICOM文件")
@@ -410,7 +410,7 @@ def main():
             else:
                 # 非批量模式，显示最终统计
                 logger.info(f"摄入成功: lab_image, patient_id={patient_id}")
-                print(f"\n[OK] 摄入记录已保存")
+                print("\n[OK] 摄入记录已保存")
                 log = json.loads(INGEST_LOG.read_text(encoding="utf-8"))
                 print(f"  总记录数: {len(log['ingested'])} 条")
                 print(f"  详细日志: {LOG_FILE}")
@@ -466,10 +466,10 @@ def main():
                 
                 if not batch_mode:
                     if seq_count == 0:
-                        print(f"\n[WARNING] 没有新序列被摄入")
+                        print("\n[WARNING] 没有新序列被摄入")
                         print("  可能原因: 所有序列已存在，或被跳过")
                     else:
-                        print(f"\n[OK] DICOM摄入成功")
+                        print("\n[OK] DICOM摄入成功")
                         print(f"  序列数量: {seq_count} 个")
                         print(f"  保存位置: {record['saved_dir']}")
                 else:
@@ -485,7 +485,7 @@ def main():
             else:
                 # 非批量模式，显示最终统计
                 logger.info(f"摄入成功: mri_dicom, patient_id={patient_id}")
-                print(f"\n[OK] 摄入记录已保存")
+                print("\n[OK] 摄入记录已保存")
                 log = json.loads(INGEST_LOG.read_text(encoding="utf-8"))
                 print(f"  总记录数: {len(log['ingested'])} 条")
                 print(f"  详细日志: {LOG_FILE}")
@@ -530,7 +530,7 @@ def main():
             else:
                 # 非批量模式，显示最终统计
                 logger.info(f"摄入成功: mri_report, patient_id={patient_id}")
-                print(f"\n[OK] 摄入记录已保存")
+                print("\n[OK] 摄入记录已保存")
                 log = json.loads(INGEST_LOG.read_text(encoding="utf-8"))
                 print(f"  总记录数: {len(log['ingested'])} 条")
                 print(f"  详细日志: {LOG_FILE}")

@@ -146,7 +146,7 @@ def _resolve_input_path(args) -> Path:
         candidate = lit_dir / "literature_results.json"
         if not candidate.exists():
             print(f"[ERROR] pipeline 模式下找不到输入文件: {candidate}")
-            print(f"  提示：请先运行步骤⑤ literature_searcher，或手动指定 --in")
+            print("  提示：请先运行步骤⑤ literature_searcher，或手动指定 --in")
             sys.exit(1)
         return candidate
     print("[ERROR] 请提供 --in <path> 或 --id-card <deid>")
@@ -185,7 +185,7 @@ def _cli():
         output_path=output_path,
     )
 
-    print(f"\n=== 文献二次筛选 ===")
+    print("\n=== 文献二次筛选 ===")
     print(f"输入: {result['input_file']}")
     print(f"场景: {result['scenario']} | 主题: {result['topic']}")
     print(f"总数: {result['total_papers']} → 保留: {result['kept_papers']}")

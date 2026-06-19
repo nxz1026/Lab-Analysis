@@ -151,7 +151,7 @@ def main():
         try:
             r = analyze_single(b64, seq_dir_name, seq_desc, finding_text)
             results.append(r)
-            print(f"  [成功] 完成")
+            print("  [成功] 完成")
         except Exception as e:
             results.append({"status": "error", "seq_name": seq_dir_name, "seq_desc": seq_desc, "error": str(e)})
             print(f"  [失败] 失败: {e}")
@@ -173,8 +173,8 @@ def main():
     # 生成 Markdown 版
     md_path = lit_dir / "mri_report_check_results.md"
     with open(md_path, "w", encoding="utf-8") as f:
-        f.write(f"# MRI 报告印证分析\n\n")
-        f.write(f"**检查日期**: 2026-04-11  **检查编号**: Y00002207707\n\n")
+        f.write("# MRI 报告印证分析\n\n")
+        f.write("**检查日期**: 2026-04-11  **检查编号**: Y00002207707\n\n")
         f.write(f"## 纸质报告关键发现\n\n{REPORT_FINDINGS}\n\n---\n\n")
         for r in results:
             if r["status"] == "success":
@@ -189,7 +189,7 @@ def main():
                 f.write(f"## {r['seq_name']} — [失败] 失败: {r.get('error', '')}\n\n")
     print(f"[报告] Markdown 已保存: {md_path}")
 
-    print(f"\n" + "="*60)
+    print("\n" + "="*60)
     print("[摘要] 分析摘要")
     print("="*60)
     for r in results:

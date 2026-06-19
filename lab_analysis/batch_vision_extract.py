@@ -82,7 +82,7 @@ def run_vision_extractor(image_path: Path, interactive: bool = False) -> dict:
         print(result.stderr)
     
     if result.returncode != 0:
-        print(f"[FAIL] 识别失败")
+        print("[FAIL] 识别失败")
         return None
     
     # 读取输出JSON
@@ -113,11 +113,11 @@ def run_ingest_data(image_path: Path, patient_id: str, report_date: str, report_
     result = subprocess.run(cmd, cwd=str(project_root), capture_output=True, text=True)
     
     if result.returncode == 0:
-        print(f"[OK] 存入成功")
+        print("[OK] 存入成功")
         if result.stdout:
             print(result.stdout)
     else:
-        print(f"[FAIL] 存入失败")
+        print("[FAIL] 存入失败")
         if result.stderr:
             print(result.stderr)
 
@@ -142,7 +142,7 @@ def main():
     image_files = sorted(origin_data_dir.glob("lab_*.jpg"))
     
     if not image_files:
-        print(f"\n[警告] 未找到 lab_*.jpg 文件")
+        print("\n[警告] 未找到 lab_*.jpg 文件")
         print(f"   请将检验报告图片放入: {origin_data_dir}")
         return 0
         
@@ -161,7 +161,7 @@ def main():
         # 步骤1: 识别图片
         result = run_vision_extractor(image_path, args.interactive)
         if not result:
-            print(f"[失败] 识别失败，跳过")
+            print("[失败] 识别失败，跳过")
             fail_count += 1
             results.append({"file": image_path.name, "status": "识别失败"})
             continue
@@ -173,7 +173,7 @@ def main():
         # 步骤2: 强制校验身份证号（OCR 识别值作为 extracted_id 传入统一校验函数）
         validated = validate_id_card(patient_id, patient_id, interactive=True)
         if not validated:
-            print(f"\n[跳过] 身份证号校验未通过，跳过此图片")
+            print("\n[跳过] 身份证号校验未通过，跳过此图片")
             skipped_count += 1
             results.append({"file": image_path.name, "status": "身份证号校验失败"})
             continue
