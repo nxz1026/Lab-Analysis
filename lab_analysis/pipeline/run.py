@@ -131,6 +131,21 @@ def main():
     if rc != 0:
         print("[!] literature_searcher 失败，退出"); sys.exit(1)
 
+    # ⑤b 文献二次筛选（evidence-grading 可选增强）
+    if args.skip_lit_filter:
+        print("\n[跳过] 文献二次筛选（--skip-lit-filter）")
+    else:
+        rc = run_step(
+            "⑤b 文献二次筛选", "literature_filter",
+            env=ts_env,
+            extra_args=pid_arg + [
+                "--scenario", args.lit_filter_scenario,
+                "--top-k", str(args.lit_filter_top_k),
+            ],
+        )
+        if rc != 0:
+            print("[!] literature_filter 失败（非致命，继续）")
+
     if args.skip_llm:
         print("\n[跳过] 循证解读（--skip-llm）")
     else:

@@ -49,6 +49,7 @@ python -m lab_analysis
 | ③ | **数据加载** | `data_loader.py` | `.../metrics.md` → `lab_metrics.csv` + `.json` |
 | ④ | **统计分析** | `analysis/run` | `lab_metrics.csv` → 7 张图表 + `analysis_results_report.md` |
 | ⑤ | **文献检索** | `literature_searcher.py` | 检验项目 + 关键指标 → PubMed 摘要 `.md` |
+| ⑤b | **文献证据打分**（可选） | `literature_filter.py` | `literature_results.json` → `literature_results.filtered.json`（top-k 按证据等级排序） |
 | ⑥ | **循证解读** | `literature_interpreter(_dspy).py` | 文献摘要 + 检验数据 → 解读报告 + DSPy prompt |
 | ⑦ | **影像分析** | `qwen_vl_report_check(_dspy).py` | MRI 报告 + 检验数据 → 一致性报告 + DSPy prompt |
 | ⑧ | **综合报告** | `gen_final_report(_dspy).py` | ④⑤⑥⑦ 产物 → 9 章节综合报告 + DSPy prompt |
@@ -88,6 +89,8 @@ Lab-Analysis/
 │   ├── data_loader.py                    # ③ 数据加载
 │   ├── data_analyzer.py                  # [过时]委托给 analysis/ 子包
 │   ├── literature_searcher.py            # ⑤ PubMed 文献检索
+│   ├── evidence_grader.py                # ⑤b 论文证据等级打分（5 维 + 3 scenario）
+│   ├── literature_filter.py             # ⑤b CLI 封装（pipeline 步骤入口）
 │   ├── literature_interpreter.py         # ⑥ 文献解读（标准）
 │   ├── literature_interpreter_dspy.py    # ⑥ 文献解读（DSPy 双模式）
 │   ├── qwen_vl_report_check.py           # ⑦ 影像检查（标准）
@@ -239,7 +242,25 @@ data/{patient_id}/{timestamp}/
 
 ## LS 增强特性
 
-本项目集成 **DSPy**（Declarative Self-improving Python）框架，在 4 个 LLM 核心模块上实现"标准模式 + DSPy 优化模式"双轨运行。
+本项目集成 **DSPy**（Declarative Self-improving Python）框架，在 4 个 LLM 核心模块上实现"standard + DSPy optimized"双轨运行。
+
+### 步骤⑤b 文献证据打分
+
+【详情】参见 [docs/EVIDENCE_GRADING.md](docs/EVIDENCE_GRADING.md)。
+
+简要：
+- 5 个独立维度打分（主题匹配 / 证据等级 / 时效性 / 样本量 / 解析质量）
+- 3 种场景权重：`early_diagnosis` / `differential_diagnosis` / `prognosis`
+- S/A/B/C 四档 tier
+- 纯规则打分，不调 LLM，可重复可测试
+
+CLI 参数：
+```
+--skip-lit-filter              跳过步骤⑤b
+--lit-filter-scenario {early_diagnosis|differential_diagnosis|prognosis}
+                              默认 differential_diagnosis
+--lit-filter-top-k INT         保留前 k 篇，默认 8
+```
 
 ### 4 个 DSPy 模块
 
