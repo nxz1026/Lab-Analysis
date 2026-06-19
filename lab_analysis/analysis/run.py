@@ -6,6 +6,8 @@ from datetime import datetime
 
 import pandas as pd
 
+from lab_analysis.alert_generator import generate_alerts, print_alerts
+
 from ._base import (
     NUMERIC_METRICS,
     REF_RANGES,
@@ -267,6 +269,15 @@ def run(patient_id: str) -> dict:
 
     # 1. 纯计算
     results = _compute_stats(df)
+
+    # 1b. 生成异常告警摘要
+    alerts = generate_alerts(results)
+    print("\n--- 异常告警摘要 ---")
+    print_alerts(alerts)
+    alerts_path = paths["analyzed_dir"] / "alerts.json"
+    with open(alerts_path, "w", encoding="utf-8") as f:
+        json.dump(alerts, f, ensure_ascii=False, indent=2)
+    print(f"  告警已保存: {alerts_path}\n")
 
     # 2. 保存 JSON
     paths["analyzed_dir"].mkdir(parents=True, exist_ok=True)

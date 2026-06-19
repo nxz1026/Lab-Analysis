@@ -38,6 +38,8 @@ def _load_patient_info(lab_path: Path) -> dict:
 def parse_args():
     parser = argparse.ArgumentParser(description="生成最终综合临床报告")
     parser.add_argument("--id-card", required=True, help="脱敏ID(由 pipeline 传入)")
+    parser.add_argument("--compare-mode", action="store_true",
+                        help="同时运行 Standard + DSPy 双模式并输出对比报告")
     return parser.parse_args()
 
 
@@ -355,8 +357,45 @@ def main():
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"\n报告已保存: {output_path}")
-        # print("\n" + "="*60)
-        # print(content)  # 跳过打印，避免 Windows GBK 编码问题
+
+        # --compare-mode: 双模式对比
+        if args.compare_mode:
+            print("\n[COMPARE] 双模式对比模式 — 同时运行 DSPy 版本...")
+            try:
+                import argparse as _argparse
+
+                from lab_analysis.compare_report_modes import compare_reports, format_comparison_md
+
+                # 运行 DSPy 模式
+                from lab_analysis.gen_final_report_dspy import run_dspy_mode as _dspy_run
+
+                _dspy_args = _argparse.Namespace(
+                    id_card=patient_id,
+                    use_dspy=True,
+                )
+                dspy_result = _dspy_run(_dspy_args)
+                dspy_sections = dspy_result.get("sections", {})
+                dspy_confidence = dspy_result.get("confidence")
+
+                # 对比
+                comp = compare_reports(content, dspy_sections, dspy_confidence)
+                comp_md = format_comparison_md(comp)
+
+                # 保存
+                comp_md_path = reports_dir / "mode_comparison_report.md"
+                comp_md_path.write_text(comp_md, encoding="utf-8")
+                print(f"[COMPARE] 对比报告已保存: {comp_md_path}")
+
+                comp_json_path = reports_dir / "mode_comparison.json"
+                import json as _json
+                comp_json_path.write_text(
+                    _json.dumps(comp, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
+                print(f"[COMPARE] 对比数据已保存: {comp_json_path}")
+            except ImportError as _e:
+                print(f"[COMPARE] 跳过对比（DSPy 模块未就绪: {_e})")
+            except Exception as _e:
+                print(f"[COMPARE] 对比出错（非致命）: {_e}")
     else:
         print("[EMPTY CONTENT]")
 

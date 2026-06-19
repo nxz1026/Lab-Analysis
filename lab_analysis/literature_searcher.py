@@ -64,6 +64,56 @@ SEARCH_STRATEGIES = {
     },
 }
 
+# 指标 → PubMed 查询模板映射（用于自动生成搜索策略）
+# 键为 analysis_results.json 中 abnormal_summary 的指标名
+# 值为 (condition_fn, query_template) 元组；condition_fn(results) 返回 bool
+_METRIC_QUERY_RULES: list[tuple[str, callable, str]] = [
+    ("hs-CRP",
+     lambda r: "hs-CRP" in r.get("abnormal_summary", {}),
+     '"chronic pancreatitis" AND ("hs-CRP" OR "high-sensitivity CRP")'),
+    ("RDW-SD",
+     lambda r: "RDW-SD" in r.get("abnormal_summary", {}) or "RDW-CV" in r.get("abnormal_summary", {}),
+     '"red cell distribution width" "chronic pancreatitis" prognostic'),
+    ("WBC",
+     lambda r: "WBC" in r.get("abnormal_summary", {}),
+     'leukocytosis chronic pancreatitis biomarker'),
+    ("CRP",
+     lambda r: "CRP" in r.get("abnormal_summary", {}) and "hs-CRP" not in r.get("abnormal_summary", {}),
+     '"C-reactive protein" pancreatitis severity biomarker'),
+    ("急性期",
+     lambda r: "急性期" in r.get("inflammation_classification", {}).get("labels", []),
+     '"acute pancreatitis" biomarker PCT CRP severity'),
+    ("NEUT#",
+     lambda r: "NEUT#" in r.get("abnormal_summary", {}),
+     'neutrophilia pancreatitis infection biomarker'),
+    ("PCT",
+     lambda r: "PCT" in r.get("abnormal_summary", {}),
+     'procalcitonin pancreatitis infection biomarker'),
+]
+
+
+def auto_generate_queries(analysis_results: dict) -> dict:
+    """根据分析结果中的异常指标自动生成 PubMed 搜索策略。
+
+    Args:
+        analysis_results: _compute_stats() 产出的 results dict。
+            至少需要 ``abnormal_summary`` 和 ``inflammation_classification`` 两个键。
+
+    Returns:
+        ``{strategy_name: {"query": str, "retmax": int, "sort": str}, ...}``
+        空 dict 表示无异常指标可生成。
+    """
+    queries = {}
+    for name, condition, query in _METRIC_QUERY_RULES:
+        if condition(analysis_results):
+            auto_name = f"auto_{name.lower().replace('-', '_').replace('#', 'n')}"
+            queries[auto_name] = {
+                "query": query,
+                "retmax": 6,
+                "sort": "relevance",
+            }
+    return queries
+
 
 @api_retry_decorator(max_attempts=3, min_wait=1.0, max_wait=20.0, description="PubMed ESearch")
 def esearch(query: str, retmax: int = 8, sort: str = "relevance",
@@ -225,12 +275,14 @@ def _parse_one_paper(lines: list[str], pmid: str) -> dict:
             "year": year, "journal": journal}
 
 
-def search_strategy(strategy_name: str, retmax: int, date_filter: str = "5") -> dict:
+def search_strategy(strategy_name: str, retmax: int, date_filter: str = "5",
+                    strategies_source: dict | None = None) -> dict:
     """执行单个检索策略"""
-    if strategy_name not in SEARCH_STRATEGIES:
+    strategies = strategies_source if strategies_source is not None else SEARCH_STRATEGIES
+    if strategy_name not in strategies:
         raise ValueError(f"Unknown strategy: {strategy_name}")
 
-    cfg = SEARCH_STRATEGIES[strategy_name]
+    cfg = strategies[strategy_name]
     print(f"  Searching [{strategy_name}]: {cfg['query']}  [近{date_filter}年]")
 
     result = esearch(cfg["query"], retmax=retmax, sort=cfg["sort"], date_filter=date_filter)
@@ -266,6 +318,10 @@ def main():
                         help="限制近 N 年内的文献（默认5，设为0则不过滤）")
     parser.add_argument("--id-card", default=None, help="脱敏ID(由 pipeline 传入)")
     parser.add_argument("--out", default=None, help="输出 JSON 路径")
+    parser.add_argument("--auto-queries", action="store_true",
+                        help="根据异常指标自动生成搜索词追加到检索策略中")
+    parser.add_argument("--analysis-results", default=None,
+                        help="analysis_results.json 路径（--auto-queries 时需指定）")
     args = parser.parse_args()
 
     if args.id_card:
@@ -274,11 +330,38 @@ def main():
         ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
         lit_dir = WORK_ROOT / "data" / args.id_card / ts / "03_literature"
         args.out = args.out or str(lit_dir / "literature_results.json")
+        # pipeline 模式下自动定位 analysis_results.json
+        if args.auto_queries and not args.analysis_results:
+            analyzed_dir = WORK_ROOT / "data" / args.id_card / ts / "02_analyzed"
+            candidate = analyzed_dir / "analysis_results.json"
+            if candidate.exists():
+                args.analysis_results = str(candidate)
 
-    all_topics = list(SEARCH_STRATEGIES.keys())
+    # 自动生成搜索策略
+    if args.auto_queries and args.analysis_results:
+        ana_path = Path(args.analysis_results)
+        if ana_path.exists():
+            ana_data = json.loads(ana_path.read_text(encoding="utf-8"))
+            auto_strategies = auto_generate_queries(ana_data)
+            if auto_strategies:
+                print(f"[AUTO] 根据异常指标自动生成 {len(auto_strategies)} 个搜索策略:")
+                for name, cfg in auto_strategies.items():
+                    print(f"       {name}: {cfg['query']}")
+                # 合并到 SEARCH_STRATEGIES（不修改全局，只作用于本次）
+                merged_strategies = {**SEARCH_STRATEGIES, **auto_strategies}
+            else:
+                print("[AUTO] 未发现异常指标，仅使用默认搜索策略")
+                merged_strategies = SEARCH_STRATEGIES
+        else:
+            print(f"[WARNING] --analysis-results 文件不存在: {ana_path}")
+            merged_strategies = SEARCH_STRATEGIES
+    else:
+        merged_strategies = SEARCH_STRATEGIES
+
+    all_topics = list(merged_strategies.keys())
     topics = all_topics if args.topic == "all" else [args.topic]
     for t in topics:
-        if t not in SEARCH_STRATEGIES:
+        if t not in merged_strategies:
             print(f"Unknown topic: {t}")
             sys.exit(1)
 
@@ -290,7 +373,8 @@ def main():
 
     date_filter = str(args.years)
     for topic in topics:
-        sr = search_strategy(topic, retmax=args.n, date_filter=date_filter)
+        sr = search_strategy(topic, retmax=args.n, date_filter=date_filter,
+                             strategies_source=merged_strategies)
         results["searches"].append(sr)
         results["all_papers"].extend(sr["papers"])
 

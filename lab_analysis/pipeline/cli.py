@@ -70,4 +70,10 @@ def parse_args():
                        help="报告类型 outpatient/inpatient（仅检验报告需要）")
     parser.add_argument("--no-interactive", action="store_true",
                        help="禁用于数据摄入的交互式 ID 确认（不一致时直接放弃该图片）")
+    parser.add_argument("--compare-report-modes", action="store_true",
+                        help="步骤⑧同时跑 Standard + DSPy 双模式并输出对比报告")
+    parser.add_argument("--auto-queries", action="store_true",
+                        help="步骤⑤根据异常指标自动生成 PubMed 搜索词")
+    parser.add_argument("--skip-pdf", action="store_true",
+                        help="跳过步骤⑨b PDF 报告生成")
     return parser.parse_args()
