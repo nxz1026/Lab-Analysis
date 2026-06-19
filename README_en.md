@@ -49,6 +49,7 @@ At runtime, the program interactively prompts for a valid Chinese ID card number
 | ③ | **Data Loading** | `data_loader.py` | `.../metrics.md` → `lab_metrics.csv` + `.json` |
 | ④ | **Statistical Analysis** | `analysis/run` | `lab_metrics.csv` → 7 charts + `analysis_results_report.md` |
 | ⑤ | **Literature Search** | `literature_searcher.py` | Lab items + key indicators → PubMed abstracts `.md` |
+| ⑤b | **Evidence Grading** (optional) | `literature_filter.py` | `literature_results.json` → `literature_results.filtered.json` (top-k ranked by evidence tier) |
 | ⑥ | **Evidence Interpretation** | `literature_interpreter(_dspy).py` | Literature abstracts + lab data → interpretation report + DSPy prompt |
 | ⑦ | **Imaging Analysis** | `qwen_vl_report_check(_dspy).py` | MRI report + lab data → consistency report + DSPy prompt |
 | ⑧ | **Integrated Report** | `gen_final_report(_dspy).py` | ④⑤⑥⑦ artifacts → 9-section integrated report + DSPy prompt |
@@ -88,6 +89,8 @@ Lab-Analysis/
 │   ├── data_loader.py                    # ③ Data loading
 │   ├── data_analyzer.py                  # [Legacy] delegates to analysis/ subpackage
 │   ├── literature_searcher.py            # ⑤ PubMed literature search
+│   ├── evidence_grader.py                # ⑤b Evidence tier scoring (5 dims + 3 scenarios)
+│   ├── literature_filter.py             # ⑤b CLI wrapper (pipeline step entry)
 │   ├── literature_interpreter.py         # ⑥ Literature interpretation (standard)
 │   ├── literature_interpreter_dspy.py    # ⑥ Literature interpretation (DSPy dual-mode)
 │   ├── qwen_vl_report_check.py           # ⑦ Imaging check (standard)
@@ -240,6 +243,24 @@ data/{patient_id}/{timestamp}/
 ## DSPy Enhancement
 
 This project integrates **DSPy** (Declarative Self-improving Python), implementing a "standard mode + DSPy optimized mode" dual-track on 4 LLM-driven modules.
+
+### Step ⑤b Evidence Grading
+
+For details see [docs/EVIDENCE_GRADING.md](docs/EVIDENCE_GRADING.md).
+
+Summary:
+- 5 independent dimensions (topic_match / evidence_level / recency / sample_size / parse_quality)
+- 3 scenario weight presets: `early_diagnosis` / `differential_diagnosis` / `prognosis`
+- S/A/B/C tier bands
+- Pure rule-based scoring — no LLM, fully reproducible and testable
+
+CLI flags:
+```
+--skip-lit-filter              Skip step ⑤b
+--lit-filter-scenario {early_diagnosis|differential_diagnosis|prognosis}
+                              Default differential_diagnosis
+--lit-filter-top-k INT         Keep top k papers, default 8
+```
 
 ### 4 DSPy Modules
 
