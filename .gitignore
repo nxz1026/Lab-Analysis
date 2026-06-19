@@ -48,3 +48,8 @@ nul
 *.log
 .ingest_log.json
 .ingest_debug.log
+
+# Reference / verification scripts (kept locally, not for product)
+grading_demo.py
+st_vs_grader_compare.py
+test_pipeline_mode.py
