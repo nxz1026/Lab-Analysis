@@ -16,6 +16,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -62,66 +63,19 @@ def extract_lab_metrics(image_path: Path) -> dict:
     api_key = load_api_key("ZHIPU_API_KEY")
     image_b64 = encode_image_to_base64(image_path)
 
-    prompt = """你是医疗检验报告OCR和数据提取专家。请从这张检验报告图片中提取以下信息：
+    prompt = """OCR提取检验报告。只输出JSON，无其他文字。
 
-## 需要提取的信息：
+{"patient_id":"ID","report_date":"YYYY-MM-DD","report_type":"outpatient","department":"科室","physician":"医生","diagnosis":"诊断","metrics":{"WBC":7.5,"RBC":4.8,"HGB":150,"HCT":45,"PLT":250,"PCT":0.2,"P-LCR":15,"MCV":90,"MCH":30,"MCHC":330,"NEUT%":60,"LYMPH%":30,"MONO%":7,"EO%":2,"BASO%":1,"NEUT#":4,"LYMPH#":2,"MONO#":0.5,"EO#":0.1,"BASO#":0.05,"RDW-SD":42,"RDW-CV":13,"MPV":10,"PDW":12,"CRP":5,"hs-CRP":1.5}}
 
-### 1. 基本信息
-- patient_id: 患者ID/诊疗卡号（纯数字）
-- report_date: 报告日期（格式：YYYY-MM-DD）
-- report_type: 门诊(outpatient)或住院(inpatient)
-- department: 科室名称
-- physician: 送检医生姓名
-- diagnosis: 临床诊断（如果有）
+    提取所有血常规+炎症指标。
+    规则：
+    1. 数值必须是纯数字（整数或浮点数）
+    2. 如果报告写 <10 或 <0.5，直接输出数字 10 或 0.5（取检测限值）
+    3. 如果报告写 >10 或 >3.0，直接输出数字 10 或 3.0（取检测限值）
+    4. 不要输出 < > 等符号，只输出数字
+    5. 无某指标则省略"""
 
-### 2. 检验指标（重点！）
-请提取所有血常规和炎症指标，包括但不限于：
-- WBC (白细胞计数)
-- RBC (红细胞计数)
-- HGB (血红蛋白)
-- HCT (红细胞压积)
-- PLT (血小板计数)
-- PCT (血小板压积)
-- MCV, MCH, MCHC
-- NEUT% (中性粒细胞百分比), NEUT# (绝对值)
-- LYMPH% (淋巴细胞百分比), LYMPH# (绝对值)
-- MONO% (单核细胞百分比), MONO# (绝对值)
-- EO% (嗜酸性粒细胞百分比), EO# (绝对值)
-- BASO% (嗜碱性粒细胞百分比), BASO# (绝对值)
-- RDW-SD, RDW-CV
-- MPV, PDW, P-LCR
-- CRP, hs-CRP
-
-对于每个指标，请提取：
-- value: 数值（浮点数）
-- unit: 单位
-- ref_range: 参考范围（如"3.5-9.5"）
-
-## 输出格式（严格的JSON）：
-
-{
-  "patient_id": "YOUR_PATIENT_ID",
-  "report_date": "2026-03-24",
-  "report_type": "outpatient",
-  "department": "门诊检验科",
-  "physician": "张三",
-  "diagnosis": "慢性胰腺炎",
-  "metrics": {
-    "WBC": {"value": 7.5, "unit": "10^9/L", "ref_range": "3.5-9.5"},
-    "RBC": {"value": 4.8, "unit": "10^12/L", "ref_range": "4.3-5.8"},
-    "HGB": {"value": 145, "unit": "g/L", "ref_range": "130-175"}
-  }
-}
-
-## 重要提示：
-1. 如果某个指标不存在，不要在metrics中包含它
-2. 数值必须是数字类型，不要带单位
-3. 参考范围保持原始格式（如"3.5-9.5"或"<10"）
-4. 只返回JSON，不要其他文字
-5. 仔细识别所有指标，不要遗漏
-"""
-
-    # 使用智谱AI GLM-4V-Flash模型
+    # 使用智谱AI GLM-4V-Flash模型（支持图片，max_tokens上限1024）
     model_name = "glm-4v-flash"
     model_type = "智谱AI"
 
@@ -187,17 +141,46 @@ def generate_metadata_md(data: dict, validated_patient_id: str) -> str:
     return md
 
 
+def _sanitize_metrics(metrics: dict) -> dict:
+    """清洗指标值，将 <X / >X 等非数字格式转为纯数字。
+
+    处理规则：
+    - "<10" → 10.0（取检测限值）
+    - ">3.0" → 3.0（取检测限值）
+    - "—" / "-" / "" → 删除该指标
+    - 已为正确保留不变
+    """
+    cleaned = {}
+    for key, val in metrics.items():
+        if isinstance(val, (int, float)):
+            cleaned[key] = float(val)
+        elif isinstance(val, str):
+            s = val.strip()
+            if not s or s in ("—", "–", "-"):
+                continue
+            num_match = re.search(r'([0-9]+\.?\d*)', s)
+            if num_match:
+                cleaned[key] = float(num_match.group(1))
+        elif isinstance(val, dict):
+            inner = _sanitize_metrics(val)
+            if inner:
+                cleaned[key] = inner
+    return cleaned
+
+
 def generate_metrics_md(data: dict) -> str:
     """生成 metrics.md 文件内容（YAML格式）"""
     metrics = data.get('metrics', {})
     
     yaml_lines = []
-    for key, info in metrics.items():
-        if isinstance(info, dict):
-            value = info.get('value')
-            if value is not None:
-                yaml_lines.append(f"{key}: {value}")
-    
+    for key, val in metrics.items():
+        if isinstance(val, (int, float)):
+            yaml_lines.append(f"{key}: {val}")
+        elif isinstance(val, dict):
+            v = val.get('value')
+            if v is not None:
+                yaml_lines.append(f"{key}: {v}")
+
     return "\n".join(yaml_lines) + "\n"
 
 
@@ -207,8 +190,9 @@ def save_structured_report(data: dict, patient_id: str) -> str:
     
     返回：保存的目录路径
     """
-    # 导入患者ID脱敏函数
-    patient_id_obf = encode(patient_id)
+    # 使用 pipeline 统一的 get_deid() 确保与后续步骤一致
+    from lab_analysis.pipeline.cli import get_deid
+    patient_id_obf = get_deid(patient_id)
     
     report_date = data.get('report_date', '').replace('-', '')
     report_type = data.get('report_type', 'unknown')
@@ -280,7 +264,12 @@ def main_with_args(args) -> bool:
         if not data:
             print("[ERROR] 数据提取失败")
             return False
-        
+
+        # 步骤1b：清洗指标值（处理 <10、>3.0 等非数字格式）
+        if "metrics" in data:
+            data["metrics"] = _sanitize_metrics(data["metrics"])
+            print(f"[OK] 指标清洗完成: {len(data['metrics'])} 个有效指标")
+
         # 步骤2：强制校验身份证号（使用AI提取的ID作为备选）
         print("\n[步骤2] 验证身份证号...")
         extracted_id = data.get('patient_id')
@@ -306,8 +295,8 @@ def main_with_args(args) -> bool:
         print("\n主要指标:")
         for key in ['WBC', 'RBC', 'HGB', 'PLT', 'CRP', 'hs-CRP']:
             if key in data.get('metrics', {}):
-                info = data['metrics'][key]
-                print(f"  {key}: {info.get('value')} {info.get('unit', '')}")
+                val = data['metrics'][key]
+                print(f"  {key}: {val}")
         print("=" * 60)
         
         return True

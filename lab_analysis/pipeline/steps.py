@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from lab_analysis.error_logger import log_error, log_pipeline_error
-from lab_analysis.patient_id import encode
+from lab_analysis.pipeline.cli import get_deid
 from lab_analysis.utils import WORK_ROOT
 
 
@@ -38,7 +38,7 @@ def extract_patient_id_from_reports() -> str | None:
                     parts = [p.strip() for p in line.split("|")]
                     if len(parts) >= 3 and parts[2]:
                         id_card = parts[2]
-                        print(f"[INFO] 从检验报告中提取到身份证号（已脱敏）: {encode(id_card)}")
+                        print(f"[INFO] 从检验报告中提取到身份证号（已脱敏）: {get_deid(id_card)}")
                         return id_card
     return None
 

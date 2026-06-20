@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import logging
 import os
 import subprocess
 import sys
@@ -10,6 +12,7 @@ from pathlib import Path
 
 from lab_analysis.patient_id import validate_id_card
 from lab_analysis.pipeline.cli import get_deid, parse_args
+from lab_analysis.pipeline.context import PipelineContext
 from lab_analysis.pipeline.ingest import auto_ingest_from_origin_data
 from lab_analysis.pipeline.steps import (
     check_patient_data,
@@ -18,6 +21,23 @@ from lab_analysis.pipeline.steps import (
     run_step,
 )
 from lab_analysis.utils import WORK_ROOT
+
+logger = logging.getLogger("pipeline")
+
+
+def _setup_pipeline_logging(ts: str) -> None:
+    """配置 pipeline 日志：输出到 logs/pipeline_{ts}.log。"""
+    log_dir = WORK_ROOT / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / f"pipeline_{ts}.log"
+
+    handler = logging.FileHandler(log_file, encoding="utf-8")
+    handler.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)-7s] %(name)s: %(message)s"
+    ))
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    logger.info("Pipeline 日志初始化: %s", log_file)
 
 
 def main():
@@ -45,7 +65,10 @@ def main():
 
     deid = get_deid(raw_id)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ctx = PipelineContext(deid=deid, timestamp=ts)
     ts_dir = f"{deid}/{ts}"
+
+    _setup_pipeline_logging(ts)
 
     print(f"[{datetime.now().isoformat()}] Pipeline 启动")
     print(f"脱敏病人ID: {deid}")
@@ -119,7 +142,7 @@ def main():
         sys.exit(1)
 
     pid_arg = ["--id-card", deid]
-    ts_env = {"ANALYSIS_TS": ts}
+    ts_env = ctx.env_dict()
 
     rc = run_step("③ 数据加载", "data_loader", pid_arg, ts_env)
     if rc != 0:
@@ -158,7 +181,8 @@ def main():
         else:
             rc = run_step("⑥ 循证解读", "literature_interpreter", pid_arg, ts_env)
         if rc != 0:
-            print("[!] literature_interpreter 失败（非致命，继续）")
+            print("[!] literature_interpreter 失败，退出")
+            sys.exit(1)
 
     if args.skip_imaging:
         print("\n[跳过] 影像分析（--skip-imaging）")
@@ -169,7 +193,8 @@ def main():
         else:
             rc = run_step("⑦ 影像分析", "qwen_vl_report_check", pid_arg, ts_env)
         if rc != 0:
-            print("[!] qwen_vl_report_check 失败（非致命，继续）")
+            print("[!] qwen_vl_report_check 失败，退出")
+            sys.exit(1)
 
     if args.use_dspy:
         rc = run_step("⑧ 生成报告", "gen_final_report_dspy",
@@ -177,7 +202,8 @@ def main():
     else:
         rc = run_step("⑧ 生成报告", "gen_final_report", pid_arg, ts_env)
     if rc != 0:
-        print("[!] gen_final_report 失败（非致命，继续）")
+        print("[!] gen_final_report 失败，退出")
+        sys.exit(1)
 
     # ⑧b 评分卡 & 决策支持
     if args.skip_scoring:
@@ -186,6 +212,39 @@ def main():
         rc = run_step("⑧b 评分卡", "scoring_card", pid_arg, ts_env)
         if rc != 0:
             print("[!] scoring_card 失败（非致命，继续）")
+
+    # ⑨a 双模式对比报告（--compare-report-modes）
+    if args.compare_report_modes and not args.use_dspy:
+        print(f"\n{'='*60}\n[COMPARE] 生成 DSPy 对比报告\n{'='*60}")
+        dspy_ts = ts + "_dspy_compare"
+        dspy_ts_env = {"ANALYSIS_TS": dspy_ts}
+        dspy_pid = ["--id-card", deid]
+
+        run_step("⑧ DSPy 循证解读", "literature_interpreter_dspy",
+                 env=dspy_ts_env, extra_args=dspy_pid + ["--use-dspy"])
+        run_step("⑧ DSPy 影像分析", "qwen_vl_report_check_dspy",
+                 env=dspy_ts_env, extra_args=dspy_pid + ["--use-dspy"])
+        rc = run_step("⑧ DSPy 生成报告", "gen_final_report_dspy",
+                      env=dspy_ts_env, extra_args=dspy_pid + ["--use-dspy"])
+        if rc != 0:
+            print("[!] DSPy gen_final_report 失败（非致命，继续）")
+
+        std_md = WORK_ROOT / "data" / ts_dir / "04_reports" / "final_integrated_report.md"
+        dspy_json = WORK_ROOT / "data" / f"{deid}/{dspy_ts}" / "04_reports" / "final_integrated_report.json"
+        if std_md.exists() and dspy_json.exists():
+            try:
+                from lab_analysis.compare_report_modes import compare_reports_from_files, format_comparison_md
+                cmp = compare_reports_from_files(std_md, dspy_json)
+                cmp_dir = WORK_ROOT / "data" / ts_dir / "04_reports"
+                (cmp_dir / "mode_comparison.json").write_text(
+                    json.dumps(cmp, ensure_ascii=False, indent=2), encoding="utf-8")
+                (cmp_dir / "mode_comparison_report.md").write_text(
+                    format_comparison_md(cmp), encoding="utf-8")
+                print(f"[COMPARE] 对比报告已保存: {cmp_dir}/mode_comparison_report.md")
+            except Exception as e:
+                print(f"[!] 对比报告生成失败（非致命）: {e}")
+        else:
+            print("[!] 缺少标准或 DSPy 报告文件，跳过对比")
 
     rc = run_step("⑨ 文件归档", "organize_local_files", pid_arg, ts_env)
     if rc != 0:

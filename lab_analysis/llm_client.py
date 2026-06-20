@@ -52,8 +52,8 @@ _PROVIDERS = {
         "base_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
         "env_var": "ZHIPU_API_KEY",
         "default_model": "glm-4v-flash",
-        "default_max_tokens": 4096,
-        "default_temperature": None,   # GLM-4V 原调用未传 temperature
+        "default_max_tokens": 1024,  # GLM-4V-Flash 上限 1024
+        "default_temperature": None,
         "default_timeout": 120,
     },
 }
