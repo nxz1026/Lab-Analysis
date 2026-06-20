@@ -179,6 +179,14 @@ def main():
     if rc != 0:
         print("[!] gen_final_report 失败（非致命，继续）")
 
+    # ⑧b 评分卡 & 决策支持
+    if args.skip_scoring:
+        print("\n[跳过] 评分卡 & 决策支持（--skip-scoring）")
+    else:
+        rc = run_step("⑧b 评分卡", "scoring_card", pid_arg, ts_env)
+        if rc != 0:
+            print("[!] scoring_card 失败（非致命，继续）")
+
     rc = run_step("⑨ 文件归档", "organize_local_files", pid_arg, ts_env)
     if rc != 0:
         print("[!] organize_local_files 失败（非致命，完成）")
