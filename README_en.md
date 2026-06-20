@@ -6,7 +6,8 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/nxz1026/Lab-Analysis/actions/workflows/tests.yml/badge.svg)](https://github.com/nxz1026/Lab-Analysis/actions/workflows/tests.yml)
 [![DSPy](https://img.shields.io/badge/DSPy-3.2+-orange.svg)](https://dspy.ai/)
-[![Pipeline](https://img.shields.io/badge/Pipeline-9_Steps-success.svg)](#complete-pipeline-flow)
+[![Tests](https://img.shields.io/badge/Tests-137_✔️-success.svg)](tests/)
+[![Pipeline](https://img.shields.io/badge/Pipeline-11_Steps-success.svg)](#complete-pipeline-flow)
 
 ---
 
@@ -26,9 +27,10 @@
 | Dimension | Description |
 |-----------|-------------|
 | **Multi-source Integration** | Lab data (CSV/JSON) + PubMed literature + MRI/DICOM imaging + text reports, with three-source consistency assessment |
-| **One-click Automation** | 9-step pipeline runs end-to-end; all intermediate artifacts are traceable |
-| **Interpretability** | 7 statistical charts + full logs + error traceback |
-| **LLM Enhancement** | DSPy integration with auto-optimized prompts; supports standard vs. optimized dual-mode comparison |
+| **One-click Automation** | 11-step pipeline runs end-to-end; all intermediate artifacts are traceable |
+| **Interpretability** | 7 statistical charts + structured alert summary + full logs |
+| **LLM Enhancement** | DSPy integration; Standard vs. DSPy dual-mode auto-comparison |
+| **Decision Support** | 5-dimension scoring card + weighted diagnostic hypotheses (pure rule engine, no LLM) |
 | **Cross-platform** | Windows / Linux auto-adaptation, console encoding auto-fix |
 | **Extensibility** | Modular design; add new analysis dimensions by implementing a standard interface |
 
@@ -40,105 +42,31 @@
 python -m lab_analysis
 ```
 
-At runtime, the program interactively prompts for a valid Chinese ID card number, then executes the following 9 steps in order. Key steps support `--skip-xxx` to skip.
+At runtime, the program interactively prompts for a valid Chinese ID card number, then executes 11 steps in order. Key steps support `--skip-xxx` to bypass.
 
 | Step | Name | Module | Input → Output |
 |------|------|--------|----------------|
 | ① | **Data Ingestion** | `ingest_data.py` | `raw/Origin_data/` lab images / DICOM / MRI reports → `raw/patient_<deid>/` |
-| ② | **Pre-check** | `pipeline.steps` | Validate `raw/patient_<deid>/` directory structure → pass/fail |
+| ② | **Pre-check** | `pipeline.steps` | Validate directory structure → pass/fail |
 | ③ | **Data Loading** | `data_loader.py` | `.../metrics.md` → `lab_metrics.csv` + `.json` |
-| ④ | **Statistical Analysis** | `analysis/run` | `lab_metrics.csv` → 7 charts + `analysis_results_report.md` |
-| ⑤ | **Literature Search** | `literature_searcher.py` | Lab items + key indicators → PubMed abstracts `.md` |
-| ⑤b | **Evidence Grading** (optional) | `literature_filter.py` | `literature_results.json` → `literature_results.filtered.json` (top-k ranked by evidence tier) |
-| ⑥ | **Evidence Interpretation** | `literature_interpreter(_dspy).py` | Literature abstracts + lab data → interpretation report + DSPy prompt |
+| ④ | **Statistical Analysis** | `analysis/run` | `lab_metrics.csv` → 7 charts + report + `alerts.json` |
+| ⑤ | **Literature Search** | `literature_searcher.py` | Lab items + key indicators → PubMed abstracts (supports `--auto-queries`) |
+| ⑤b | **Evidence Grading** (optional) | `literature_filter.py` | `literature_results.json` → `.filtered.json` (top-k by evidence tier) |
+| ⑥ | **Evidence Interpretation** | `literature_interpreter(_dspy).py` | Abstracts + lab data → interpretation report + DSPy prompt |
 | ⑦ | **Imaging Analysis** | `qwen_vl_report_check(_dspy).py` | MRI report + lab data → consistency report + DSPy prompt |
-| ⑧ | **Integrated Report** | `gen_final_report(_dspy).py` | ④⑤⑥⑦ artifacts → 9-section integrated report + DSPy prompt |
+| ⑧ | **Integrated Report** | `gen_final_report(_dspy).py` | ④⑤⑥⑦ artifacts → 9-chapter report (supports `--compare-mode`) |
+| ⑧b | **Scoring Card** (optional, new) | `scoring_card.py` | Multi-source → 5-dimension scores + top-3 hypotheses |
 | ⑨ | **Local Archive** | `organize_local_files.py` | `data/<id>/<ts>/` → `local_upload/<YYYY-MM-DD>/` |
+| ⑩ | **Run Cleanup** (optional, new) | `cleanup_runs.py` | Auto-delete old runs, keep last N (`--keep-last 3`) |
 
-> Steps ⑥⑦⑧ automatically switch to DSPy optimized mode when `--use-dspy` is set, and save the optimized prompts for comparison.
+> Steps ⑥⑦⑧ automatically switch to DSPy optimized mode when `--use-dspy` is set.
 
 ### Flow Diagram
 
 ```
 [① Data Ingestion] → [② Pre-check] → [③ Data Loading] → [④ Statistical Analysis]
-                                                              ↓
-[⑨ Local Archive] ← [⑧ Integrated Report] ← [⑦ Imaging Analysis] ← [⑥ Evidence Interpretation] ← [⑤ Literature Search]
-```
-
----
-
-## Project Structure
-
-```
-Lab-Analysis/
-├── lab_analysis/                         # Core code package
-│   ├── __init__.py                       #   Package entry (auto platform adaptation)
-│   ├── __main__.py                       #   python -m entry point
-│   ├── pipeline.py                       # [Legacy] delegates to pipeline/ subpackage
-│   ├── pipeline/                         #   Pipeline orchestration
-│   │   ├── cli.py                        #     CLI argument parsing
-│   │   ├── steps.py                      #     Sub-steps (check / subprocess / logging)
-│   │   ├── ingest.py                     #     Auto data ingestion
-│   │   └── run.py                        #     Main orchestrator
-│   ├── analysis/                         #   Statistical analysis subpackage
-│   │   ├── _base.py                      #     Constants / reference ranges / plotting utils
-│   │   ├── _compute.py                   #     Pure computation (regression / classification / outlier detection)
-│   │   ├── charts.py                     #     7 chart functions
-│   │   └── run.py                        #     Orchestrator + Markdown report generation
-│   ├── ingest_data.py                    # ① Data ingestion implementation
-│   ├── data_loader.py                    # ③ Data loading
-│   ├── data_analyzer.py                  # [Legacy] delegates to analysis/ subpackage
-│   ├── literature_searcher.py            # ⑤ PubMed literature search
-│   ├── evidence_grader.py                # ⑤b Evidence tier scoring (5 dims + 3 scenarios)
-│   ├── literature_filter.py             # ⑤b CLI wrapper (pipeline step entry)
-│   ├── literature_interpreter.py         # ⑥ Literature interpretation (standard)
-│   ├── literature_interpreter_dspy.py    # ⑥ Literature interpretation (DSPy dual-mode)
-│   ├── qwen_vl_report_check.py           # ⑦ Imaging check (standard)
-│   ├── qwen_vl_report_check_dspy.py      # ⑦ Imaging check (DSPy dual-mode)
-│   ├── gen_final_report.py               # ⑧ Report generation (standard)
-│   ├── gen_final_report_dspy.py          # ⑧ Report generation (DSPy dual-mode)
-│   ├── extract_lab_data.py               # Lab report OCR extraction
-│   ├── vision_extractor.py               # Single-image Vision AI extraction
-│   ├── batch_vision_extract.py           # Batch vision extraction
-│   ├── llm_client.py                     # Unified LLM API client (DeepSeek / Zhipu / DashScope)
-│   ├── patient_id.py                     # AES-GCM ID card de-identification & validation
-│   ├── error_logger.py                   # Error logging
-│   ├── utils.py                          # Common utilities (platform adaptation / paths / JSON parsing)
-│   ├── organize_local_files.py           # ⑨ Local archive
-│   ├── upload_to_feishu_backup.py        # Feishu backup (experimental)
-│   └── dspy_modules/                     # DSPy optimized modules
-│       ├── __init__.py
-│       ├── literature_interpreter.py     #   DSPy literature interpretation
-│       ├── mri_analyzer.py               #   DSPy imaging analysis
-│       ├── final_report_generator.py     #   DSPy report generation
-│       ├── lab_data_extractor.py         #   DSPy lab data extraction
-│       └── prompt_inspector.py           #   DSPy prompt extraction tool
-├── tests/                                # pytest test suite
-│   ├── conftest.py                       #   Test configuration (env / fixtures)
-│   ├── test_utils.py                     #   Utility function tests
-│   ├── test_patient_id.py                #   ID de-identification / validation tests
-│   └── test_extract_lab_data.py          #   Lab data extraction tests
-├── examples/                             # Examples & tools
-│   ├── dspy_quickstart.py
-│   ├── dspy_prompt_comparison.py         #   Prompt comparison report generator
-│   ├── compile_dspy_module.py            #   DSPy module compilation
-│   ├── test_dspy_e2e.py                  #   DSPy end-to-end test
-│   ├── test_dspy_prompt_e2e.py           #   Prompt save/compare verification
-│   └── ...
-├── docs/                                 # Supplementary docs
-│   ├── DSPY_INTEGRATION.md               #   DSPy integration technical details
-│   └── DSPY_USAGE.md                     #   DSPy usage guide
-├── models/dspy/                          # Compiled DSPy models
-├── raw/                                  # Raw data
-│   └── Origin_data/                      #   Files to process (lab_*.jpg / mri_*.jpg / export_*.zip)
-├── data/                                 # Analysis results (by patient + timestamp)
-├── local_upload/                         # Local archive (by date)
-├── .github/workflows/                    # CI configuration
-│   ├── tests.yml                         #   Matrix tests (py3.10~3.12)
-│   └── ci.yml                            #   Quick import check
-├── .env.example                          # Environment variable example
-├── pyproject.toml                        # Project configuration & dependencies
-└── run_analysis.py                       # Quick start script
+                                                                ↓
+[⑩ Cleanup] ← [⑨ Archive] ← [⑧b Scoring] ← [⑧ Report] ← [⑦ Imaging] ← [⑥ Interpretation] ← [⑤ Literature]
 ```
 
 ---
@@ -157,7 +85,12 @@ Lab-Analysis/
 git clone https://github.com/nxz1026/Lab-Analysis.git
 cd Lab-Analysis
 pip install -e .
-pip install "dspy-ai>=3.2" python-dotenv   # Optional: for DSPy mode
+
+# Optional dependency groups
+pip install "lab-analysis[dspy]"       # DSPy mode (dspy-ai, pydicom)
+pip install "lab-analysis[pdf]"        # PDF output (weasyprint, markdown)
+pip install "lab-analysis[dashboard]"  # Streamlit dashboard
+pip install "lab-analysis[dev]"        # Dev tools (ruff, pytest)
 ```
 
 ### Environment Variables
@@ -191,25 +124,134 @@ python -m lab_analysis --use-dspy
 ### Skip Steps
 
 ```bash
-python -m lab_analysis --skip-ingest   # Skip data ingestion
-python -m lab_analysis --skip-llm      # Skip literature interpretation
-python -m lab_analysis --skip-imaging  # Skip imaging analysis
+python -m lab_analysis --skip-ingest       # Skip ingestion
+python -m lab_analysis --skip-llm          # Skip literature interpretation
+python -m lab_analysis --skip-imaging      # Skip imaging analysis
+python -m lab_analysis --skip-lit-filter   # Skip evidence grading
+python -m lab_analysis --skip-scoring      # Skip scoring card
+python -m lab_analysis --skip-pdf          # Skip PDF generation
+python -m lab_analysis --skip-cleanup      # Skip old run cleanup
+```
+
+### New Features
+
+**Auto-generated PubMed queries** (from abnormal metrics):
+```bash
+python -m lab_analysis --auto-queries
+```
+
+**Standard / DSPy dual-mode comparison**:
+```bash
+python -m lab_analysis --compare-report-modes
+```
+
+**Run cleanup** (keep last 5):
+```bash
+python -m lab_analysis --keep-last 5
+```
+
+**Streamlit dashboard** (standalone):
+```bash
+pip install "lab-analysis[dashboard]"
+streamlit run lab_analysis/dashboard.py
 ```
 
 ### Debug a Single Step
 
 ```bash
 python -m lab_analysis.data_loader --id-card <deid>
-python -m lab_analysis.data_analyzer --id-card <deid>
-python -m lab_analysis.literature_interpreter_dspy --id-card <deid> --use-dspy
+python -m lab_analysis.scoring_card --id-card <deid>
+python -m lab_analysis.cleanup_runs --keep-last 3 --dry-run
 ```
 
 For steps ⑥⑦⑧, set `ANALYSIS_TS` to an existing timestamp directory:
 
 ```powershell
 $env:ANALYSIS_TS="20260611_111343"
-python -m lab_analysis.literature_interpreter_dspy --id-card <deid> --use-dspy
+python -m lab_analysis.literature_interpreter --id-card <deid>
 ```
+
+---
+
+## New Features Detail
+
+### Structured Alert Summary
+
+Auto-generated by step ④, outputs `alerts.json`:
+
+| Level | Trigger |
+|-------|---------|
+| 🚨 CRITICAL | Acute inflammation / severe Z-score outliers / ≥3x out-of-range |
+| ⚠️ WARNING | Out-of-range / high CV (>0.2) / significant upward trend |
+| ℹ️ INFO | Mild Z-score outliers / downward trend |
+
+### Scoring Card & Clinical Decision Support (step ⑧b)
+
+Pure rule engine (no LLM). 5 dimensions (0-100) + weighted diagnostic hypotheses:
+
+| Dimension | Source | Meaning |
+|-----------|--------|---------|
+| `inflammation` | hs-CRP stage + trend | High → active inflammation |
+| `lab_abnormality` | Abnormal metrics + Z-scores | High → significant abnormality |
+| `literature_support` | Evidence grading | High → strong literature support |
+| `imaging_consistency` | MRI consistency report | High → imaging agrees with labs |
+| `variability_stability` | CV stability | High → stable metrics |
+
+### Auto PubMed Queries
+
+```bash
+python -m lab_analysis --auto-queries
+# or standalone:
+python -m lab_analysis.literature_searcher --id-card <deid> --auto-queries
+```
+
+Generates search strategies based on abnormal metrics, e.g.:
+- hs-CRP↑ → `"chronic pancreatitis" AND ("hs-CRP" OR "high-sensitivity CRP")`
+- Acute phase → `"acute pancreatitis" biomarker PCT CRP severity`
+
+### Standard / DSPy Dual-mode Comparison
+
+```bash
+python -m lab_analysis.gen_final_report --id-card <deid> --compare-mode
+```
+
+Runs both Standard API and DSPy module simultaneously, compares 9 chapters section-by-section: character count, overlap rate, entity mention differences. Output to `04_reports/mode_comparison_report.md`.
+
+### PDF Report
+
+```bash
+pip install "lab-analysis[pdf]"
+python -m lab_analysis.gen_final_report_pdf \
+    --md data/<deid>/<ts>/04_reports/final_integrated_report.md \
+    --img-dir data/<deid>/<ts>/02_analyzed/figures \
+    --out data/<deid>/<ts>/04_reports/final_integrated_report.pdf
+```
+
+Enabled by default in pipeline (if deps installed). `--skip-pdf` to bypass. CJK typesetting.
+
+### Streamlit Dashboard
+
+```bash
+pip install "lab-analysis[dashboard]"
+streamlit run lab_analysis/dashboard.py
+```
+
+4 tabs: Overview (inflammation timeline + alerts) / Charts / Lab Data Table / Final Report. Sidebar selects patient and run batch.
+
+### Run Cleanup
+
+```bash
+# Keep last 3, delete older runs
+python -m lab_analysis.cleanup_runs --keep-last 3
+
+# Preview only
+python -m lab_analysis.cleanup_runs --keep-last 5 --dry-run
+
+# Clean specific patient only
+python -m lab_analysis.cleanup_runs --keep-last 2 --id-card <deid>
+```
+
+Pipeline step ⑩ enabled by default (keep last 3). `--skip-cleanup` to bypass.
 
 ---
 
@@ -217,69 +259,48 @@ python -m lab_analysis.literature_interpreter_dspy --id-card <deid> --use-dspy
 
 ```
 data/{patient_id}/{timestamp}/
-├── lab_metrics.csv                       # Lab data (CSV, analysis input)
+├── lab_metrics.csv                       # Lab data (CSV)
 ├── lab_metrics.json                      # Lab data (JSON, de-identified)
-├── fig_01_trend_regression.png           # Trend regression
-├── fig_02_correlation_heatmap.png        # Correlation heatmap
-├── fig_03_inflammation_status.png        # Inflammation staging
-├── fig_04_abnormal_indicators.png        # Abnormal indicator annotation
-├── fig_05_moving_average.png             # Moving average
-├── fig_06_cv_stability.png              # CV stability heatmap
-├── fig_07_zscore_distribution.png        # Z-score distribution
-├── analysis_results_report.md            # Statistical analysis report
-├── literature_results.md                 # PubMed search results
+├── analysis_results.json                 # Full statistical results
+├── alerts.json                           # Structured alert summary (NEW)
+├── fig_01~fig_07.png                     # 7 statistical charts
+├── analysis_results_report.md            # Statistical report
+├── literature_results.json               # PubMed search results
+├── literature_results.filtered.json      # Evidence-graded results
 ├── literature_interpretation.md          # Literature interpretation
 ├── mri_report_check_results.md           # Imaging consistency report
 ├── final_integrated_report.md            # Final integrated report
-├── reports/dspy_prompt_comparison.{md,json}  # Prompt comparison report
+├── final_integrated_report.pdf           # PDF report (optional, NEW)
+├── scoring_card.json                     # Scoring card & hypotheses (NEW)
+├── scoring_card.md                       # Scoring card readable (NEW)
+├── mode_comparison_report.md             # Standard/DSPy comparison (NEW)
+├── mode_comparison.json                  # Comparison data (NEW)
+├── reports/dspy_prompt_comparison.{md,json}  # Prompt comparison
 └── dspy_prompts/                         # DSPy prompt snapshots
-    ├── *_standard_prompt.txt
-    ├── *_dspy_actual_prompt.txt
-    └── *_dspy_prompts.{json,md}
 ```
 
 ---
 
-## DSPy Enhancement
+## Evidence Grading (Step ⑤b)
 
-This project integrates **DSPy** (Declarative Self-improving Python), implementing a "standard mode + DSPy optimized mode" dual-track on 4 LLM-driven modules.
-
-### Step ⑤b Evidence Grading
-
-For details see [docs/EVIDENCE_GRADING.md](docs/EVIDENCE_GRADING.md).
+See [docs/EVIDENCE_GRADING.md](docs/EVIDENCE_GRADING.md).
 
 Summary:
 - 5 independent dimensions (topic_match / evidence_level / recency / sample_size / parse_quality)
 - 3 scenario weight presets: `early_diagnosis` / `differential_diagnosis` / `prognosis`
 - S/A/B/C tier bands
-- Pure rule-based scoring — no LLM, fully reproducible and testable
+- Pure rule-based — no LLM, fully reproducible
 
-CLI flags:
-```
---skip-lit-filter              Skip step ⑤b
---lit-filter-scenario {early_diagnosis|differential_diagnosis|prognosis}
-                              Default differential_diagnosis
---lit-filter-top-k INT         Keep top k papers, default 8
-```
+---
 
-### 4 DSPy Modules
+## DSPy Enhancement
 
-| Module | Responsibility | Standard Version | DSPy Version |
-|--------|---------------|------------------|--------------|
-| `literature_interpreter` | Evidence-based interpretation | `literature_interpreter.py` | `dspy_modules/literature_interpreter.py` |
-| `mri_analyzer` | Imaging report analysis | `qwen_vl_report_check.py` | `dspy_modules/mri_analyzer.py` |
-| `final_report_generator` | Integrated report generation | `gen_final_report.py` | `dspy_modules/final_report_generator.py` |
-| `lab_data_extractor` | Lab data extraction | `extract_lab_data.py` | `dspy_modules/lab_data_extractor.py` |
-
-### Prompt Auto-Extraction & Comparison
-
-After each inference, DSPy modules automatically save both standard prompts and DSPy actual prompts (including ChainOfThought format + few-shot examples) side by side for diff comparison.
-
-Generate comparison report:
-
-```bash
-python examples/dspy_prompt_comparison.py --data-dir data/<deid>/<ts>
-```
+| Module | Standard | DSPy |
+|--------|----------|------|
+| Literature Interpretation | `literature_interpreter.py` | `dspy_modules/literature_interpreter.py` |
+| MRI Analysis | `qwen_vl_report_check.py` | `dspy_modules/mri_analyzer.py` |
+| Report Generation | `gen_final_report.py` | `dspy_modules/final_report_generator.py` |
+| Lab Data Extraction | `extract_lab_data.py` | `dspy_modules/lab_data_extractor.py` |
 
 ---
 
@@ -288,79 +309,44 @@ python examples/dspy_prompt_comparison.py --data-dir data/<deid>/<ts>
 | Domain | Choice |
 |--------|--------|
 | Data Processing | pandas, numpy, scipy |
-| Machine Learning | scikit-learn |
-| Visualization | matplotlib |
-| Image Processing | Pillow, pydicom |
-| OCR / Vision | Zhipu GLM-4V, Alibaba Qwen-VL |
-| Text Generation | DeepSeek API, OpenAI-compatible protocol |
-| LLM Optimization | DSPy 3.2+ (BootstrapFewShot / MIPROv2) |
-| Literature Search | PubMed E-utilities API |
-| Error Handling | tenacity (retry) + self-developed error_logger |
-| Testing | pytest, pytest-cov |
-| CI | GitHub Actions (Python 3.10~3.12 matrix) |
+| ML | scikit-learn |
+| Visualization | matplotlib, Streamlit (dashboard) |
+| Image | Pillow, pydicom |
+| PDF | weasyprint, markdown (optional) |
+| OCR / Vision | GLM-4V, Qwen-VL |
+| Text Generation | DeepSeek API (OpenAI-compatible) |
+| LLM Optimization | DSPy 3.2+ |
+| Literature Search | PubMed E-utilities |
+| Error Handling | tenacity + error_logger |
+| Testing | pytest (137 test cases) |
+| CI | GitHub Actions (py3.10~3.12 matrix) |
 
 ---
 
-## Development Guide
+## Development
 
 ### Testing
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                # Run all tests
+python -m pytest                # 137 tests
 python -m pytest -v --cov       # With coverage
-ruff check lab_analysis/        # Code style check
+ruff check lab_analysis/        # Code style
 ```
 
 ### Code Standards
 
 - PEP 8 + type hints
-- Paths use `pathlib.Path` uniformly
-- Prefer `WORK_ROOT` + relative paths
-- Dual-mode scripts named `<module>_dspy.py`
-
-### Add a New Module
-
-1. Create the module in `lab_analysis/`
-2. Implement the `main_with_args(args)` standard interface
-3. Register it in `pipeline/run.py` via `run_step()`
-4. If LLM-driven, implement the DSPy version and integrate with `prompt_inspector`
-
-### Dependency Management
-
-```bash
-pip install -e .                              # Install
-pip install pip-tools                         # Optional: generate lock file
-pip-compile pyproject.toml -o requirements.lock
-```
-
-All dependencies are declared in `pyproject.toml`. Do not manually create `requirements.txt`.
-
----
-
-## Advanced Docs
-
-- [DSPy Integration Technical Details](docs/DSPY_INTEGRATION.md)
-- [DSPy Usage Guide](docs/DSPY_USAGE.md)
-- [examples/dspy_quickstart.py](examples/dspy_quickstart.py)
-
----
-
-## Contributing
-
-Issues and PRs are welcome!
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/xxx`)
-3. Commit your changes (`git commit -m 'feat: add xxx'`)
-4. Push (`git push origin feature/xxx`)
-5. Open a Pull Request
+- `pathlib.Path` for all paths
+- `WORK_ROOT` + relative paths preferred
+- `<module>_dspy.py` for DSPy variants
+- Platform detection via `utils.is_windows()`
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details
+MIT — see [LICENSE](LICENSE)
 
 ---
 
@@ -368,14 +354,4 @@ MIT License — see [LICENSE](LICENSE) for details
 
 **nxz1026** — [GitHub @nxz1026](https://github.com/nxz1026)
 
----
-
-## Acknowledgments
-
-- DeepSeek, Zhipu AI, Alibaba Cloud Bailian (Qwen-VL) for LLM capabilities
-- Stanford NLP's [DSPy](https://dspy.ai/) framework
-- PubMed E-utilities open API
-
----
-
-⭐ If this project helps you, please give it a Star!
+⭐ Star if this project helps you!
