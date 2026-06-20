@@ -133,6 +133,16 @@ def _compute_stats(df: pd.DataFrame) -> dict:
     if total_outliers > 0:
         print(f"  [警告] 发现 {total_outliers} 个轻度异常值 (|Z|>2)")
 
+    # ── 9. 检验指标预测 ───────────────────────────────────────
+    try:
+        from lab_analysis.lab_prediction import predict_metrics, print_predictions
+        preds = predict_metrics(results, df)
+        if preds:
+            results["predictions"] = preds
+            print_predictions(preds)
+    except Exception as e:
+        print(f"  [WARNING] 指标预测失败: {e}")
+
     return results
 
 

@@ -191,6 +191,14 @@ def main():
     if rc != 0:
         print("[!] organize_local_files 失败（非致命，完成）")
 
+    # ⑨b FHIR 输出
+    if args.skip_fhir:
+        print("\n[跳过] FHIR 输出（--skip-fhir）")
+    else:
+        rc = run_step("⑨b FHIR 输出", "fhir_exporter", pid_arg, ts_env)
+        if rc != 0:
+            print("[!] fhir_exporter 失败（非致命，继续）")
+
     # ⑩ 旧产物清理
     if args.skip_cleanup:
         print("\n[跳过] 旧产物清理（--skip-cleanup）")
