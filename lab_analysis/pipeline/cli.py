@@ -76,4 +76,8 @@ def parse_args():
                         help="步骤⑤根据异常指标自动生成 PubMed 搜索词")
     parser.add_argument("--skip-pdf", action="store_true",
                         help="跳过步骤⑨b PDF 报告生成")
+    parser.add_argument("--skip-cleanup", action="store_true",
+                        help="跳过步骤⑩ 旧产物清理")
+    parser.add_argument("--keep-last", type=int, default=3,
+                        help="产物清理保留最近 N 次运行（默认 3）")
     return parser.parse_args()

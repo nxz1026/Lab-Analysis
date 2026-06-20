@@ -183,6 +183,18 @@ def main():
     if rc != 0:
         print("[!] organize_local_files 失败（非致命，完成）")
 
+    # ⑩ 旧产物清理
+    if args.skip_cleanup:
+        print("\n[跳过] 旧产物清理（--skip-cleanup）")
+    else:
+        print(f"\n⑩ 旧产物清理（保留最近 {args.keep_last} 次）")
+        try:
+            from lab_analysis.cleanup_runs import cleanup_all, print_summary
+            clean_results = cleanup_all(keep_last=args.keep_last, dry_run=False, id_card=deid)
+            print_summary(clean_results)
+        except Exception as e:
+            print(f"  [!] 产物清理失败（非致命）: {e}")
+
     data_dir = WORK_ROOT / "data" / ts_dir
     print(f"\n[{datetime.now().isoformat()}] Pipeline 完成")
     print(f"\n输出目录：{data_dir}/")
