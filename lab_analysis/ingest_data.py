@@ -144,7 +144,8 @@ def save_image(image_path: Path, patient_id_obf: str, report_date: str,
 def ingest_lab_image(image_path: Path, patient_id: str, report_date: str, 
                      report_type: str) -> dict:
     """摄入检验报告图片"""
-    patient_id_obf = encode(patient_id)
+    from lab_analysis.pipeline.cli import get_deid
+    patient_id_obf = get_deid(patient_id)
     saved_path = save_image(image_path, patient_id_obf, report_date, report_type, "lab")
     
     record = {
@@ -268,7 +269,8 @@ def rename_dicom_sequences(source_dir: Path, target_dir: Path) -> int:
 def ingest_mri_dicom(zip_path: Path = None, dicom_dir: Path = None,
                      patient_id: str = None, report_date: str = None) -> dict:
     """摄入MRI DICOM数据"""
-    patient_id_obf = encode(patient_id)
+    from lab_analysis.pipeline.cli import get_deid
+    patient_id_obf = get_deid(patient_id)
     imaging_dir = WORK_ROOT / "raw" / f"patient_{patient_id_obf}" / "imaging"
     imaging_dir.mkdir(parents=True, exist_ok=True)
     
@@ -299,7 +301,8 @@ def ingest_mri_dicom(zip_path: Path = None, dicom_dir: Path = None,
 
 def ingest_mri_report(report_path: Path, patient_id: str, report_date: str) -> dict:
     """摄入MRI文字报告"""
-    patient_id_obf = encode(patient_id)
+    from lab_analysis.pipeline.cli import get_deid
+    patient_id_obf = get_deid(patient_id)
     saved_path = save_image(report_path, patient_id_obf, report_date, "report", "papers")
     
     record = {
@@ -359,7 +362,8 @@ def main():
     logger.info(f"开始数据摄入: type={args.type}, patient_id={patient_id}")
     
     print(f"\n[Ingest] 数据类型: {args.type}")
-    print(f"[Ingest] 身份证号: {patient_id} -> {encode(patient_id)}")
+    from lab_analysis.pipeline.cli import get_deid
+    print(f"[Ingest] 身份证号: {patient_id} -> {get_deid(patient_id)}")
     if args.report_date:
         print(f"[Ingest] 报告日期: {args.report_date}")
     print(f"[Ingest] 日志文件: {LOG_FILE}")

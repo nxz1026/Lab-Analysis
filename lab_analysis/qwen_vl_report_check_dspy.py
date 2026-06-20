@@ -223,7 +223,7 @@ def main():
             })
 
     # 保存结果
-    output_path = lit_dir / "mri_analysis_results.json"
+    output_path = lit_dir / "mri_report_check_results.json"
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump({
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

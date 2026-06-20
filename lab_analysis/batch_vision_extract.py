@@ -26,7 +26,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from lab_analysis.patient_id import encode, validate_id_card
+from lab_analysis.patient_id import validate_id_card
 from lab_analysis.utils import WORK_ROOT
 
 
@@ -55,39 +55,35 @@ def get_venv_python() -> Path:
 
 
 def run_vision_extractor(image_path: Path, interactive: bool = False) -> dict:
-    """调用 vision_extractor 识别单张图片"""
-    output_json = image_path.with_suffix(".extracted.json")
+    """调用 extract_lab_data 识别单张图片"""
     project_root = get_project_root()
     venv_python = get_venv_python()
-    
+
     cmd = [
-        str(venv_python), "-m", "lab_analysis.vision_extractor",
+        str(venv_python), "-m", "lab_analysis.extract_lab_data",
         "--image", str(image_path),
-        "--output", str(output_json)
+        "--no-interactive" if not interactive else "",
     ]
-    
-    if interactive:
-        cmd.append("--interactive")
-    
+    cmd = [c for c in cmd if c]
+
     print(f"\n{'='*60}")
     print(f"[识别] 正在识别: {image_path.name}")
     print(f"{'='*60}")
-    
+
     result = subprocess.run(cmd, cwd=str(project_root), capture_output=True, text=True)
-    
-    # 打印输出（包括交互式提示）
+
     if result.stdout:
         print(result.stdout)
     if result.stderr:
         print(result.stderr)
-    
+
     if result.returncode != 0:
         print("[FAIL] 识别失败")
         return None
-    
-    # 读取输出JSON
-    if output_json.exists():
-        return json.loads(output_json.read_text(encoding="utf-8"))
+
+    metrics_dir = image_path.parent / f"extracted_{image_path.stem}.json"
+    if metrics_dir.exists():
+        return json.loads(metrics_dir.read_text(encoding="utf-8"))
     return None
 
 
@@ -182,8 +178,9 @@ def main():
         # 步骤3: 存入数据
         run_ingest_data(image_path, patient_id, report_date, report_type)
         success_count += 1
-        results.append({"file": image_path.name, "status": "成功", 
-                       "patient_id_obf": encode(patient_id),  # 只记录脱敏ID
+        from lab_analysis.pipeline.cli import get_deid
+        results.append({"file": image_path.name, "status": "成功",
+                       "patient_id_obf": get_deid(patient_id),
                        "report_date": report_date, "report_type": report_type})
     
     # 生成汇总报告

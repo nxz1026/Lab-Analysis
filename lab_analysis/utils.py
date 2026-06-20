@@ -57,21 +57,26 @@ def fix_console_encoding():
         pass
 
 
-def build_paths(patient_id: str) -> dict:
+def build_paths(patient_id: str, timestamp: str | None = None) -> dict:
     """
-    根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典
-    
+    根据 patient_id 和可选 timestamp 构建路径字典。
+
     Args:
         patient_id: 患者ID（脱敏后）
-    
+        timestamp: 时间戳（如 20260620_150000）。
+                   None 时从 ANALYSIS_TS 环境变量读取（向后兼容）。
+
     Returns:
-        包含各种路径的字典
+         包含各种路径的字典
     """
-    raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
-    ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
-    
+    if timestamp is None:
+        raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
+        ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
+    else:
+        ts = timestamp
+
     data_dir = WORK_ROOT / "data" / patient_id / ts
-    
+
     return {
         "data_dir": data_dir,
         "patient_id": patient_id,
@@ -80,7 +85,7 @@ def build_paths(patient_id: str) -> dict:
         "raw_lab": WORK_ROOT / "raw" / f"patient_{patient_id}" / "lab",
         "raw_imaging": WORK_ROOT / "raw" / f"patient_{patient_id}" / "imaging",
         "output_dir": data_dir,
-        "analyzed_dir": data_dir / "02_analyzed",  # 添加 analyzed_dir
+        "analyzed_dir": data_dir / "02_analyzed",
     }
 
 
