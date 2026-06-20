@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/nxz1026/Lab-Analysis/actions/workflows/tests.yml/badge.svg)](https://github.com/nxz1026/Lab-Analysis/actions/workflows/tests.yml)
 [![DSPy](https://img.shields.io/badge/DSPy-3.2+-orange.svg)](https://dspy.ai/)
-[![Tests](https://img.shields.io/badge/Tests-137_✔️-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-166_✔️-success.svg)](tests/)
 [![Pipeline](https://img.shields.io/badge/Pipeline-11_Steps-success.svg)](#complete-pipeline-flow)
 
 ---
@@ -57,6 +57,7 @@ At runtime, the program interactively prompts for a valid Chinese ID card number
 | ⑧ | **Integrated Report** | `gen_final_report(_dspy).py` | ④⑤⑥⑦ artifacts → 9-chapter report (supports `--compare-mode`) |
 | ⑧b | **Scoring Card** (optional, new) | `scoring_card.py` | Multi-source → 5-dimension scores + top-3 hypotheses |
 | ⑨ | **Local Archive** | `organize_local_files.py` | `data/<id>/<ts>/` → `local_upload/<YYYY-MM-DD>/` |
+| ⑨b | **FHIR Export** (optional, new) | `fhir_exporter.py` | Multi-source → HL7 FHIR R4 Bundle (Patient/Observation/RiskAssessment) |
 | ⑩ | **Run Cleanup** (optional, new) | `cleanup_runs.py` | Auto-delete old runs, keep last N (`--keep-last 3`) |
 
 > Steps ⑥⑦⑧ automatically switch to DSPy optimized mode when `--use-dspy` is set.
@@ -130,6 +131,7 @@ python -m lab_analysis --skip-imaging      # Skip imaging analysis
 python -m lab_analysis --skip-lit-filter   # Skip evidence grading
 python -m lab_analysis --skip-scoring      # Skip scoring card
 python -m lab_analysis --skip-pdf          # Skip PDF generation
+python -m lab_analysis --skip-fhir         # Skip FHIR export
 python -m lab_analysis --skip-cleanup      # Skip old run cleanup
 ```
 
@@ -253,6 +255,58 @@ python -m lab_analysis.cleanup_runs --keep-last 2 --id-card <deid>
 
 Pipeline step ⑩ enabled by default (keep last 3). `--skip-cleanup` to bypass.
 
+### Lab Metric Prediction
+
+Auto-executed in step ④. Uses linear regression + 95% CI on time-series data to predict next-visit values.
+
+```
+   hs-CRP: next=14.300  95%CI=[11.200, 17.400]  rising ⚠️ exceeds threshold 3.0
+```
+
+Results written to `analysis_results.json` under `predictions` field, also printed to console.
+
+### FHIR Export (step ⑨b)
+
+Maps pipeline results to HL7 FHIR R4 Bundle:
+
+| FHIR Resource | Source |
+|---------------|--------|
+| `Patient` | De-identified patient ID |
+| `Observation` | Lab metrics with LOINC codes + reference ranges |
+| `Observation` | Inflammation status |
+| `Observation` | Alert summary (CRITICAL/WARNING) |
+| `RiskAssessment` | Scoring card top-3 hypotheses |
+| `DiagnosticReport` | Final integrated report conclusion |
+
+```bash
+# Pipeline default enabled
+python -m lab_analysis --skip-fhir   # Skip
+
+# Standalone
+python -m lab_analysis.fhir_exporter --id-card <deid>
+```
+
+Output to `04_reports/fhir_bundle.json`.
+
+### Feedback Loop
+
+Record user corrections to scoring card hypotheses, auto-adjusts confidence weights on next run.
+
+```bash
+# Show current feedback
+python -m lab_analysis.feedback --id-card <deid> --show
+
+# Record a correction
+python -m lab_analysis.feedback --id-card <deid> --correct \
+  --original "Chronic pancreatitis (active)" --corrected "Acute pancreatitis" \
+  --confidence 0.90 --comment "Confirmed clinically"
+
+# Clear feedback
+python -m lab_analysis.feedback --id-card <deid> --clear
+```
+
+Feedback stored in `data/<deid>/feedback.json`, auto-loaded by scoring card on next pipeline run.
+
 ---
 
 ## Output Artifacts
@@ -275,6 +329,7 @@ data/{patient_id}/{timestamp}/
 ├── scoring_card.md                       # Scoring card readable (NEW)
 ├── mode_comparison_report.md             # Standard/DSPy comparison (NEW)
 ├── mode_comparison.json                  # Comparison data (NEW)
+├── fhir_bundle.json                      # HL7 FHIR R4 Bundle (NEW)
 ├── reports/dspy_prompt_comparison.{md,json}  # Prompt comparison
 └── dspy_prompts/                         # DSPy prompt snapshots
 ```
@@ -318,7 +373,7 @@ Summary:
 | LLM Optimization | DSPy 3.2+ |
 | Literature Search | PubMed E-utilities |
 | Error Handling | tenacity + error_logger |
-| Testing | pytest (137 test cases) |
+| Testing | pytest (166 test cases) |
 | CI | GitHub Actions (py3.10~3.12 matrix) |
 
 ---
@@ -329,7 +384,7 @@ Summary:
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                # 137 tests
+python -m pytest                # 166 tests
 python -m pytest -v --cov       # With coverage
 ruff check lab_analysis/        # Code style
 ```

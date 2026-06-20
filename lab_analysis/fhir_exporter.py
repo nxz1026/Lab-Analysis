@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 from datetime import datetime
 from pathlib import Path
@@ -189,7 +190,7 @@ def _build_diagnostic_report(deid: str, obs_ids: list[str], scoring_card: dict,
     if report_md:
         dr["presentedForm"] = [{
             "contentType": "text/markdown",
-            "data": __import__("base64").b64encode(report_md.encode()).decode(),
+            "data": base64.b64encode(report_md.encode()).decode(),
         }]
     return dr
 
@@ -227,8 +228,8 @@ def build_fhir_bundle(
     if lab_metrics:
         for lm in lab_metrics:
             metric = lm.get("metric", lm.get("name", ""))
-            value = lm.get("value") or lm.get("latest_value")
-            unit = lm.get("unit", "?")
+            value = lm.get("value") if lm.get("value") is not None else lm.get("latest_value")
+            unit = lm.get("unit") or "?"
             date = lm.get("date") or lm.get("report_date")
             ref = REF_RANGES.get(metric)
             ref_low, ref_high = ref if ref else (None, None)
@@ -236,6 +237,26 @@ def build_fhir_bundle(
             obs = _build_observation(obs_id, metric, value, unit, ref_low, ref_high, date)
             entry.append({"resource": obs})
             obs_ids.append(obs_id)
+
+    # 2b. Alert Observations
+    for i, alert in enumerate(alerts):
+        alert_obs_id = f"{deid}-alert-{i}"
+        alert_obs: dict = {
+            "resourceType": "Observation",
+            "id": alert_obs_id,
+            "status": "final",
+            "code": {
+                "coding": [{
+                    "system": "urn:lab-analysis:alert",
+                    "code": alert.get("level", "INFO"),
+                    "display": alert.get("source", "alert"),
+                }],
+                "text": f"Alert: {alert.get('level', '')} - {alert.get('metric', '')}",
+            },
+            "valueString": alert.get("message", ""),
+        }
+        entry.append({"resource": alert_obs})
+        obs_ids.append(alert_obs_id)
 
     # 3. Inflammation Observation
     infl_obs = _build_inflammation_observation(
@@ -274,7 +295,8 @@ def _cli():
     parser.add_argument("--out", default=None, help="输出 JSON 路径")
     args = parser.parse_args()
 
-    raw_ts = __import__("os").environ.get("ANALYSIS_TS", "")
+    import os
+    raw_ts = os.environ.get("ANALYSIS_TS", "")
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
     data_dir = WORK_ROOT / "data" / args.id_card / ts
 

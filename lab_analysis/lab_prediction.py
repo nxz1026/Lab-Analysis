@@ -84,16 +84,19 @@ def predict_metric(series: pd.Series, metric: str) -> dict:
 
     # 指数平滑（n >= 3 时作为补充）
     method = "linear_regression"
+    smooth_next = None
     if n >= 3 and r2 >= 0.3:
         # 简单一次指数平滑
         alpha = 0.3
         s = vals[0]
         for v in vals[1:]:
             s = alpha * v + (1 - alpha) * s
+        smooth_next = alpha * vals[-1] + (1 - alpha) * s
         method = "linear_regression+exponential_smoothing"
 
     return {
         "next_value": round(float(y_pred), 3),
+        "smooth_next": round(float(smooth_next), 3) if smooth_next is not None else None,
         "ci_95_lower": round(float(ci_lower), 3),
         "ci_95_upper": round(float(ci_upper), 3),
         "ci_95_half_width": round(float(ci_half), 3),

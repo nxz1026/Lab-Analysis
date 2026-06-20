@@ -97,7 +97,7 @@ def record_correction(
         "original_hypothesis": original_hypothesis,
         "original_confidence": original_confidence,
         "corrected_hypothesis": corrected_hypothesis,
-        "corrected_confidence": corrected_confidence or original_confidence,
+        "corrected_confidence": corrected_confidence if corrected_confidence is not None else original_confidence,
         "user_comment": user_comment or "",
         "corrected_at": datetime.now().isoformat(),
     }
@@ -195,7 +195,7 @@ def _cli():
     parser.add_argument("--correct", action="store_true", help="记录纠正")
     parser.add_argument("--original", default="", help="原始诊断假设")
     parser.add_argument("--corrected", default="", help="纠正后的诊断")
-    parser.add_argument("--confidence", type=float, default=0.0, help="置信度 (0-1)")
+    parser.add_argument("--confidence", type=float, default=None, help="置信度 (0-1)")
     parser.add_argument("--comment", default="", help="用户备注")
     parser.add_argument("--clear", action="store_true", help="清除反馈")
     args = parser.parse_args()
