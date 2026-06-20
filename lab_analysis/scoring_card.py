@@ -288,9 +288,16 @@ def evaluate_hypotheses(
     lit_filtered: dict,
     mri_results: dict,
     dim_scores: DimensionScores,
+    confidence_adjustments: dict[str, float] | None = None,
 ) -> list[Hypothesis]:
-    """运行诊断规则，返回按置信度排序的假设列表。"""
+    """运行诊断规则，返回按置信度排序的假设列表。
+
+    Args:
+        confidence_adjustments: 可选，来自 feedback.py 的规则置信度调整表。
+            ``{rule_name: delta}``，正值上调，负值下调。
+    """
     hypotheses: list[Hypothesis] = []
+    adjustments = confidence_adjustments or {}
 
     for rule_name, condition_fn, hypothesis_text, actions, base_confidence in DIAGNOSTIC_RULES:
         try:
@@ -312,6 +319,11 @@ def evaluate_hypotheses(
         ) / 100.0
 
         confidence = min(0.95, max(0.10, dim_avg + base_confidence))
+
+        # 来自 feedback.py 的置信度调整
+        fb_adj = adjustments.get(rule_name, 0.0)
+        if fb_adj:
+            confidence = min(0.95, max(0.05, confidence + fb_adj))
 
         # 支持/矛盾信号
         supporting = _collect_supporting_signals(results, alerts, rule_name)
@@ -440,8 +452,21 @@ def build_scoring_card(
     if not results:
         print("  [WARNING] analysis_results.json 为空，评分可能不完整")
 
+    # 加载 feedback 置信度调整
+    fb_adjustments = {}
+    try:
+        from lab_analysis.feedback import get_confidence_adjustments
+        fb_adjustments = get_confidence_adjustments(patient_id)
+        if fb_adjustments:
+            print(f"  [FEEDBACK] 已加载 {len(fb_adjustments)} 条置信度调整")
+    except Exception:
+        pass
+
     dim_scores = compute_dimension_scores(results, alerts, lit_filtered, mri_results)
-    hypotheses = evaluate_hypotheses(results, alerts, lit_filtered, mri_results, dim_scores)
+    hypotheses = evaluate_hypotheses(
+        results, alerts, lit_filtered, mri_results, dim_scores,
+        confidence_adjustments=fb_adjustments,
+    )
     assessment = generate_overall_assessment(dim_scores, hypotheses)
 
     data_quality = {
