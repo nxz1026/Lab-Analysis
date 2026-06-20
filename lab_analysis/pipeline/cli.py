@@ -75,9 +75,9 @@ def parse_args():
     parser.add_argument("--auto-queries", action="store_true",
                         help="步骤⑤根据异常指标自动生成 PubMed 搜索词")
     parser.add_argument("--skip-pdf", action="store_true",
-                        help="跳过步骤⑨b PDF 报告生成")
+                        help="跳过 PDF 报告生成（需安装 weasyprint）")
     parser.add_argument("--skip-fhir", action="store_true",
-                        help="跳过步骤⑨c FHIR 输出")
+                        help="跳过步骤⑨b FHIR 输出")
     parser.add_argument("--skip-scoring", action="store_true",
                         help="跳过步骤⑧b 评分卡 & 决策支持")
     parser.add_argument("--skip-cleanup", action="store_true",
