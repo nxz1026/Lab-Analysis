@@ -105,7 +105,7 @@ cp .env.example .env
 | `WORK_ROOT` | Yes | Project working root (default: current dir) | — |
 | `DEEPSEEK_API_KEY` | Yes | Literature interpretation / report generation | DeepSeek |
 | `DASHSCOPE_API_KEY` | Yes | Imaging analysis (Qwen-VL) | Alibaba Cloud Bailian |
-| `ZHIPU_API_KEY` | No | Lab report OCR (GLM-4V) | Zhipu AI |
+| `SCNET_OCR_API_KEY` | No | Lab report image OCR text extraction | SCNet |
 | `FEISHU_FOLDER_TOKEN` | No | Feishu cloud upload (experimental) | Feishu Open Platform |
 
 ---
@@ -368,7 +368,7 @@ Summary:
 | Visualization | matplotlib, Streamlit (dashboard) |
 | Image | Pillow, pydicom |
 | PDF | weasyprint, markdown (optional) |
-| OCR / Vision | GLM-4V, Qwen-VL |
+| OCR / Vision | SCNet OCR, Qwen-VL |
 | Text Generation | DeepSeek API (OpenAI-compatible) |
 | LLM Optimization | DSPy 3.2+ |
 | Literature Search | PubMed E-utilities |

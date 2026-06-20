@@ -110,7 +110,7 @@ Lab-Analysis/
 │   ├── extract_lab_data.py               # 检验报告 OCR 提取
 │   ├── vision_extractor.py               # 单图 Vision AI 提取
 │   ├── batch_vision_extract.py           # 批量视觉提取
-│   ├── llm_client.py                     # 统一 LLM API 客户端（DeepSeek / 智谱 / DashScope）
+│   ├── llm_client.py                     # 统一 LLM API 客户端（DeepSeek / DashScope）
 │   ├── patient_id.py                     # AES-GCM 身份证脱敏与校验
 │   ├── error_logger.py                   # 错误日志
 │   ├── utils.py                          # 通用工具（平台适配 / 路径 / JSON 解析）
@@ -189,7 +189,7 @@ cp .env.example .env
 | `WORK_ROOT` | 是 | 项目工作根目录（默认当前目录） | — |
 | `DEEPSEEK_API_KEY` | 是 | 文献解读 / 报告生成 | DeepSeek |
 | `DASHSCOPE_API_KEY` | 是 | 影像分析（Qwen-VL） | 阿里云百炼 |
-| `ZHIPU_API_KEY` | 否 | 检验报告 OCR（GLM-4V） | 智谱 AI |
+| `SCNET_OCR_API_KEY` | 否 | 检验报告图片 OCR 文字提取 | SCNet |
 | `FEISHU_FOLDER_TOKEN` | 否 | 飞书云盘上传（实验性） | 飞书开放平台 |
 
 ---
@@ -463,7 +463,7 @@ CLI 参数：
 | 可视化 | matplotlib, Streamlit（看板） |
 | 图像处理 | Pillow, pydicom |
 | PDF | weasyprint, markdown（可选） |
-| OCR / Vision | 智谱 GLM-4V, 阿里云 Qwen-VL |
+| OCR / Vision | SCNet OCR, 阿里云 Qwen-VL |
 | 文本生成 | DeepSeek API, OpenAI 兼容协议 |
 | LLM 优化 | DSPy 3.2+（BootstrapFewShot / MIPROv2） |
 | 文献检索 | PubMed E-utilities API |
@@ -535,7 +535,7 @@ MIT License — 详见 [LICENSE](LICENSE)
 
 ## 致谢
 
-- DeepSeek、智谱 AI、阿里云百炼（Qwen-VL）提供的 LLM 能力
+- DeepSeek、SCNet、阿里云百炼（Qwen-VL）提供的 LLM 与 OCR 能力
 - Stanford NLP 的 [DSPy](https://dspy.ai/) 框架
 - PubMed E-utilities 开放接口
 
