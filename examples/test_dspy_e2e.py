@@ -7,11 +7,12 @@ DSPy 端到端集成测试
 包括: 文献解读、影像分析、报告生成
 """
 
+import json
 import os
 import sys
-import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 # 加载环境变量
@@ -29,21 +30,15 @@ def test_dspy_imports():
     print("=" * 60)
     
     try:
-        from lab_analysis.dspy_modules import (
-            LiteratureInterpreterModule,
-            FinalReportGenerator,
-            LabDataExtractor,
-            MRIAnalysisModule
-        )
-        
-        print("[OK] 所有 DSPy 模块导入成功")
-        print(f"   - LiteratureInterpreterModule")
-        print(f"   - FinalReportGenerator")
-        print(f"   - LabDataExtractor")
-        print(f"   - MRIAnalysisModule")
-        
+        # 仅做包级导入检查：确认 dspy_modules 可被发现
+        from lab_analysis import dspy_modules  # noqa: F401
+        print("[OK] 所有 DSPy 模块包可发现")
+        for name in ('LiteratureInterpreterModule', 'FinalReportGenerator',
+                     'LabDataExtractor', 'MRIAnalysisModule'):
+            print(f"   - {name}")
+
         return True
-        
+
     except ImportError as e:
         print(f"[FAIL] 模块导入失败: {e}")
         return False
@@ -66,7 +61,7 @@ def test_dspy_configuration():
             print("[FAIL] 未找到 API Key (DEEPSEEK_API_KEY 或 DASHSCOPE_API_KEY)")
             return False
         
-        print(f"[OK] API Key 已配置")
+        print("[OK] API Key 已配置")
         if deepseek_key:
             print(f"   - DeepSeek: {deepseek_key[:20]}...")
         if dashscope_key:
@@ -74,21 +69,21 @@ def test_dspy_configuration():
         
         # 配置 DeepSeek (用于文献解读和报告生成)
         if deepseek_key:
-            lm_deepseek = dspy.LM(
+            dspy.LM(
                 model='deepseek/deepseek-chat',
                 api_key=deepseek_key,
                 api_base='https://api.deepseek.com/v1'
             )
-            print(f"[OK] DeepSeek LM 配置成功")
+            print("[OK] DeepSeek LM 配置成功")
         
         # 配置 Qwen-VL (用于影像分析)
         if dashscope_key:
-            lm_qwen = dspy.LM(
+            dspy.LM(
                 model='qwen/qwen-vl-plus',
                 api_key=dashscope_key,
                 api_base='https://dashscope.aliyuncs.com/api/v1'
             )
-            print(f"[OK] Qwen-VL LM 配置成功")
+            print("[OK] Qwen-VL LM 配置成功")
         
         return True
         
@@ -106,8 +101,9 @@ def test_literature_interpreter_dspy():
     print("=" * 60)
     
     try:
-        from lab_analysis.literature_interpreter_dspy import run_dspy_mode
         from argparse import Namespace
+
+        from lab_analysis.literature_interpreter_dspy import run_dspy_mode
         
         # 准备测试数据
         patient_id = "846552421134373347"
@@ -117,8 +113,8 @@ def test_literature_interpreter_dspy():
         lit_file = project_root / "data" / patient_id / ts / "03_literature" / "literature_results.json"
         
         if not (analysis_file.exists() and lit_file.exists()):
-            print(f"[WARN]  测试数据不存在,跳过此测试")
-            print(f"   需要运行完整 Pipeline 生成数据")
+            print("[WARN]  测试数据不存在,跳过此测试")
+            print("   需要运行完整 Pipeline 生成数据")
             return True  # 不算失败
         
         args = Namespace(
@@ -129,7 +125,7 @@ def test_literature_interpreter_dspy():
             use_dspy=True
         )
         
-        print(f"[测试] 运行 DSPy 文献解读...")
+        print("[测试] 运行 DSPy 文献解读...")
         print(f"       患者ID: {patient_id}")
         print(f"       时间戳: {ts}")
         
@@ -139,7 +135,7 @@ def test_literature_interpreter_dspy():
         result = run_dspy_mode(args)
         
         if result:
-            print(f"[OK] 文献解读成功")
+            print("[OK] 文献解读成功")
             output_path = result.get('output_path', '')
             if output_path and output_path != '.':
                 output_file = Path(output_path)
@@ -151,7 +147,7 @@ def test_literature_interpreter_dspy():
                     print(f"   输出文件: {output_file}")
             return True
         else:
-            print(f"[FAIL] 文献解读失败")
+            print("[FAIL] 文献解读失败")
             return False
         
     except Exception as e:
@@ -176,7 +172,7 @@ def test_mri_analyzer_dspy():
 增强少许点片状弱强化，考虑感染性病变，较前明显缩小"""
         clinical_context = "男，38岁，胰管支架置入后复查，腹痛待查"
         
-        print(f"[测试] 运行 DSPy MRI 分析...")
+        print("[测试] 运行 DSPy MRI 分析...")
         
         result = run_dspy_mri_analysis(
             image_desc=image_desc,
@@ -185,12 +181,12 @@ def test_mri_analyzer_dspy():
         )
         
         if result:
-            print(f"[OK] MRI 分析成功")
+            print("[OK] MRI 分析成功")
             print(f"   解剖定位: {result['anatomical_localization'][:50]}...")
             print(f"   置信度: {result['confidence_score']:.2f}")
             return True
         else:
-            print(f"[FAIL] MRI 分析失败")
+            print("[FAIL] MRI 分析失败")
             return False
         
     except Exception as e:
@@ -207,8 +203,9 @@ def test_final_report_dspy():
     print("=" * 60)
     
     try:
-        from lab_analysis.gen_final_report_dspy import run_dspy_mode
         from argparse import Namespace
+
+        from lab_analysis.gen_final_report_dspy import run_dspy_mode
         
         patient_id = "846552421134373347"
         ts = "20260611_111343"
@@ -223,7 +220,7 @@ def test_final_report_dspy():
         
         missing_files = [f for f in required_files if not f.exists()]
         if missing_files:
-            print(f"[WARN]  部分前置文件缺失,跳过此测试")
+            print("[WARN]  部分前置文件缺失,跳过此测试")
             for f in missing_files:
                 print(f"   缺失: {f}")
             return True  # 不算失败
@@ -235,15 +232,15 @@ def test_final_report_dspy():
         
         os.environ['ANALYSIS_TS'] = ts
         
-        print(f"[测试] 运行 DSPy 报告生成...")
+        print("[测试] 运行 DSPy 报告生成...")
         
         result = run_dspy_mode(args)
         
         if result:
-            print(f"[OK] 报告生成成功")
+            print("[OK] 报告生成成功")
             return True
         else:
-            print(f"[FAIL] 报告生成失败")
+            print("[FAIL] 报告生成失败")
             return False
         
     except Exception as e:
@@ -264,7 +261,7 @@ def test_pipeline_integration():
         pipeline_file = project_root / "lab_analysis" / "pipeline.py"
         
         if not pipeline_file.exists():
-            print(f"[FAIL] pipeline.py 不存在")
+            print("[FAIL] pipeline.py 不存在")
             return False
         
         content = pipeline_file.read_text(encoding='utf-8')

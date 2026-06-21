@@ -4,7 +4,6 @@
 import re
 import subprocess
 import sys
-from pathlib import Path
 
 # 跑脚本输出 dry-run
 result = subprocess.run(

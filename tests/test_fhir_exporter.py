@@ -1,14 +1,13 @@
 """tests.test_fhir_exporter — FHIR R4 Bundle 输出测试"""
 
 import json
-import pytest
 
 from lab_analysis.fhir_exporter import (
-    _build_patient,
-    _build_observation,
-    _build_inflammation_observation,
-    _build_risk_assessment,
     _build_diagnostic_report,
+    _build_inflammation_observation,
+    _build_observation,
+    _build_patient,
+    _build_risk_assessment,
     build_fhir_bundle,
 )
 

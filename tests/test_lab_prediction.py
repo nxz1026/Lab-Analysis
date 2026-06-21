@@ -1,8 +1,6 @@
 """tests.test_lab_prediction — 检验指标预测测试"""
 
-import numpy as np
 import pandas as pd
-import pytest
 
 from lab_analysis.lab_prediction import predict_metric, predict_metrics, print_predictions
 

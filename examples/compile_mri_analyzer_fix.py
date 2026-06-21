@@ -5,18 +5,22 @@ import json
 import os
 import sys
 from pathlib import Path
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 import dspy
+
 lm = dspy.LM(model='deepseek/deepseek-chat', api_key=os.environ['DEEPSEEK_API_KEY'],
              api_base='https://api.deepseek.com/v1', max_tokens=4000)
 dspy.configure(lm=lm)
 
 from lab_analysis.dspy_modules.mri_analyzer import MRIAnalysisModule
+
 
 # 收集样本
 def collect_mri_samples():

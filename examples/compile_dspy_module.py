@@ -6,9 +6,10 @@ DSPy 模块编译和优化脚本
 使用训练数据编译和优化 LiteratureInterpreterModule
 """
 
-import os
 import json
+import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # 加载环境变量
@@ -17,6 +18,7 @@ load_dotenv()
 # 添加项目根目录到路径
 project_root = Path(__file__).parent.parent
 import sys
+
 sys.path.insert(0, str(project_root))
 
 
@@ -37,7 +39,7 @@ def configure_dspy():
     )
     
     dspy.configure(lm=lm)
-    print(f"[配置] DSPy LM 已配置: deepseek-chat")
+    print("[配置] DSPy LM 已配置: deepseek-chat")
     
     return lm
 
@@ -82,7 +84,7 @@ def prepare_dspy_examples(samples):
 
 def compile_module(examples, num_threads=2):
     """编译和优化 DSPy 模块"""
-    from lab_analysis.dspy_modules import LiteratureInterpreterModule, compile_interpreter
+    from lab_analysis.dspy_modules import compile_interpreter
     
     print("\n" + "=" * 60)
     print("开始编译 DSPy 模块")
@@ -115,7 +117,7 @@ def compile_module(examples, num_threads=2):
         })
     
     # 编译模块
-    print(f"\n[编译] 使用 BootstrapFewShot 优化器...")
+    print("\n[编译] 使用 BootstrapFewShot 优化器...")
     
     try:
         compiled_module = compile_interpreter(
@@ -123,7 +125,7 @@ def compile_module(examples, num_threads=2):
             dev_data=dev_data
         )
         
-        print(f"\n[成功] 模块编译完成!")
+        print("\n[成功] 模块编译完成!")
         
         # 保存编译后的模块
         output_dir = project_root / "models" / "dspy"

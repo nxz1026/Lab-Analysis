@@ -33,12 +33,12 @@ def example_1_basic_usage():
             print("请先运行完整 Pipeline 生成数据")
             return
         
-        print(f"\n运行 DSPy 文献解读...")
+        print("\n运行 DSPy 文献解读...")
         result = run_dspy_interpretation(patient_id, data_dir)
         
-        print(f"\n[OK] 解读完成!")
+        print("\n[OK] 解读完成!")
         print(f"   可信度: {result['confidence']:.2f}")
-        print(f"\n解读摘要:")
+        print("\n解读摘要:")
         print(result['interpretation'][:500] + "...")
         
     except ImportError as e:
@@ -104,8 +104,8 @@ def example_2_custom_module():
             context="患者反复发热,CRP-WBC分离现象"
         )
         
-        print(f"\n[OK] 医学建议生成完成!")
-        print(f"\n建议内容:")
+        print("\n[OK] 医学建议生成完成!")
+        print("\n建议内容:")
         print(result.recommendations)
         
     except ImportError:

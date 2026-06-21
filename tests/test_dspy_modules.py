@@ -56,7 +56,9 @@ class TestFinalReportSignature:
 
 class TestLiteratureInterpreterSignature:
     def test_signature_has_required_fields(self):
-        from lab_analysis.dspy_modules.literature_interpreter import LiteratureInterpretationSignature
+        from lab_analysis.dspy_modules.literature_interpreter import (
+            LiteratureInterpretationSignature,
+        )
 
         sig = LiteratureInterpretationSignature
         in_fields = set(sig.input_fields.keys())
@@ -119,8 +121,8 @@ class TestLabDataExtractorSignature:
 class TestPromptInspector:
     def test_extract_signature_info_without_dspy_lm(self):
         """无需 LM 配置即可提取 signature 信息"""
-        from lab_analysis.dspy_modules.prompt_inspector import extract_signature_info
         from lab_analysis.dspy_modules.final_report_generator import FinalReportSignature
+        from lab_analysis.dspy_modules.prompt_inspector import extract_signature_info
 
         info = extract_signature_info(FinalReportSignature)
         assert "signature_name" in info
@@ -130,8 +132,8 @@ class TestPromptInspector:
 
     def test_extract_module_prompts_returns_structure(self):
         """extract_module_prompts 返回正确的数据结构"""
-        from lab_analysis.dspy_modules.prompt_inspector import extract_module_prompts
         from lab_analysis.dspy_modules.final_report_generator import FinalReportGenerator
+        from lab_analysis.dspy_modules.prompt_inspector import extract_module_prompts
 
         module = FinalReportGenerator()
         result = extract_module_prompts(module, module_name="final_report_generator")

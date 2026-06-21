@@ -1,21 +1,20 @@
 """tests.test_scoring_card — 评分卡 & 决策支持测试"""
 
 import json
+
 import pytest
 
 from lab_analysis.scoring_card import (
+    compute_dimension_scores,
+    evaluate_hypotheses,
+    format_scoring_md,
+    generate_overall_assessment,
+    score_imaging_consistency,
     score_inflammation,
     score_lab_abnormality,
     score_literature_support,
-    score_imaging_consistency,
     score_variability_risk,
-    compute_dimension_scores,
-    evaluate_hypotheses,
-    generate_overall_assessment,
-    build_scoring_card,
-    format_scoring_md,
 )
-
 
 # ═════════════════════════════════════════════════════════════════════
 # Fixtures

@@ -1,7 +1,6 @@
 """测试 prompt 提取功能"""
 import os
 import sys
-import json
 from pathlib import Path
 
 # 配置 WORK_ROOT
@@ -15,12 +14,16 @@ api_key = os.environ.get('DEEPSEEK_API_KEY')
 if api_key:
     lm = dspy.LM(model='deepseek/deepseek-chat', api_key=api_key, api_base='https://api.deepseek.com/v1')
     dspy.configure(lm=lm)
-    print(f"[OK] LLM configured")
+    print("[OK] LLM configured")
 else:
     print("[WARN] DEEPSEEK_API_KEY not set, demos will be empty")
 
 from lab_analysis.dspy_modules.literature_interpreter import LiteratureInterpreterModule
-from lab_analysis.dspy_modules.prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
+from lab_analysis.dspy_modules.prompt_inspector import (
+    extract_module_prompts,
+    save_prompts_to_json,
+    save_prompts_to_markdown,
+)
 
 # 测试 1: 未编译的模块 (无 demos)
 print("\n=== Test 1: Uncompiled Module ===")

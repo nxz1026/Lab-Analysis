@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 project_root = Path(__file__).resolve().parent.parent
@@ -32,7 +33,7 @@ def configure_dspy():
         max_tokens=4000,
     )
     dspy.configure(lm=lm)
-    print(f"[配置] DSPy LM: deepseek-chat")
+    print("[配置] DSPy LM: deepseek-chat")
     return lm
 
 
@@ -163,6 +164,7 @@ def collect_samples_from_runs(data_root: Path):
 
 def compile_literature_interpreter(samples):
     import dspy.teleprompt
+
     from lab_analysis.dspy_modules import LiteratureInterpreterModule
 
     def simple_metric(example, pred, trace=None):
@@ -209,14 +211,12 @@ def compile_literature_interpreter(samples):
 
 def compile_final_report(samples):
     import dspy.teleprompt
+
     from lab_analysis.dspy_modules import FinalReportGenerator
 
     def simple_metric(example, pred, trace=None):
+        # 简化：只检查几个核心 section
         try:
-            required = [f'section_{i}_{n}' for i in range(1, 10) for n in
-                        ['basic_info', 'lab_analysis', 'mri_analysis', 'multidisciplinary',
-                         'diagnosis', 'consistency', 'action_plan', 'followup', 'prognosis']]
-            # 简化：只检查几个核心 section
             checks = ['section_1_basic_info', 'section_2_lab_analysis',
                       'section_5_diagnosis', 'section_7_action_plan']
             return all(getattr(pred, c, '') for c in checks)
@@ -271,6 +271,7 @@ def compile_final_report(samples):
 
 def compile_mri_analyzer(samples):
     import dspy.teleprompt
+
     from lab_analysis.dspy_modules import MRIAnalysisModule
 
     def simple_metric(example, pred, trace=None):
@@ -314,6 +315,7 @@ def compile_mri_analyzer(samples):
 
 def compile_lab_extractor(samples):
     import dspy.teleprompt
+
     from lab_analysis.dspy_modules import LabDataExtractor
 
     def simple_metric(example, pred, trace=None):
@@ -377,7 +379,8 @@ def main():
             results[fn.__name__] = r
         except Exception as e:
             print(f"\n[失败] {fn.__name__}: {e}")
-            import traceback; traceback.print_exc()
+            import traceback
+            traceback.print_exc()
 
     print("\n" + "=" * 60)
     print(f"[完成] {len(results)}/4 模块编译")

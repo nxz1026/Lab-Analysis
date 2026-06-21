@@ -9,8 +9,7 @@ DSPy 训练数据准备工具
 
 import json
 from pathlib import Path
-from typing import List, Dict
-import sys
+from typing import Dict, List
 
 
 def extract_training_samples(data_root: Path = None) -> List[Dict]:
@@ -57,11 +56,10 @@ def extract_training_samples(data_root: Path = None) -> List[Dict]:
             literature_dir = ts_dir / "03_literature"
             
             if not analyzed_dir.exists() or not literature_dir.exists():
-                print(f"    [跳过] 缺少必要目录")
+                print("    [跳过] 缺少必要目录")
                 continue
             
             # 提取数据分析结果
-            metrics_csv = analyzed_dir / "lab_metrics.csv"
             analysis_json = analyzed_dir / "analysis_results.json"  # 修正文件名
             
             analysis_results = {}
@@ -69,7 +67,7 @@ def extract_training_samples(data_root: Path = None) -> List[Dict]:
                 try:
                     with open(analysis_json, 'r', encoding='utf-8') as f:
                         analysis_results = json.load(f)
-                    print(f"    [成功] 加载分析结果")
+                    print("    [成功] 加载分析结果")
                 except Exception as e:
                     print(f"    [警告] 加载分析结果失败: {e}")
                     continue
@@ -85,7 +83,7 @@ def extract_training_samples(data_root: Path = None) -> List[Dict]:
                 try:
                     with open(search_results_json, 'r', encoding='utf-8') as f:
                         literature_results = json.load(f)
-                    print(f"    [成功] 加载文献结果")
+                    print("    [成功] 加载文献结果")
                 except Exception as e:
                     print(f"    [警告] 加载文献结果失败: {e}")
                     continue
@@ -107,7 +105,7 @@ def extract_training_samples(data_root: Path = None) -> List[Dict]:
             }
             
             samples.append(sample)
-            print(f"    [样本] 已添加训练样本")
+            print("    [样本] 已添加训练样本")
     
     print(f"\n{'=' * 60}")
     print(f"[汇总] 共提取 {len(samples)} 个训练样本")
@@ -153,9 +151,9 @@ def main():
     print(f"\n{'=' * 60}")
     print("[完成] 训练数据准备完成!")
     print(f"{'=' * 60}")
-    print(f"\n下一步:")
+    print("\n下一步:")
     print(f"1. 检查训练数据: {output_path}")
-    print(f"2. 运行 DSPy 编译: python examples/compile_dspy_module.py")
+    print("2. 运行 DSPy 编译: python examples/compile_dspy_module.py")
     print(f"{'=' * 60}\n")
 
 
