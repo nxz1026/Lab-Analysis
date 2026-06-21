@@ -132,14 +132,17 @@ class TestMetricsSanitization:
 
     def test_less_than_prefix(self):
         from lab_analysis.extract_lab_data import _sanitize_metrics
+
         assert _sanitize_metrics({"CRP": "<10", "WBC": 7.5}) == {"CRP": 10.0, "WBC": 7.5}
 
     def test_greater_than_prefix(self):
         from lab_analysis.extract_lab_data import _sanitize_metrics
+
         assert _sanitize_metrics({"hs-CRP": ">3.0", "PLT": 250}) == {"hs-CRP": 3.0, "PLT": 250.0}
 
     def test_dash_removed(self):
         from lab_analysis.extract_lab_data import _sanitize_metrics
+
         cleaned = _sanitize_metrics({"EO#": "—", "BASO%": "-", "WBC": 5.0})
         assert "EO#" not in cleaned
         assert "BASO%" not in cleaned
@@ -147,14 +150,144 @@ class TestMetricsSanitization:
 
     def test_empty_string_removed(self):
         from lab_analysis.extract_lab_data import _sanitize_metrics
+
         cleaned = _sanitize_metrics({"EO#": "", "WBC": 5.0})
         assert "EO#" not in cleaned
 
     def test_normal_values_preserved(self):
         from lab_analysis.extract_lab_data import _sanitize_metrics
+
         assert _sanitize_metrics({"WBC": 7.5, "RBC": 4.52}) == {"WBC": 7.5, "RBC": 4.52}
 
     def test_mixed_formats(self):
         from lab_analysis.extract_lab_data import _sanitize_metrics
+
         cleaned = _sanitize_metrics({"CRP": "<10", "hs-CRP": ">3.0", "WBC": 7.5, "EO#": "\u2014"})
         assert cleaned == {"CRP": 10.0, "hs-CRP": 3.0, "WBC": 7.5}
+
+
+# ----------------------------------------------------------------------------
+# SCNet OCR 端到端: 用 monkeypatch 注入 fake OCR 文本，
+# 这样 e2e 可以在 CI 里跑，不依赖真实 SCNet 服务。
+# ----------------------------------------------------------------------------
+
+
+_FAKE_OCR_TEXT = """\
+川渝HR
+四川省人民医院温江医院
+成都市温江区人民医院
+血细胞分析+超敏C反应蛋白测定(门)
+检验报告单
+Report of Clinical Laboratory
+姓名(Name): 聂聃
+性别(Sex): 男
+年龄 (Age): 38岁
+样本编号(No.): 22
+科别(Dept.):消化内科
+诊疗卡号(CaseNo.)513229198801040014
+诊断(Diag.):慢性胰腺炎
+标本(Sample): 全血
+送检医生 (Doc.): 李薇
+序号
+项目名称(Test)
+结果(Result)
+单位(Unit)
+参考范围(Ref.)
+1 *
+白细胞计数(WBC)
+6.70
+10^9/L
+3.5-9.5
+2 *
+红细胞计数(RBC)
+4.52
+10^12/L
+4.30-5.80
+3 *
+血红蛋白测定(HGB)
+138
+g/L
+130-175
+4 *
+血小板计数(PLT)
+275
+10^9/L
+125-350
+5 *
+C反应蛋白测定(CRP)
+8.2
+mg/L
+<10
+报告时间: 2026-03-24 08:15
+打印时间: 2026-05-01 08:14
+第1页 共1页
+"""
+
+
+class TestSCNetOCRE2E:
+    """端到端走 call_scnet_ocr + _parse_ocr_to_json，
+    但用 monkeypatch 替换网络调用，使 CI 可跑。
+    """
+
+    def test_call_scnet_ocr_is_monkeypatchable(self, tmp_path, monkeypatch):
+        """call_scnet_ocr 能被 monkeypatch 替换，避免走真实 API。"""
+        from lab_analysis import extract_lab_data as mod
+
+        fake_called = []
+
+        def fake_scnet(image_path, api_key):
+            fake_called.append((str(image_path), len(api_key)))
+            return _FAKE_OCR_TEXT
+
+        monkeypatch.setattr(mod, "call_scnet_ocr", fake_scnet)
+        # 现在调它会走 fake
+        out = mod.call_scnet_ocr(tmp_path / "x.jpg", "dummy-key")
+        assert out == _FAKE_OCR_TEXT
+        assert fake_called == [(str(tmp_path / "x.jpg"), 9)]
+
+    def test_extract_lab_metrics_e2e_with_fake_ocr(self, tmp_path, monkeypatch):
+        """extract_lab_metrics 全流程跑通，metrics 字典非空且关键指标正确。"""
+        from lab_analysis import extract_lab_data as mod
+
+        monkeypatch.setattr(mod, "call_scnet_ocr", lambda *a, **kw: _FAKE_OCR_TEXT)
+
+        fake_img = tmp_path / "lab_fake.jpg"
+        fake_img.write_bytes(b"\x00")  # 不读，只走函数路径
+
+        result = mod.extract_lab_metrics(fake_img)
+
+        assert isinstance(result, dict)
+        # 元数据
+        assert result.get("report_date") == "2026-03-24"
+        assert "消化内科" in (result.get("department") or "")
+        assert "慢性胰腺炎" in (result.get("diagnosis") or "")
+        # 关键指标
+        metrics = result.get("metrics", {})
+        assert metrics.get("WBC") == 6.7
+        assert metrics.get("RBC") == 4.52
+        assert metrics.get("HGB") == 138.0
+        assert metrics.get("PLT") == 275.0
+        assert "CRP" in metrics
+        # 至少有 5 个指标被解析
+        assert len(metrics) >= 5
+
+    def test_extract_lab_metrics_resize_does_not_break_monkeypatch(self, tmp_path, monkeypatch):
+        """当 fake OCR 被注入，call_scnet_ocr 不应走真实图片预处理路径。"""
+        from lab_analysis import extract_lab_data as mod
+
+        monkeypatch.setattr(mod, "call_scnet_ocr", lambda *a, **kw: _FAKE_OCR_TEXT)
+
+        # PIL.Image 不会真的被打开，因为 fake 完全绕过真实读取
+        fake_img = tmp_path / "anything.bin"
+        fake_img.write_bytes(b"not an image")
+
+        result = mod.extract_lab_metrics(fake_img)
+        assert "metrics" in result
+        assert isinstance(result["metrics"], dict)
+
+    def test_resize_threshold_units(self):
+        """MAX_OCR_SIDE 常量暴露，且是合理上限（<= 2048）。"""
+        from lab_analysis import extract_lab_data as mod
+
+        # 阈值不应超过 2048（原始 2082px 图片就触发了 435）
+        assert 800 <= getattr(mod, "MAX_OCR_SIDE", 0) <= 2048
