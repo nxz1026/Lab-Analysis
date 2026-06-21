@@ -13,8 +13,7 @@
 
 import json
 from pathlib import Path
-from typing import List, Dict
-from datetime import datetime
+from typing import Dict, List
 
 
 def collect_literature_interpretation_samples(data_root: Path = None) -> List[Dict]:
@@ -256,10 +255,10 @@ def main():
     print("\n" + "=" * 60)
     print("[DONE] 训练数据收集完成!")
     print("=" * 60)
-    print(f"\n下一步:")
+    print("\n下一步:")
     print(f"1. 检查数据质量: {output_file}")
-    print(f"2. 运行编译脚本: python examples/compile_dspy_module.py")
-    print(f"3. 验证优化效果: python examples/test_dspy_performance.py")
+    print("2. 运行编译脚本: python examples/compile_dspy_module.py")
+    print("3. 验证优化效果: python examples/test_dspy_performance.py")
     print("=" * 60)
 
 

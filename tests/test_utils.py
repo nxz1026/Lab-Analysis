@@ -1,12 +1,10 @@
 """tests.test_utils — 通用工具函数测试"""
 
-import pytest
 
+from lab_analysis.llm_client import parse_json_response, strip_code_fence
 from lab_analysis.utils import (
-    validate_chinese_id,
     parse_metadata_table,
 )
-from lab_analysis.llm_client import strip_code_fence, parse_json_response
 
 
 class TestParseMetadataTable:

@@ -1,17 +1,17 @@
 """tests.test_compare_modes — 双模式报告对比测试"""
 
 import json
+
 import pytest
 
 from lab_analysis.compare_report_modes import (
-    _parse_std_sections,
+    _KEY_ENTITIES,
     _calc_overlap_rate,
     _count_entities,
+    _parse_std_sections,
     compare_reports,
     format_comparison_md,
-    _KEY_ENTITIES,
 )
-
 
 # ═════════════════════════════════════════════════════════════════════
 # Fixtures

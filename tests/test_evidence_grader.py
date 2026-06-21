@@ -12,17 +12,16 @@ from datetime import datetime
 import pytest
 
 from lab_analysis.evidence_grader import (
-    TOPIC_KEYWORDS,
     SCENARIO_WEIGHTS,
     GradedPaper,
+    _tier_from_score,
     grade_paper,
     rank_papers,
-    score_topic_match,
     score_evidence_level,
+    score_parse_quality,
     score_recency,
     score_sample_size,
-    score_parse_quality,
-    _tier_from_score,
+    score_topic_match,
 )
 
 

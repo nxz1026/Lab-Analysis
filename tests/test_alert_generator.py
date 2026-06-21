@@ -1,20 +1,18 @@
 """tests.test_alert_generator — 结构化异常告警摘要测试"""
 
 import json
+
 import pytest
-from pathlib import Path
-from datetime import datetime
 
 from lab_analysis.alert_generator import (
-    generate_alerts,
-    print_alerts,
     _alert_inflammation,
     _alert_reference_range,
-    _alert_zscore,
-    _alert_variability,
     _alert_trend,
+    _alert_variability,
+    _alert_zscore,
+    generate_alerts,
+    print_alerts,
 )
-
 
 # ═════════════════════════════════════════════════════════════════════
 # Fixtures: 模拟 _compute_stats() 产出的 results dict

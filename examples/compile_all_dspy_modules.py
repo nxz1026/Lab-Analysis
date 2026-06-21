@@ -18,6 +18,7 @@ from pathlib import Path
 
 # 加载 .env
 from dotenv import load_dotenv
+
 load_dotenv()
 
 project_root = Path(__file__).resolve().parent.parent
@@ -36,7 +37,7 @@ def configure_dspy():
         api_base='https://api.deepseek.com/v1'
     )
     dspy.configure(lm=lm)
-    print(f"[配置] DSPy LM 已配置: deepseek-chat")
+    print("[配置] DSPy LM 已配置: deepseek-chat")
     return lm
 
 
@@ -149,7 +150,7 @@ def ensure_min_samples(samples, min_n=3):
 
 def compile_literature_interpreter(samples):
     """编译 literature_interpreter"""
-    from lab_analysis.dspy_modules import LiteratureInterpreterModule, compile_interpreter
+    from lab_analysis.dspy_modules import compile_interpreter
 
     # 构造训练数据：每个 timestamp 对应一个样本
     train_data = []
@@ -180,7 +181,7 @@ def compile_literature_interpreter(samples):
 
 def compile_final_report(samples):
     """编译 final_report_generator"""
-    from lab_analysis.dspy_modules import FinalReportGenerator, compile_report_generator
+    from lab_analysis.dspy_modules import compile_report_generator
 
     train_data = []
     for s in samples:
@@ -224,7 +225,7 @@ def compile_final_report(samples):
 
 def compile_mri_analyzer(samples):
     """编译 mri_analyzer"""
-    from lab_analysis.dspy_modules import MRIAnalysisModule, compile_mri_analyzer
+    from lab_analysis.dspy_modules import compile_mri_analyzer
 
     # 收集所有 MRI 序列样本
     train_data = []
@@ -248,7 +249,7 @@ def compile_mri_analyzer(samples):
 
 def compile_lab_extractor(samples):
     """编译 lab_data_extractor"""
-    from lab_analysis.dspy_modules import LabDataExtractor, compile_lab_extractor
+    from lab_analysis.dspy_modules import compile_lab_extractor
 
     train_data = []
     for s in samples:
@@ -294,25 +295,29 @@ def main():
         results["literature_interpreter"] = compile_literature_interpreter(samples)
     except Exception as e:
         print(f"[失败] literature_interpreter: {e}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
 
     try:
         results["final_report_generator"] = compile_final_report(samples)
     except Exception as e:
         print(f"[失败] final_report_generator: {e}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
 
     try:
         results["mri_analyzer"] = compile_mri_analyzer(samples)
     except Exception as e:
         print(f"[失败] mri_analyzer: {e}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
 
     try:
         results["lab_data_extractor"] = compile_lab_extractor(samples)
     except Exception as e:
         print(f"[失败] lab_data_extractor: {e}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
 
     print("\n" + "=" * 60)
     print(f"[完成] 编译结果: {len(results)}/4 模块成功")

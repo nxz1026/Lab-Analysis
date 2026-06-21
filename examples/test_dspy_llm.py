@@ -7,7 +7,7 @@ DSPy LLM 配置测试
 """
 
 import os
-from pathlib import Path
+
 from dotenv import load_dotenv
 
 # 加载 .env 文件
@@ -39,8 +39,8 @@ def test_deepseek_connection():
             api_base='https://api.deepseek.com/v1'
         )
         dspy.configure(lm=lm)
-        print(f"[OK] LM 配置成功")
-        print(f"   模型: deepseek-chat")
+        print("[OK] LM 配置成功")
+        print("   模型: deepseek-chat")
         
         # 测试简单调用
         print("\n测试 LLM 调用...")
@@ -48,8 +48,8 @@ def test_deepseek_connection():
         
         result = predictor(question="什么是DSPy?请用一句话回答。")
         
-        print(f"[OK] LLM 调用成功!")
-        print(f"   问题: 什么是DSPy?")
+        print("[OK] LLM 调用成功!")
+        print("   问题: 什么是DSPy?")
         print(f"   回答: {result.answer}")
         
         return True

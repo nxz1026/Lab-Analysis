@@ -23,7 +23,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
@@ -291,12 +290,12 @@ def main():
         sys.exit(1)
 
     print(f"[信息] 数据目录: {data_dir}")
-    print(f"[信息] 查找 dspy_prompts 目录...")
+    print("[信息] 查找 dspy_prompts 目录...")
 
     prompts_dirs = find_dspy_prompts_dirs(data_dir)
     if not prompts_dirs:
-        print(f"[错误] 未找到任何 dspy_prompts 目录")
-        print(f"  请先运行 DSPy 优化模式: python -m lab_analysis.literature_interpreter_dspy --use-dspy")
+        print("[错误] 未找到任何 dspy_prompts 目录")
+        print("  请先运行 DSPy 优化模式: python -m lab_analysis.literature_interpreter_dspy --use-dspy")
         sys.exit(1)
 
     print(f"[信息] 找到 {len(prompts_dirs)} 个 prompts 目录:")
@@ -332,9 +331,9 @@ def main():
         dspy_data = load_dspy_prompts(prompts_dir, module_name)
 
         if not standard:
-            print(f"  [警告] 未找到标准模式 prompt 文件")
+            print("  [警告] 未找到标准模式 prompt 文件")
         if not dspy_data:
-            print(f"  [警告] 未找到 DSPy 模式 prompt 文件")
+            print("  [警告] 未找到 DSPy 模式 prompt 文件")
 
         if standard and dspy_data:
             print(f"  [标准] prompt: {standard['length']} 字符")
@@ -343,7 +342,7 @@ def main():
             comparison = compare_prompts(standard, dspy_data)
             comparisons.append(comparison)
         elif dspy_data:
-            print(f"  [信息] 仅 DSPy 数据,生成独立报告")
+            print("  [信息] 仅 DSPy 数据,生成独立报告")
             comparisons.append({
                 "module_name": module_name,
                 "standard_mode": {"length": 0, "lines": 0, "path": "(未运行标准模式)"},
@@ -358,7 +357,7 @@ def main():
             })
 
     if not comparisons:
-        print(f"\n[错误] 没有可对比的数据")
+        print("\n[错误] 没有可对比的数据")
         sys.exit(1)
 
     # 生成报告
@@ -368,10 +367,10 @@ def main():
     generate_markdown_report(comparisons, md_path)
     generate_json_report(comparisons, json_path)
 
-    print(f"\n[OK] 对比报告生成完成!")
+    print("\n[OK] 对比报告生成完成!")
     print(f"  [Markdown] {md_path}")
     print(f"  [JSON]     {json_path}")
-    print(f"\n[提示] 可使用以下命令查看对比:")
+    print("\n[提示] 可使用以下命令查看对比:")
     print(f"  cat {md_path}")
 
 

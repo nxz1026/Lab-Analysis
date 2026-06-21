@@ -2,7 +2,7 @@
 
 import pytest
 
-from lab_analysis.patient_id import encode, decode, validate_id_card
+from lab_analysis.patient_id import decode, encode, validate_id_card
 
 
 class TestEncodeDecode:

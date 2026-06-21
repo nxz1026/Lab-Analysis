@@ -233,7 +233,10 @@ def main():
         dspy_json = WORK_ROOT / "data" / f"{deid}/{dspy_ts}" / "04_reports" / "final_integrated_report.json"
         if std_md.exists() and dspy_json.exists():
             try:
-                from lab_analysis.compare_report_modes import compare_reports_from_files, format_comparison_md
+                from lab_analysis.compare_report_modes import (
+                    compare_reports_from_files,
+                    format_comparison_md,
+                )
                 cmp = compare_reports_from_files(std_md, dspy_json)
                 cmp_dir = WORK_ROOT / "data" / ts_dir / "04_reports"
                 (cmp_dir / "mode_comparison.json").write_text(

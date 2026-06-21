@@ -7,6 +7,7 @@
 """
 
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -48,7 +49,7 @@ def test_dashscope_direct():
             "Content-Type": "application/json"
         }
         
-        print(f"[测试] 发送请求到 DashScope...")
+        print("[测试] 发送请求到 DashScope...")
         response = requests.post(url, json=payload, headers=headers, timeout=30)
         
         if response.status_code == 200:
@@ -88,7 +89,7 @@ def test_litellm_qwen():
             try:
                 print(f"[测试] 尝试模型: {model_name}")
                 
-                response = litellm.completion(
+                response = litellm.completion(  # noqa: F841 — 仅用于验证调用成功
                     model=model_name,
                     messages=[{"role": "user", "content": "Hello"}],
                     api_key=api_key,
@@ -132,13 +133,13 @@ def test_dspy_simple():
         )
         
         dspy.configure(lm=lm)
-        print(f"[OK] DSPy LM 配置成功")
+        print("[OK] DSPy LM 配置成功")
         
         # 简单测试
         predictor = dspy.Predict("question -> answer")
         result = predictor(question="什么是DSPy?")
         
-        print(f"[OK] DSPy 调用成功")
+        print("[OK] DSPy 调用成功")
         print(f"   回答: {result.answer[:100]}...")
         
         return True

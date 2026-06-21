@@ -1,13 +1,11 @@
 """tests.test_cleanup_runs — 产物清理工具测试"""
 
+
 import pytest
-from pathlib import Path
 
 from lab_analysis.cleanup_runs import (
-    cleanup_patient,
-    cleanup_all,
-    _get_dir_size,
     _format_size,
+    _get_dir_size,
 )
 
 
@@ -74,7 +72,6 @@ class TestCleanupPatient:
     def test_keep_last_3(self, mock_data_dir, monkeypatch):
         tmp, deid = mock_data_dir
         monkeypatch.chdir(tmp)
-        from lab_analysis.utils import WORK_ROOT
         # 临时改 WORK_ROOT 指向 tmp
         import lab_analysis.cleanup_runs as cr
         original = cr._DATA_DIR
@@ -121,7 +118,7 @@ class TestCleanupPatient:
         cr._DATA_DIR = tmp / "data"
 
         try:
-            result = cr.cleanup_patient(deid, keep_last=3, dry_run=True)
+            cr.cleanup_patient(deid, keep_last=3, dry_run=True)
             # 确认目录还在
             assert (tmp / "data" / deid / "20260601_100000").exists()
         finally:

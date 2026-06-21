@@ -50,7 +50,7 @@ from datetime import datetime
 from pathlib import Path
 from zipfile import ZipFile
 
-from lab_analysis.patient_id import encode, validate_id_card
+from lab_analysis.patient_id import validate_id_card
 from lab_analysis.utils import print_progress
 
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))

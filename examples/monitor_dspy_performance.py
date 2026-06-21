@@ -7,10 +7,9 @@ DSPy 性能监控和评估工具
 """
 
 import json
-import time
-from pathlib import Path
-from typing import Dict, List, Optional
 from datetime import datetime
+from pathlib import Path
+from typing import Dict, List
 
 
 def load_dspy_samples(data_file: Path = None) -> List[Dict]:
@@ -118,10 +117,10 @@ def compare_modes(samples: List[Dict]) -> Dict:
         # 根据来源判断模式
         if sample.get('source') == 'manual_annotation':
             results['dspy'].append(quality)
-            print(f"  模式: DSPy (手动标注示例)")
+            print("  模式: DSPy (手动标注示例)")
         else:
             results['standard'].append(quality)
-            print(f"  模式: 标准 Pipeline")
+            print("  模式: 标准 Pipeline")
     
     # 计算平均指标
     def calc_avg(qualities):
@@ -200,17 +199,17 @@ def generate_performance_report(results: Dict, output_file: Path):
     imp = results.get('improvement', {})
     
     if std and dspy:
-        print(f"\n标准模式:")
+        print("\n标准模式:")
         print(f"  平均长度: {std.get('avg_length', 'N/A')} 字符")
         print(f"  平均评分: {std.get('avg_score', 'N/A')}/10")
         print(f"  平均章节: {std.get('avg_sections', 'N/A')}")
         
-        print(f"\nDSPy 模式:")
+        print("\nDSPy 模式:")
         print(f"  平均长度: {dspy.get('avg_length', 'N/A')} 字符")
         print(f"  平均评分: {dspy.get('avg_score', 'N/A')}/10")
         print(f"  平均章节: {dspy.get('avg_sections', 'N/A')}")
         
-        print(f"\n提升幅度:")
+        print("\n提升幅度:")
         print(f"  长度: {imp.get('length', 'N/A')}")
         print(f"  评分: {imp.get('score', 'N/A')}")
         print(f"  章节: {imp.get('sections', 'N/A')}")

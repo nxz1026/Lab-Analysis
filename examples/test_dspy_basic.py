@@ -6,7 +6,6 @@ DSPy 基础功能测试
 自动测试 DSPy 的基本功能,无需人工交互
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -23,7 +22,7 @@ def test_import():
     
     try:
         import dspy
-        print(f"[OK] DSPy 导入成功")
+        print("[OK] DSPy 导入成功")
         print(f"   版本: {dspy.__version__}")
         return True
     except ImportError as e:
@@ -46,9 +45,9 @@ def test_basic_signature():
             question: str = dspy.InputField(desc="问题")
             answer: str = dspy.OutputField(desc="答案")
         
-        print(f"[OK] 签名创建成功")
-        print(f"   输入字段: question")
-        print(f"   输出字段: answer")
+        print("[OK] 签名创建成功")
+        print("   输入字段: question")
+        print("   输出字段: answer")
         return True
         
     except Exception as e:
@@ -80,7 +79,7 @@ def test_module_creation():
                 return self.predict(question=question)
         
         module = TestModule()
-        print(f"[OK] 模块创建成功")
+        print("[OK] 模块创建成功")
         print(f"   类型: {type(module).__name__}")
         return True
         
@@ -101,14 +100,14 @@ def test_lab_analysis_module():
         from lab_analysis.dspy_modules import LiteratureInterpreterModule
         
         module = LiteratureInterpreterModule()
-        print(f"[OK] LiteratureInterpreterModule 导入成功")
+        print("[OK] LiteratureInterpreterModule 导入成功")
         print(f"   模块类型: {type(module).__name__}")
-        print(f"   包含组件: interpret (ChainOfThought)")
+        print("   包含组件: interpret (ChainOfThought)")
         return True
         
     except ImportError as e:
         print(f"[WARN]  模块导入失败 (可能需要先配置 LLM): {e}")
-        print(f"   这是正常的,因为还没有配置 API 密钥")
+        print("   这是正常的,因为还没有配置 API 密钥")
         return None  # 不算失败
     except Exception as e:
         print(f"[FAIL] 模块测试失败: {e}")

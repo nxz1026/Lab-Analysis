@@ -1,15 +1,14 @@
 """tests.test_feedback — 交互式反馈回路测试"""
 
 import json
+
 import pytest
 
 from lab_analysis.feedback import (
-    load_feedback,
-    save_feedback,
-    record_correction,
-    get_confidence_adjustments,
     clear_feedback,
-    _auto_adjust_confidence,
+    get_confidence_adjustments,
+    load_feedback,
+    record_correction,
 )
 
 

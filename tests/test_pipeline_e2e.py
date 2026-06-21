@@ -12,7 +12,6 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -81,7 +80,7 @@ class TestBuildPaths:
     def test_with_explicit_timestamp(self, tmp_path, monkeypatch):
         """显式传入 timestamp 时应使用传入值。"""
         monkeypatch.setenv("WORK_ROOT", str(tmp_path))
-        from lab_analysis.utils import build_paths, WORK_ROOT
+        from lab_analysis.utils import WORK_ROOT, build_paths
 
         paths = build_paths("test123", timestamp="20260620_150000")
         assert paths["timestamp"] == "20260620_150000"
