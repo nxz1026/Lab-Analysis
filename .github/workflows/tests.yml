@@ -10,8 +10,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -20,25 +21,40 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Lint with ruff
-        run: python -m ruff check lab_analysis/
+      - name: Lint (ruff check)
+        run: python -m ruff check .
 
-      - name: Test with pytest
-        run: python -m pytest
+      - name: Lint (ruff format)
+        # 警告而非阳断：现有代码还未大范围过 formatter，后续 PR 逐迁
+        continue-on-error: true
+        run: python -m ruff format --check . || echo "::warning::ruff format 需要调优，请运行 'ruff format .' 后提交"
+
+      - name: Test with pytest + coverage
+        run: python -m pytest --cov=lab_analysis --cov-report=term-missing --cov-report=xml:coverage.xml --cov-branch
         env:
           LAB_DEID_KEY: "VW5pdFRlc3RLZXktLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLXM="
 
-      - name: Verify module imports
+      - name: Verify module imports (smoke test)
         run: python -c "
           from lab_analysis.llm_client import call_chat, call_dashscope_multimodal, load_api_key;
           from lab_analysis.patient_id import encode, decode, validate_id_card;
           from lab_analysis.pipeline.cli import parse_args, get_deid;
           from lab_analysis.analysis.run import run;
+          from lab_analysis.extract_lab_data import call_scnet_ocr, MAX_OCR_SIDE;
+          assert MAX_OCR_SIDE <= 2048, 'MAX_OCR_SIDE too large for SCNet';
           print('All imports OK')
           "
+
+      - name: Upload coverage artifact
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml

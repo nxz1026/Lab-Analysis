@@ -39,8 +39,33 @@ include = ["lab_analysis*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --strict-markers"
 filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+    "e2e: end-to-end tests that may call external services",
+    "scnet: tests that mock the SCNet OCR API",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["lab_analysis"]
+omit = [
+    "lab_analysis/__main__.py",
+    "lab_analysis/cleanup_runs.py",
+]
+
+[tool.coverage.report]
+# CI 阈值设为 20%,每次只递增 1%,避免一次性跳出
+fail_under = 20
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "\\.\\.\\.",
+]
 
 [tool.ruff]
 line-length = 100
