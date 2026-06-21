@@ -17,7 +17,8 @@ for name, root in runs.items():
     # 文献解读
     interp_json = root / "03_literature" / "literature_interpretation.json"
     if interp_json.exists():
-        data = json.load(open(interp_json, encoding='utf-8'))
+        with open(interp_json, encoding='utf-8') as f:
+            data = json.load(f)
         conf = data.get('confidence', '?')
         mode = data.get('mode', 'standard')
         print(f"  [⑥] literature_interpreter: mode={mode}, confidence={conf}")
@@ -29,7 +30,8 @@ for name, root in runs.items():
     ]
     for mf in mri_files:
         if mf.exists():
-            data = json.load(open(mf, encoding='utf-8'))
+            with open(mf, encoding='utf-8') as f:
+                data = json.load(f)
             mode = data.get('mode', 'standard')
             n = data.get('analyzed_count', len(data.get('results', [])))
             conf = data.get('results', [{}])[0].get('confidence', '?') if data.get('results') else '?'

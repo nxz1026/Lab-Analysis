@@ -7,6 +7,7 @@ init_dirs.py - 初始化项目目录结构
 """
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # 加载 .env 文件
@@ -36,15 +37,15 @@ def create_directories():
     
     print("=" * 60)
     print("目录结构初始化完成！")
-    print(f"\n完整目录结构:")
+    print("\n完整目录结构:")
     print(f"{WORK_ROOT}/")
-    print(f"├── raw/")
-    print(f"│   ├── Origin_data/          # 放置原始检验报告图片 (lab_*.jpg)")
-    print(f"│   └── patient_{{ID}}/       # 各患者数据（自动生成）")
-    print(f"│       ├── papers/           # 检验报告")
-    print(f"│       └── imaging/          # 医学影像")
-    print(f"└── data/                     # 分析输出（自动生成）")
-    print(f"    └── {{ID}}/{{TIMESTAMP}}/")
+    print("├── raw/")
+    print("│   ├── Origin_data/          # 放置原始检验报告图片 (lab_*.jpg)")
+    print("│   └── patient_{ID}/       # 各患者数据（自动生成）")
+    print("│       ├── papers/           # 检验报告")
+    print("│       └── imaging/          # 医学影像")
+    print("└── data/                     # 分析输出（自动生成）")
+    print("    └── {ID}/{TIMESTAMP}/")
 
 if __name__ == "__main__":
     create_directories()
