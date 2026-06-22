@@ -20,6 +20,27 @@ load_dotenv()
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
+sys.path.insert(
+    0, str(Path(__file__).resolve().parent)
+)  # 允许 import scripts.inject_compile_metadata
+
+# 编译后自动注入 metadata (compiled_at / source_commit),
+# 避免后续被 git checkout / 复制误判 STALE
+from scripts.inject_compile_metadata import inject_metadata as _inject_metadata  # noqa: E402
+
+_PROJECT_ROOT = project_root
+
+
+def _save_and_inject(compiled_module, save_path: Path) -> None:
+    """compiled.save() 后立即注入 metadata,保证 JSON 包含真实编译时间戳。"""
+    compiled_module.save(save_path)
+    try:
+        result = _inject_metadata(save_path)
+        print(
+            f"  [元数据] compiled_at={result.get('compiled_at')} source_commit={result.get('source_commit')}"
+        )
+    except Exception as e:  # 注入失败不影响 compile 主流程
+        print(f"  [警告] metadata 注入失败: {e}")
 
 
 def configure_dspy():
@@ -228,7 +249,7 @@ def compile_literature_interpreter(samples):
     out_dir = project_root / "models" / "dspy"
     out_dir.mkdir(parents=True, exist_ok=True)
     save_path = out_dir / "literature_interpreter_compiled.json"
-    compiled.save(save_path)
+    _save_and_inject(compiled, save_path)
     print(f"[保存] {save_path}")
 
     # 显示 demos
@@ -308,7 +329,7 @@ def compile_final_report(samples):
     out_dir = project_root / "models" / "dspy"
     out_dir.mkdir(parents=True, exist_ok=True)
     save_path = out_dir / "final_report_generator_compiled.json"
-    compiled.save(save_path)
+    _save_and_inject(compiled, save_path)
     print(f"[保存] {save_path}")
 
     for name, pred in compiled.named_predictors():
@@ -352,7 +373,7 @@ def compile_mri_analyzer(samples):
     out_dir = project_root / "models" / "dspy"
     out_dir.mkdir(parents=True, exist_ok=True)
     save_path = out_dir / "mri_analyzer_compiled.json"
-    compiled.save(save_path)
+    _save_and_inject(compiled, save_path)
     print(f"[保存] {save_path}")
 
     for name, pred in compiled.named_predictors():
@@ -393,7 +414,7 @@ def compile_lab_extractor(samples):
     out_dir = project_root / "models" / "dspy"
     out_dir.mkdir(parents=True, exist_ok=True)
     save_path = out_dir / "lab_data_extractor_compiled.json"
-    compiled.save(save_path)
+    _save_and_inject(compiled, save_path)
     print(f"[保存] {save_path}")
 
     for name, pred in compiled.named_predictors():

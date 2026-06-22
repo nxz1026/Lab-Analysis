@@ -30,6 +30,7 @@ Thumbs.db
 
 # Backup files
 *_backup.py
+*.bak
 
 # Pipeline outputs (optional: remove the line below if you version test fixtures)
 data/

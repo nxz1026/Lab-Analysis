@@ -138,6 +138,11 @@
       "python": "3.14",
       "dspy": "3.2.1",
       "cloudpickle": "3.1"
-    }
+    },
+    "compiled_at": "2026-06-12T18:48:24",
+    "source_commit": "83990a9",
+    "latest_src_mtime": "2026-06-22T08:33:56",
+    "injected_at": "2026-06-22T08:47:23",
+    "injector_version": "1.0.0"
   }
 }
