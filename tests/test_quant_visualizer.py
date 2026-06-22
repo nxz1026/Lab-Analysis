@@ -139,7 +139,8 @@ def test_render_metrics_html_basic(sample_metrics):
     assert "data:image/png;base64," in html
     assert "TEST" in html
     assert "<h1>" in html
-    assert "<table>" in html
+    assert "<details>" in html
+    assert "passed-ok" in html
 
 
 def test_render_metrics_html_with_chart_bytes(sample_metrics):
@@ -162,6 +163,9 @@ def test_render_metrics_html_unavailable_table_row(sample_metrics):
     html = render_metrics_html(report)
     assert "N/A" in html
     assert "std_md 缺失" in html
+    # T17: N/A 用 details 折叠块 (passed-skip 样式)
+    assert "<details>" in html
+    assert "passed-skip" in html
 
 
 def test_render_metrics_html_feedback_delta_with_corrections(sample_metrics):
@@ -177,6 +181,9 @@ def test_render_metrics_html_feedback_delta_with_corrections(sample_metrics):
     html = render_metrics_html(report)
     assert "n_corrections=3" in html
     assert "avg_Δ=+0.1000" in html
+    # T17: feedback_delta 应作为 SKIP 折叠块
+    assert "passed-skip" in html
+    assert "<details>" in html
 
 
 # ---- render_trend_chart ----
@@ -208,9 +215,102 @@ def test_render_trend_chart_basic():
     assert len(png) > 1000
 
 
-def test_render_trend_chart_empty_reports():
-    png = render_trend_chart([])
+def test_render_trend_chart_empty_reports_raises():
+    """T18: 空 reports 应抛 ValueError 而不是画空白图."""
+    with pytest.raises(ValueError, match="不能为空"):
+        render_trend_chart([])
+
+
+def test_render_trend_chart_x_key():
+    """T18: x_key 参数控制 X 轴 label 来源."""
+    reports = [
+        {
+            "std_ts": "20260101_100000",
+            "deid": "P1",
+            "metrics": {
+                "entity_f1": {"f1": 0.7},
+                "section_coverage": {"coverage_rate": 0.8},
+                "entity_recall": {"recall_rate": 0.75},
+                "confidence": {"dspy_confidence": 0.8},
+            },
+        },
+        {
+            "std_ts": "20260201_100000",
+            "deid": "P2",
+            "metrics": {
+                "entity_f1": {"f1": 0.85},
+                "section_coverage": {"coverage_rate": 0.95},
+                "entity_recall": {"recall_rate": 0.88},
+                "confidence": {"dspy_confidence": 0.85},
+            },
+        },
+    ]
+    # 默认 x_key='std_ts' 也能成功画
+    png1 = render_trend_chart(reports, x_key="std_ts")
+    assert png1[:8] == b"\x89PNG\r\n\x1a\n"
+    # x_key='deid' 也能成功画
+    png2 = render_trend_chart(reports, x_key="deid")
+    assert png2[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_render_trend_chart_annotations():
+    """T18: 阈值参考线 + 数值标签."""
+    reports = [
+        {
+            "std_ts": "run1",
+            "metrics": {
+                "entity_f1": {"f1": 0.75},
+                "section_coverage": {"coverage_rate": 0.85},
+                "entity_recall": {"recall_rate": 0.80},
+                "confidence": {"dspy_confidence": 0.82},
+            },
+        },
+    ]
+    png = render_trend_chart(reports, figsize=(10, 5))
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    assert len(png) > 1500  # 有标签的图应大一些
+
+
+# ---- render_metrics_html 响应式 + 折叠 (T17) ----
+
+
+def test_render_metrics_html_responsive_css(sample_metrics):
+    """T17: HTML 含 @media 响应式 CSS."""
+    report = {"deid": "RESP", "metrics": sample_metrics}
+    html = render_metrics_html(report)
+    assert "@media (max-width: 720px)" in html
+    assert "font-size" in html.lower()
+
+
+def test_render_metrics_html_dark_mode_css(sample_metrics):
+    """T17: HTML 含 @media (prefers-color-scheme: dark) CSS."""
+    report = {"deid": "DARK", "metrics": sample_metrics}
+    html = render_metrics_html(report)
+    assert "prefers-color-scheme: dark" in html
+
+
+def test_render_metrics_html_details_collapsible(sample_metrics):
+    """T17: 每个 metric 都包在 <details> 里, 可折叠."""
+    report = {"deid": "COL", "metrics": sample_metrics}
+    html = render_metrics_html(report)
+    # 6 metric 全部为 details
+    assert html.count("<details>") == len(sample_metrics)
+    assert html.count("<summary>") == len(sample_metrics)
+    assert html.count("</details>") == len(sample_metrics)
+    # 包含 OK/FAIL/SKIP 状态色类
+    assert "passed-ok" in html
+    # entity_f1 详情应包含 f1 值
+    assert "f1=" in html
+
+
+def test_render_metrics_html_pass_fail_styles(sample_metrics):
+    """T17: 各 metric 根据阈值显示 OK/FAIL 状态色."""
+    # 把 entity_f1 设为低于阈值 → 应 FAIL
+    sample_metrics["entity_f1"]["f1"] = 0.5
+    report = {"deid": "FAIL", "metrics": sample_metrics}
+    html = render_metrics_html(report)
+    assert "passed-fail" in html
+    assert "FAIL" in html
 
 
 # ---- DEFAULT_THRESHOLDS ----
