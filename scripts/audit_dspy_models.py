@@ -8,10 +8,13 @@
 """
 
 import json
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
-ROOT = Path(r"e:\2026Workplace\Code\Lab-Analysis")
+# 仓库根 = scripts/ 上一级,避免硬编码 Windows 路径,CI 可跑
+ROOT = Path(__file__).resolve().parent.parent
 MODELS = ROOT / "models" / "dspy"
 SRC_DIR = ROOT / "lab_analysis" / "dspy_modules"
 
@@ -109,6 +112,10 @@ def main():
     else:
         print("  结论: 全部 UP-TO-DATE,无需重 compile")
     print("=" * 72)
+    # CI 模式:检测到 STALE 退出 1,让 pipeline fail
+    # 默认 Windows 本地无脑运行仍 exit 0 (避免误报),要 CI 行为需 --ci 或 CI env
+    if overall_needs_recompile and ("--ci" in sys.argv or os.environ.get("CI")):
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -45,6 +45,13 @@ def _save_and_inject(compiled_module, save_path: Path) -> None:
 
 def configure_dspy():
     import dspy
+    import litellm
+
+    # 启用 LiteLLM 缓存:相同 prompt 命中本地缓存,跳过 API 调用
+    # 适用于 BootstrapFewShot 反复预测同一训练样本的场景
+    litellm.cache = True
+    # 缓存写入 ~/.litellm_cache.db (SQLite),跨进程共享
+    litellm.cache_dir = str(_PROJECT_ROOT / ".litellm_cache")
 
     api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
@@ -54,9 +61,10 @@ def configure_dspy():
         api_key=api_key,
         api_base="https://api.deepseek.com/v1",
         max_tokens=4000,
+        cache=True,  # DSPy 3.0+ per-LM cache,与 litellm.cache 叠加
     )
     dspy.configure(lm=lm)
-    print("[配置] DSPy LM: deepseek-chat")
+    print("[配置] DSPy LM: deepseek-chat (cache=True, dir=.litellm_cache)")
     return lm
 
 
