@@ -101,8 +101,8 @@ DSPy 优化是否真的比 Standard 模式好？6 个量化指标 + 可视化报
 
 | # | 指标 | 含义 | OK 阈值 |
 |---|------|------|---------|
-| 1 | `entity_f1` | DSPy 实体 vs 标准实体 F1 | ≥ 0.95 |
-| 2 | `section_coverage` | 9 章节覆盖度 | ≥ 0.85 |
+| 1 | `entity_f1` | DSPy 实体 vs 标准实体 F1 | ≥ 0.70 |
+| 2 | `section_coverage` | 9 章节覆盖度 | ≥ 0.80 |
 | 3 | `failure_rate` | 解析失败率（反向） | is_failure = False |
 | 4 | `entity_recall` | 标准实体被 DSPy 召回率 | ≥ 0.70 |
 | 5 | `confidence` | DSPy 置信度校准 | ≥ 0.60 |

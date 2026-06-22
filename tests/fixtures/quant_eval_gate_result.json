@@ -1,9 +1,9 @@
 {
   "overall_pass": true,
-  "n_total": 6,
+  "n_total": 7,
   "n_passed": 5,
   "n_failed": 0,
-  "n_skipped": 1,
+  "n_skipped": 2,
   "source": "CI_FIXTURE_PASS",
   "results": [
     {
@@ -52,6 +52,14 @@
       "actual": null,
       "threshold": null,
       "reason": "无 corrections 记录",
+      "skipped": true
+    },
+    {
+      "metric": "cross_modality_consistency",
+      "passed": true,
+      "actual": null,
+      "threshold": null,
+      "reason": "N/A",
       "skipped": true
     }
   ]

@@ -11,6 +11,7 @@ from lab_analysis.quant_metrics import (
     KEY_ENTITIES,
     count_entity,
     metric_confidence,
+    metric_cross_modality_consistency,
     metric_entity_f1,
     metric_entity_recall_breakdown,
     metric_failure_rate,
@@ -274,3 +275,43 @@ def test_feedback_delta_negative_delta():
     assert result["avg_delta_confidence"] == -0.2
     assert result["max_delta"] == -0.2
     assert result["min_delta"] == -0.2
+
+# -------------------- metric 7: cross_modality_consistency --------------------
+
+
+def test_cross_modality_no_sections():
+    """dspy_sections 缺失 → available=False."""
+    result = metric_cross_modality_consistency(None, None)
+    assert result["available"] is False
+
+
+def test_cross_modality_empty_consistency():
+    """consistency 段缺失 → available=False."""
+    result = metric_cross_modality_consistency({"consistency": ""}, None)
+    assert result["available"] is False
+
+
+def test_cross_modality_full_match():
+    """consistency 段提到 top_hypo + KEY_ENTITIES → accuracy>=0.7."""
+    sections = {"consistency": "影像与检验一致, 慢性胰腺炎诊断成立, hs-CRP 持续升高"}
+    std_scoring = {"top_hypotheses": [{"name": "慢性胰腺炎"}]}
+    result = metric_cross_modality_consistency(sections, std_scoring)
+    assert result["available"] is True
+    assert result["accuracy"] >= 0.7
+    assert result["mentions_top_hypothesis"] is True
+    assert result["mentions_key_entity"] is True
+
+
+def test_cross_modality_only_entity():
+    """只提 key entity → accuracy=0.7 (基础 0.3 + entity 0.4)."""
+    sections = {"consistency": "hs-CRP 升高支持炎症"}
+    result = metric_cross_modality_consistency(sections, None)
+    assert result["accuracy"] == 0.7
+    assert result["mentions_top_hypothesis"] is False
+
+
+def test_cross_modality_only_basic():
+    """段非空但无匹配 → accuracy=0.3."""
+    sections = {"consistency": "影像所见, 无显著异常"}
+    result = metric_cross_modality_consistency(sections, None)
+    assert result["accuracy"] == 0.3
