@@ -45,10 +45,27 @@ def main():
         age_h = (datetime.now().timestamp() - mtime) / 3600
         data = read_compiled(json_path)
         meta = data.get("metadata", {})
-        # dspy 保存的元数据键不固定,几个常见 key 都试一下
-        created_at = (
-            meta.get("created_at") or meta.get("compile_time") or meta.get("timestamp") or "unknown"
-        )
+
+        # 优先读 metadata.compiled_at (由 inject_compile_metadata.py 注入),
+        # 其次 dspy 自己的 created_at,都没有再降级到文件 mtime
+        compiled_at_iso = meta.get("compiled_at")
+        source_commit = meta.get("source_commit", "unknown")
+        latest_src_iso = meta.get("latest_src_mtime")
+        if compiled_at_iso:
+            try:
+                compiled_at_dt = datetime.fromisoformat(compiled_at_iso)
+                compiled_ts = compiled_at_dt.timestamp()
+            except ValueError:
+                compiled_ts = mtime
+                compiled_at_iso = f"{compiled_at_iso} (解析失败)"
+        else:
+            compiled_ts = mtime
+            compiled_at_iso = (
+                meta.get("created_at")
+                or meta.get("compile_time")
+                or meta.get("timestamp")
+                or "unknown"
+            )
 
         # 检查 prompt 文本
         text_blob = json.dumps(data, ensure_ascii=False)
@@ -56,26 +73,31 @@ def main():
         new_hits = [s for s in NEW_ENDPOINTS if s in text_blob]
 
         # 是否源文件改动后未重新 compile
-        stale = latest_src_mtime > mtime
+        stale = latest_src_iso and datetime.fromisoformat(latest_src_iso).timestamp() > compiled_ts
         if stale:
             overall_needs_recompile = True
 
         flag = "STALE " if stale else "OK     "
         print(f"\n  [{flag}] {json_path.name}")
-        print(f"    mtime:      {datetime.fromtimestamp(mtime):%Y-%m-%d %H:%M} ({age_h:.1f}h ago)")
-        print(f"    metadata:   created_at={created_at!r}")
-        print(f"    keys:       {sorted(data.keys())[:8]}...")
+        print(
+            f"    compiled_at:   {compiled_at_iso} (source: {'metadata' if meta.get('compiled_at') else 'mtime/fallback'})"
+        )
+        print(f"    source_commit: {source_commit}")
+        if latest_src_iso:
+            print(f"    src_mtime:     {latest_src_iso}")
+        print(f"    file_age:      {age_h:.1f}h (mtime 仅供参考)")
         print(f"    old refs:   {old_hits if old_hits else '(none)'}")
         print(f"    new refs:   {new_hits if new_hits else '(none)'}")
-        # 显示 prompt signature
-        for sig in ("signature", "predictor", "instructions"):
-            if sig in data:
-                v = data[sig]
-                if isinstance(v, str):
-                    print(f"    {sig:11s}: {v[:100]!r}")
-                elif isinstance(v, dict):
-                    keys = list(v.keys())[:5]
-                    print(f"    {sig:11s}: dict keys={keys}")
+        # 显示 prompt signature (只在 OK 时简化,STALE 时省略)
+        if not stale:
+            for sig in ("signature", "predictor", "instructions"):
+                if sig in data:
+                    v = data[sig]
+                    if isinstance(v, str):
+                        print(f"    {sig:11s}: {v[:100]!r}")
+                    elif isinstance(v, dict):
+                        keys = list(v.keys())[:5]
+                        print(f"    {sig:11s}: dict keys={keys}")
 
     # 3) 结论
     print("\n" + "=" * 72)
