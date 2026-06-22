@@ -43,9 +43,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
+
+# 时间戳目录名格式: YYYYMMDD_HHMMSS (e.g. 20260620_175730)
+# auto_pick 用这个过滤, 防止把"846552421134373347"这种 id_card 误当时间戳选进来
+_TS_DIR_RE = re.compile(r"^\d{8}_\d{6}$")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -77,6 +82,9 @@ def _auto_pick_runs(deid: str) -> tuple[str | None, str | None]:
     dspy_ts: str | None = None
     for ts_dir in sorted(patient_dir.iterdir(), reverse=True):
         if not ts_dir.is_dir():
+            continue
+        # 只接受 YYYYMMDD_HHMMSS 格式目录, 防止 id_card 误选
+        if not _TS_DIR_RE.match(ts_dir.name):
             continue
         rep = ts_dir / "04_reports"
         if not rep.is_dir():

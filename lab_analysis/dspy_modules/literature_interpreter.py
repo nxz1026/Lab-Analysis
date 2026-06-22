@@ -11,6 +11,9 @@ from typing import Dict, List
 
 import dspy
 
+import logging
+
+from ._retry import SafeCallError, make_empty_prediction, safe_predict
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
 
 
@@ -41,13 +44,19 @@ class LiteratureInterpreterModule(dspy.Module):
 
     def forward(self, patient_id: str, analysis_results: dict, literature_results: dict):
         """执行文献解读"""
-
-        # 准备输入数据
-        prediction = self.interpret(
-            patient_id=patient_id,
-            analysis_results=analysis_results,
-            literature_results=literature_results,
-        )
+        try:
+            prediction = safe_predict(
+                self.interpret,
+                module_name="literature_interpreter",
+                patient_id=patient_id,
+                analysis_results=analysis_results,
+                literature_results=literature_results,
+            )
+        except SafeCallError as exc:
+            logging.getLogger(__name__).error(
+                "literature_interpreter fallback to empty prediction: %s", exc
+            )
+            return make_empty_prediction(LiteratureInterpretationSignature)
 
         return dspy.Prediction(
             interpretation=prediction.interpretation, confidence=prediction.confidence

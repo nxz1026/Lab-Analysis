@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 from lab_analysis.llm_client import call_chat, load_api_key
+from lab_analysis.report_schema_models import try_validate_sections
 
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
@@ -195,6 +196,30 @@ def main():
     # 保存结果
     reports_dir = data_dir / "04_reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
+
+    # 强校验 sections (9 章节存在 + 每节 >= 10 字)
+    sections_dict = output.get("sections") or {}
+    if sections_dict:
+        ok, errs = try_validate_sections(sections_dict)
+        if not ok:
+            # 不阻塞, 但记录 warning + 写一份 .validation_errors.json
+            print(f"[校验] 警告: sections 不通过 Pydantic 校验 ({len(errs)} 条)")
+            for line in errs[:5]:
+                print(f"  - {line}")
+            if len(errs) > 5:
+                print(f"  ... 还有 {len(errs) - 5} 条")
+            (reports_dir / "validation_errors.json").write_text(
+                json.dumps(
+                    {"ok": False, "errors": errs, "checked_at": datetime.now().isoformat()},
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+        else:
+            print("[校验] sections 通过 Pydantic 强校验 (9 章节 + 长度)")
+    else:
+        print("[校验] 跳过: output 不含 sections 字段 (standard 模式 raw text)")
 
     output_path = reports_dir / "final_integrated_report.json"
     with open(output_path, "w", encoding="utf-8") as f:
