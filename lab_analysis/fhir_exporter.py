@@ -18,26 +18,29 @@ from lab_analysis.utils import WORK_ROOT
 
 # LOINC 编码映射（常用检验指标 → LOINC code + display）
 _LOINC_MAP: dict[str, tuple[str, str]] = {
-    "WBC":       ("6690-2",  "Leukocytes [Volume] in Blood"),
-    "RBC":       ("789-8",   "Erythrocytes [Volume] in Blood"),
-    "HGB":       ("718-7",   "Hemoglobin [Mass/Volume] in Blood"),
-    "HCT":       ("4544-3",  "Hematocrit [Volume Fraction] of Blood"),
-    "PLT":       ("777-3",   "Platelets [Volume] in Blood"),
-    "MCV":       ("787-2",   "MCV [Volume] in Red Blood Cells"),
-    "MCH":       ("785-6",   "MCH [Mass] in Red Blood Cells"),
-    "MCHC":      ("786-4",   "MCHC [Mass/Volume] in Red Blood Cells"),
-    "RDW-SD":    ("788-0",   "RBC Distribution Width [Entitic volume]"),
-    "RDW-CV":    ("21000-5", "RBC Distribution Width [Ratio]"),
-    "NEUT#":     ("751-8",   "Neutrophils [Cells/Volume] in Blood"),
-    "LYMPH#":    ("731-0",   "Lymphocytes [Cells/Volume] in Blood"),
-    "MONO#":     ("742-7",   "Monocytes [Cells/Volume] in Blood"),
-    "EO#":       ("711-2",   "Eosinophils [Cells/Volume] in Blood"),
-    "BASO#":     ("706-1",   "Basophils [Cells/Volume] in Blood"),
-    "CRP":       ("1988-5",  "C reactive protein [Mass/Volume] in Serum or Plasma"),
-    "hs-CRP":    ("30522-7", "C reactive protein [Mass/Volume] in Serum or Plasma by High sensitivity method"),
-    "PCT":       ("33914-3", "Procalcitonin [Mass/Volume] in Serum or Plasma"),
-    "MPV":       ("32604-5", "Platelet mean volume [Volume]"),
-    "PDW":       ("777-3",   "Platelet distribution width"),
+    "WBC": ("6690-2", "Leukocytes [Volume] in Blood"),
+    "RBC": ("789-8", "Erythrocytes [Volume] in Blood"),
+    "HGB": ("718-7", "Hemoglobin [Mass/Volume] in Blood"),
+    "HCT": ("4544-3", "Hematocrit [Volume Fraction] of Blood"),
+    "PLT": ("777-3", "Platelets [Volume] in Blood"),
+    "MCV": ("787-2", "MCV [Volume] in Red Blood Cells"),
+    "MCH": ("785-6", "MCH [Mass] in Red Blood Cells"),
+    "MCHC": ("786-4", "MCHC [Mass/Volume] in Red Blood Cells"),
+    "RDW-SD": ("788-0", "RBC Distribution Width [Entitic volume]"),
+    "RDW-CV": ("21000-5", "RBC Distribution Width [Ratio]"),
+    "NEUT#": ("751-8", "Neutrophils [Cells/Volume] in Blood"),
+    "LYMPH#": ("731-0", "Lymphocytes [Cells/Volume] in Blood"),
+    "MONO#": ("742-7", "Monocytes [Cells/Volume] in Blood"),
+    "EO#": ("711-2", "Eosinophils [Cells/Volume] in Blood"),
+    "BASO#": ("706-1", "Basophils [Cells/Volume] in Blood"),
+    "CRP": ("1988-5", "C reactive protein [Mass/Volume] in Serum or Plasma"),
+    "hs-CRP": (
+        "30522-7",
+        "C reactive protein [Mass/Volume] in Serum or Plasma by High sensitivity method",
+    ),
+    "PCT": ("33914-3", "Procalcitonin [Mass/Volume] in Serum or Plasma"),
+    "MPV": ("32604-5", "Platelet mean volume [Volume]"),
+    "PDW": ("777-3", "Platelet distribution width"),
 }
 
 
@@ -45,15 +48,21 @@ def _build_patient(deid: str) -> dict:
     return {
         "resourceType": "Patient",
         "id": deid,
-        "identifier": [{
-            "system": "urn:lab-analysis:deid",
-            "value": deid,
-        }],
-        "meta": {"security": [{
-            "code": "DEID",
-            "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
-            "display": "de-identified",
-        }]},
+        "identifier": [
+            {
+                "system": "urn:lab-analysis:deid",
+                "value": deid,
+            }
+        ],
+        "meta": {
+            "security": [
+                {
+                    "code": "DEID",
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+                    "display": "de-identified",
+                }
+            ]
+        },
     }
 
 
@@ -72,11 +81,13 @@ def _build_observation(
         "id": obs_id,
         "status": "final",
         "code": {
-            "coding": [{
-                "system": "http://loinc.org",
-                "code": loinc[0] or "unknown",
-                "display": loinc[1],
-            }],
+            "coding": [
+                {
+                    "system": "http://loinc.org",
+                    "code": loinc[0] or "unknown",
+                    "display": loinc[1],
+                }
+            ],
             "text": metric,
         },
     }
@@ -97,13 +108,9 @@ def _build_observation(
     # 异常判断
     if value is not None and ref_low is not None and ref_high is not None:
         if value > ref_high:
-            obs["interpretation"] = [{
-                "coding": [{"code": "H", "display": "High"}]
-            }]
+            obs["interpretation"] = [{"coding": [{"code": "H", "display": "High"}]}]
         elif value < ref_low:
-            obs["interpretation"] = [{
-                "coding": [{"code": "L", "display": "Low"}]
-            }]
+            obs["interpretation"] = [{"coding": [{"code": "L", "display": "Low"}]}]
     return obs
 
 
@@ -113,25 +120,34 @@ def _build_inflammation_observation(deid: str, labels: list[str], dates: list[st
         return None
     latest_label = labels[-1]
     latest_date = dates[-1] if dates else None
-    status_map = {"急性期": "acute", "过渡期": "transitional", "缓解期": "remission", "未知": "unknown"}
+    status_map = {
+        "急性期": "acute",
+        "过渡期": "transitional",
+        "缓解期": "remission",
+        "未知": "unknown",
+    }
     obs: dict = {
         "resourceType": "Observation",
         "id": f"{deid}-inflammation-status",
         "status": "final",
         "code": {
-            "coding": [{
-                "system": "http://loinc.org",
-                "code": "76437-3",
-                "display": "Inflammation status",
-            }],
+            "coding": [
+                {
+                    "system": "http://loinc.org",
+                    "code": "76437-3",
+                    "display": "Inflammation status",
+                }
+            ],
             "text": "炎症分期",
         },
         "valueCodeableConcept": {
-            "coding": [{
-                "system": "urn:lab-analysis:inflammation-status",
-                "code": status_map.get(latest_label, "unknown"),
-                "display": latest_label,
-            }],
+            "coding": [
+                {
+                    "system": "urn:lab-analysis:inflammation-status",
+                    "code": status_map.get(latest_label, "unknown"),
+                    "display": latest_label,
+                }
+            ],
             "text": latest_label,
         },
     }
@@ -145,10 +161,12 @@ def _build_risk_assessment(deid: str, scoring_card: dict) -> dict:
     hypotheses = scoring_card.get("top_hypotheses", [])
     predictions = []
     for h in hypotheses:
-        predictions.append({
-            "outcome": {"text": h["hypothesis"]},
-            "probabilityDecimal": h["confidence"],
-        })
+        predictions.append(
+            {
+                "outcome": {"text": h["hypothesis"]},
+                "probabilityDecimal": h["confidence"],
+            }
+        )
     ra: dict = {
         "resourceType": "RiskAssessment",
         "id": f"{deid}-scoring-card",
@@ -161,18 +179,21 @@ def _build_risk_assessment(deid: str, scoring_card: dict) -> dict:
     return ra
 
 
-def _build_diagnostic_report(deid: str, obs_ids: list[str], scoring_card: dict,
-                              report_md: str) -> dict:
+def _build_diagnostic_report(
+    deid: str, obs_ids: list[str], scoring_card: dict, report_md: str
+) -> dict:
     dr: dict = {
         "resourceType": "DiagnosticReport",
         "id": f"{deid}-integrated-report",
         "status": "final",
         "code": {
-            "coding": [{
-                "system": "http://loinc.org",
-                "code": "11536-0",
-                "display": "Integrated clinical report",
-            }],
+            "coding": [
+                {
+                    "system": "http://loinc.org",
+                    "code": "11536-0",
+                    "display": "Integrated clinical report",
+                }
+            ],
             "text": "综合临床诊断报告",
         },
         "result": [{"reference": f"Observation/{oid}"} for oid in obs_ids],
@@ -181,17 +202,21 @@ def _build_diagnostic_report(deid: str, obs_ids: list[str], scoring_card: dict,
         top = scoring_card["top_hypotheses"][0]
         dr["conclusion"] = f"{top['hypothesis']}（置信度 {top['confidence']:.0%}）"
         dr["conclusionCodeableConcept"] = {
-            "coding": [{
-                "system": "urn:lab-analysis:hypothesis",
-                "code": top["hypothesis"][:50],
-                "display": top["hypothesis"],
-            }],
+            "coding": [
+                {
+                    "system": "urn:lab-analysis:hypothesis",
+                    "code": top["hypothesis"][:50],
+                    "display": top["hypothesis"],
+                }
+            ],
         }
     if report_md:
-        dr["presentedForm"] = [{
-            "contentType": "text/markdown",
-            "data": base64.b64encode(report_md.encode()).decode(),
-        }]
+        dr["presentedForm"] = [
+            {
+                "contentType": "text/markdown",
+                "data": base64.b64encode(report_md.encode()).decode(),
+            }
+        ]
     return dr
 
 
@@ -246,11 +271,13 @@ def build_fhir_bundle(
             "id": alert_obs_id,
             "status": "final",
             "code": {
-                "coding": [{
-                    "system": "urn:lab-analysis:alert",
-                    "code": alert.get("level", "INFO"),
-                    "display": alert.get("source", "alert"),
-                }],
+                "coding": [
+                    {
+                        "system": "urn:lab-analysis:alert",
+                        "code": alert.get("level", "INFO"),
+                        "display": alert.get("source", "alert"),
+                    }
+                ],
                 "text": f"Alert: {alert.get('level', '')} - {alert.get('metric', '')}",
             },
             "valueString": alert.get("message", ""),
@@ -296,6 +323,7 @@ def _cli():
     args = parser.parse_args()
 
     import os
+
     raw_ts = os.environ.get("ANALYSIS_TS", "")
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
     data_dir = WORK_ROOT / "data" / args.id_card / ts
@@ -303,20 +331,29 @@ def _cli():
     analyzed_dir = data_dir / "02_analyzed"
     reports_dir = data_dir / "04_reports"
 
-    analysis_results = json.loads(
-        (analyzed_dir / "analysis_results.json").read_text(encoding="utf-8")
-    ) if (analyzed_dir / "analysis_results.json").exists() else {}
+    analysis_results = (
+        json.loads((analyzed_dir / "analysis_results.json").read_text(encoding="utf-8"))
+        if (analyzed_dir / "analysis_results.json").exists()
+        else {}
+    )
 
-    scoring_card = json.loads(
-        (reports_dir / "scoring_card.json").read_text(encoding="utf-8")
-    ) if (reports_dir / "scoring_card.json").exists() else {}
+    scoring_card = (
+        json.loads((reports_dir / "scoring_card.json").read_text(encoding="utf-8"))
+        if (reports_dir / "scoring_card.json").exists()
+        else {}
+    )
 
-    alerts = json.loads(
-        (analyzed_dir / "alerts.json").read_text(encoding="utf-8")
-    ) if (analyzed_dir / "alerts.json").exists() else []
+    alerts = (
+        json.loads((analyzed_dir / "alerts.json").read_text(encoding="utf-8"))
+        if (analyzed_dir / "alerts.json").exists()
+        else []
+    )
 
-    report_md = (reports_dir / "final_integrated_report.md").read_text(encoding="utf-8") \
-        if (reports_dir / "final_integrated_report.md").exists() else ""
+    report_md = (
+        (reports_dir / "final_integrated_report.md").read_text(encoding="utf-8")
+        if (reports_dir / "final_integrated_report.md").exists()
+        else ""
+    )
 
     # 从 lab_metrics.json 读取检验数据
     lab_metrics = []
@@ -326,13 +363,16 @@ def _cli():
         lab_metrics = lm_data.get("reports", lm_data.get("records", []))
 
     bundle = build_fhir_bundle(
-        args.id_card, analysis_results, scoring_card, alerts, report_md, lab_metrics,
+        args.id_card,
+        analysis_results,
+        scoring_card,
+        alerts,
+        report_md,
+        lab_metrics,
     )
 
     out_path = args.out or str(reports_dir / "fhir_bundle.json")
-    Path(out_path).write_text(
-        json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    Path(out_path).write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[OK] FHIR Bundle 已保存: {out_path}")
 
 

@@ -7,6 +7,7 @@ try:
     from pathlib import Path
 
     from dotenv import load_dotenv
+
     project_root = Path(__file__).resolve().parent.parent
     env_file = project_root / ".env"
     if env_file.exists():
@@ -17,6 +18,7 @@ except ImportError:
 # 跨平台适配：修复 Windows 控制台编码（中文输出）
 try:
     from lab_analysis.utils import fix_console_encoding
+
     fix_console_encoding()
 except Exception:
     pass

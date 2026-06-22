@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 上腹部MRI报告印证分析 - DSPy 增强版
@@ -31,12 +31,12 @@ REPORT_FINDINGS = """【纸质报告关键发现 - 2026-04-11，检查号Y000022
 
 # 6个代表性序列：seq_XX → (解剖部位描述, 选取逻辑, DICOM文件后缀关键词)
 SEQ_SELECTIONS = [
-    ("seq_01", "肝胆胰脾T2加权横断面",     "T2WI横断面，代表层面"),
-    ("seq_02", "T2/扩散加权（DWI）",         "DWI序列，肝右后叶区域"),
-    ("seq_06", "动脉期增强扫描",             "动脉期，胰头区域"),
-    ("seq_09", "门脉期增强扫描",             "门脉期，肝内胆管/胆囊"),
-    ("seq_12", "胰胆管薄层MRCP",            "MRCP，胰管+胆管"),
-    ("seq_18", "延迟期/肾脏层面",            "延迟期，右肾区域"),
+    ("seq_01", "肝胆胰脾T2加权横断面", "T2WI横断面，代表层面"),
+    ("seq_02", "T2/扩散加权（DWI）", "DWI序列，肝右后叶区域"),
+    ("seq_06", "动脉期增强扫描", "动脉期，胰头区域"),
+    ("seq_09", "门脉期增强扫描", "门脉期，肝内胆管/胆囊"),
+    ("seq_12", "胰胆管薄层MRCP", "MRCP，胰管+胆管"),
+    ("seq_18", "延迟期/肾脏层面", "延迟期，右肾区域"),
 ]
 
 PROMPT_TEMPLATE = """你是一位资深放射科医生。请仔细分析这张上腹部MRI影像，并结合以下【纸质报告描述】进行印证分析。
@@ -67,14 +67,15 @@ def load_dicom_image(path: Path) -> str:
 
         import pydicom
         from PIL import Image
+
         dcm = pydicom.dcmread(str(path))
         img = dcm.pixel_array
         # 归一化到0-255
-        img = ((img - img.min()) / (img.max() - img.min()) * 255).astype('uint8')
+        img = ((img - img.min()) / (img.max() - img.min()) * 255).astype("uint8")
         pil_img = Image.fromarray(img)
         buffer = io.BytesIO()
         pil_img.save(buffer, format="JPEG")
-        return base64.b64encode(buffer.getvalue()).decode('utf-8')
+        return base64.b64encode(buffer.getvalue()).decode("utf-8")
     except Exception as e:
         print(f"  [失败] DICOM读取失败: {e}")
         return None
@@ -105,13 +106,15 @@ def analyze_single_dspy(image_b64: str, seq_name: str, seq_desc: str, finding: s
     """DSPy 模式: 使用优化的 MRI 分析模块"""
     try:
         from lab_analysis.dspy_modules import run_dspy_mri_analysis
-        
+
         # 构建临床背景
         clinical_context = "男，38岁，胰管支架置入后复查，腹痛待查，检查编号Y00002207707"
-        
+
         # 编译模型路径
-        model_path = str(Path(__file__).parent.parent / "models" / "dspy" / "mri_analyzer_compiled.json")
-        
+        model_path = str(
+            Path(__file__).parent.parent / "models" / "dspy" / "mri_analyzer_compiled.json"
+        )
+
         # 运行 DSPy 分析
         result = run_dspy_mri_analysis(
             image_desc=f"{seq_name} — {seq_desc}",
@@ -119,31 +122,31 @@ def analyze_single_dspy(image_b64: str, seq_name: str, seq_desc: str, finding: s
             clinical_context=clinical_context,
             model_path=model_path,
         )
-        
+
         # 格式化输出
         formatted_analysis = f"""【解剖定位】
-{result['anatomical_localization']}
+{result["anatomical_localization"]}
 
 【影像所见】
-{result['imaging_findings']}
+{result["imaging_findings"]}
 
 【印证评价】
-{result['consistency_evaluation']}
+{result["consistency_evaluation"]}
 
 【补充发现】
-{result['additional_findings']}
+{result["additional_findings"]}
 
-【置信度】{result['confidence_score']:.2f}"""
-        
+【置信度】{result["confidence_score"]:.2f}"""
+
         return {
             "status": "success",
             "seq_name": seq_name,
             "seq_desc": seq_desc,
             "analysis": formatted_analysis,
             "mode": "dspy_optimized",
-            "confidence": result['confidence_score']
+            "confidence": result["confidence_score"],
         }
-        
+
     except Exception as e:
         print(f"  [警告] DSPy 分析失败，回退到标准模式: {e}")
         # 回退到标准模式
@@ -152,6 +155,7 @@ def analyze_single_dspy(image_b64: str, seq_name: str, seq_desc: str, finding: s
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="上腹部MRI报告印证分析 - DSPy 增强版")
     parser.add_argument("--id-card", required=True)
     parser.add_argument("--use-dspy", action="store_true", help="使用 DSPy 优化版本")
@@ -193,8 +197,10 @@ def main():
         # 选取中间帧作为代表
         mid_idx = len(dcm_files) // 2
         selected_file = sorted(dcm_files)[mid_idx]
-        
-        print(f"[图片] 选取: {seq_id}/{selected_file.name} ({seq_desc}) 第{mid_idx+1}/{len(dcm_files)}帧")
+
+        print(
+            f"[图片] 选取: {seq_id}/{selected_file.name} ({seq_desc}) 第{mid_idx + 1}/{len(dcm_files)}帧"
+        )
 
         # 加载图像
         image_b64 = load_dicom_image(selected_file)
@@ -208,31 +214,33 @@ def main():
                 result = analyze_single_dspy(image_b64, seq_name, seq_desc, REPORT_FINDINGS)
             else:
                 result = analyze_single_standard(image_b64, seq_name, seq_desc, REPORT_FINDINGS)
-            
+
             elapsed = time.time() - start_time
             print(f"  [成功] 完成 (耗时: {elapsed:.1f}s)")
             results.append(result)
-            
+
         except Exception as e:
             print(f"  [失败] 分析失败: {e}")
-            results.append({
-                "status": "error",
-                "seq_name": seq_name,
-                "seq_desc": seq_desc,
-                "error": str(e)
-            })
+            results.append(
+                {"status": "error", "seq_name": seq_name, "seq_desc": seq_desc, "error": str(e)}
+            )
 
     # 保存结果
     output_path = lit_dir / "mri_report_check_results.json"
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump({
-            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "patient_id": args.id_card,
-            "mode": "dspy_optimized" if args.use_dspy else "standard",
-            "total_sequences": len(SEQ_SELECTIONS),
-            "analyzed_count": len([r for r in results if r["status"] == "success"]),
-            "results": results
-        }, f, ensure_ascii=False, indent=2)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "patient_id": args.id_card,
+                "mode": "dspy_optimized" if args.use_dspy else "standard",
+                "total_sequences": len(SEQ_SELECTIONS),
+                "analyzed_count": len([r for r in results if r["status"] == "success"]),
+                "results": results,
+            },
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
 
     # 保存 prompts 到独立目录
     prompts_dir = lit_dir / "dspy_prompts"
@@ -252,9 +260,11 @@ def main():
     print(f"  总序列数: {len(SEQ_SELECTIONS)}")
     print(f"  成功分析: {len([r for r in results if r['status'] == 'success'])}")
     print(f"  失败: {len([r for r in results if r['status'] == 'error'])}")
-    
+
     if args.use_dspy:
-        avg_confidence = sum(r.get('confidence', 0) for r in results if r['status'] == 'success') / max(len([r for r in results if r['status'] == 'success']), 1)
+        avg_confidence = sum(
+            r.get("confidence", 0) for r in results if r["status"] == "success"
+        ) / max(len([r for r in results if r["status"] == "success"]), 1)
         print(f"  平均置信度: {avg_confidence:.2f}")
 
     print(f"\n[保存] 结果已保存: {output_path}")

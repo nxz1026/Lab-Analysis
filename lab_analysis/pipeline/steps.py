@@ -91,15 +91,16 @@ def pick_python_exe() -> str:
     return sys.executable
 
 
-def run_step(name: str, module: str, extra_args: list[str] | None = None,
-             env: dict | None = None) -> int:
+def run_step(
+    name: str, module: str, extra_args: list[str] | None = None, env: dict | None = None
+) -> int:
     """以 python -m lab_analysis.<module> 运行单步。"""
     root = Path(__file__).resolve().parent.parent.parent
     python = pick_python_exe()
     cmd = [python, "-m", f"lab_analysis.{module}"]
     if extra_args:
         cmd.extend(extra_args)
-    print(f"\n{'='*60}\n[STEP] {name}\n命令: {' '.join(cmd)}\n{'='*60}")
+    print(f"\n{'=' * 60}\n[STEP] {name}\n命令: {' '.join(cmd)}\n{'=' * 60}")
 
     full_env = dict(os.environ)
     if env:
@@ -109,15 +110,21 @@ def run_step(name: str, module: str, extra_args: list[str] | None = None,
 
     try:
         result = subprocess.run(
-            cmd, cwd=str(root), env=full_env,
-            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            cmd,
+            cwd=str(root),
+            env=full_env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
         )
         if result.returncode != 0:
             log_error(
                 message=f"Pipeline 步骤 '{name}' 执行失败",
                 exc_info=None,
                 context={
-                    "module": module, "command": " ".join(cmd),
+                    "module": module,
+                    "command": " ".join(cmd),
                     "returncode": result.returncode,
                     "error": (result.stderr or "Unknown error")[:500],
                 },

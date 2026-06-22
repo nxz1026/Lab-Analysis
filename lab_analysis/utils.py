@@ -25,6 +25,7 @@ try:
         stop_after_attempt,
         wait_exponential,
     )
+
     HAS_TENACITY = True
 except ImportError:
     HAS_TENACITY = False
@@ -49,10 +50,10 @@ def fix_console_encoding():
     if not is_windows():
         return
     try:
-        if hasattr(sys.stdout, 'reconfigure'):
-            sys.stdout.reconfigure(encoding='utf-8')
-        if hasattr(sys.stderr, 'reconfigure'):
-            sys.stderr.reconfigure(encoding='utf-8')
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8")
     except Exception:
         pass
 
@@ -97,12 +98,12 @@ def get_project_root() -> Path:
 def get_env_var(name: str, default=None, required: bool = False):
     """
     获取环境变量
-    
+
     Args:
         name: 环境变量名
         default: 默认值
         required: 是否必需，如果为True且变量不存在则抛出异常
-    
+
     Returns:
         环境变量值
     """
@@ -115,31 +116,31 @@ def get_env_var(name: str, default=None, required: bool = False):
 def validate_chinese_id(id_number: str) -> bool:
     """
     验证中国大陆身份证号格式
-    
+
     Args:
         id_number: 身份证号
-    
+
     Returns:
         是否有效
     """
     if not id_number:
         return False
-    
+
     # 18位身份证：17位数字 + 1位数字或X
-    pattern_18 = r'^\d{17}[\dXx]$'
+    pattern_18 = r"^\d{17}[\dXx]$"
     # 15位身份证：15位数字
-    pattern_15 = r'^\d{15}$'
-    
+    pattern_15 = r"^\d{15}$"
+
     return bool(re.match(pattern_18, id_number) or re.match(pattern_15, id_number))
 
 
 def parse_metadata_table(text: str) -> dict:
     """
     解析 Markdown 表格格式的 metadata（| 字段 | 值 |）
-    
+
     Args:
         text: metadata 文本
-    
+
     Returns:
         解析后的字典
     """
@@ -160,22 +161,24 @@ def parse_metadata_table(text: str) -> dict:
 def append_to_json_log(log_file: Path, record: dict):
     """
     追加记录到JSON日志文件
-    
+
     Args:
         log_file: 日志文件路径
         record: 要追加的记录
     """
     log = json.loads(log_file.read_text(encoding="utf-8")) if log_file.exists() else {"records": []}
-    
+
     log["records"].append(record)
     log["last_updated"] = datetime.now().isoformat()
     log_file.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def print_progress(current: int, total: int, prefix: str = "", suffix: str = "", bar_length: int = 30):
+def print_progress(
+    current: int, total: int, prefix: str = "", suffix: str = "", bar_length: int = 30
+):
     """
     打印进度条
-    
+
     Args:
         current: 当前进度
         total: 总数量
@@ -197,7 +200,7 @@ def print_progress(current: int, total: int, prefix: str = "", suffix: str = "",
 def ensure_dirs(*dirs: Path):
     """
     确保目录存在，不存在则创建
-    
+
     Args:
         dirs: 目录路径列表
     """
@@ -210,21 +213,21 @@ def api_retry_decorator(
     min_wait: float = 1.0,
     max_wait: float = 60.0,
     retry_on_exceptions: tuple = (Exception,),
-    description: str = "API调用"
+    description: str = "API调用",
 ):
     """
     API 重试装饰器 - 使用指数退避策略
-    
+
     Args:
         max_attempts: 最大重试次数（包括首次尝试）
         min_wait: 最小等待时间（秒）
         max_wait: 最大等待时间（秒）
         retry_on_exceptions: 需要重试的异常类型元组
         description: API 描述（用于日志）
-    
+
     Returns:
         装饰器函数
-    
+
     Example:
         @api_retry_decorator(max_attempts=3, description="智谱AI")
         def call_zhipu_api(...):
@@ -234,8 +237,9 @@ def api_retry_decorator(
         # 如果 tenacity 未安装，返回原函数
         def dummy_decorator(func):
             return func
+
         return dummy_decorator
-    
+
     def decorator(func: Callable) -> Callable:
         return retry(
             stop=stop_after_attempt(max_attempts),
@@ -243,5 +247,5 @@ def api_retry_decorator(
             retry=retry_if_exception_type(retry_on_exceptions),
             reraise=True,
         )(func)
-    
+
     return decorator

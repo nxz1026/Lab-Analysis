@@ -58,13 +58,13 @@ _PROVIDERS = {
     },
 }
 _DASHSCOPE_MULTIMODAL_URL = (
-    "https://dashscope.aliyuncs.com/api/v1/services/aigc/"
-    "multimodal-generation/generation"
+    "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
 )
 _USER_AGENT = "Hermes-Lab-Analyzer/1.0"
 
 
 # ── 密钥读取 ────────────────────────────────────────────────────────────
+
 
 def load_api_key(env_var: str, *, required: bool = True) -> Optional[str]:
     """读取 API 密钥。
@@ -80,22 +80,19 @@ def load_api_key(env_var: str, *, required: bool = True) -> Optional[str]:
     if val:
         return val
     if required:
-        raise RuntimeError(
-            f"未找到环境变量 {env_var}。请在 .env 或运行环境中配置。"
-        )
+        raise RuntimeError(f"未找到环境变量 {env_var}。请在 .env 或运行环境中配置。")
     return None
 
 
 def _resolve_provider(provider: str) -> dict:
     """根据 provider 名取配置，并校验。"""
     if provider not in _PROVIDERS:
-        raise ValueError(
-            f"未知 provider: {provider!r}，可选: {list(_PROVIDERS)}"
-        )
+        raise ValueError(f"未知 provider: {provider!r}，可选: {list(_PROVIDERS)}")
     return _PROVIDERS[provider]
 
 
 # ── OpenAI 兼容 chat 调用（DeepSeek / 智谱 GLM-4V）─────────────────────
+
 
 def call_chat(
     provider: str,
@@ -138,16 +135,18 @@ def call_chat(
 
     if image_b64:
         # 多模态：OpenAI image_url 形态（GLM-4V 用此）
-        messages.append({
-            "role": "user",
-            "content": [
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"},
-                },
-                {"type": "text", "text": user_prompt},
-            ],
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"},
+                    },
+                    {"type": "text", "text": user_prompt},
+                ],
+            }
+        )
     else:
         messages.append({"role": "user", "content": user_prompt})
 
@@ -178,21 +177,24 @@ def call_chat(
     return data.get("choices", [{}])[0].get("message", {}).get("content", "")
 
 
-def call_chat_with_retry(provider: str, *, max_attempts: int = 3,
-                         min_wait: float = 2.0, max_wait: float = 30.0,
-                         **kwargs) -> str:
+def call_chat_with_retry(
+    provider: str, *, max_attempts: int = 3, min_wait: float = 2.0, max_wait: float = 30.0, **kwargs
+) -> str:
     """``call_chat`` 的指数退避重试封装（tenacity 缺失时为透传）。
 
     保留与原 ``literature_interpreter.call_deepseek`` 一致的默认退避参数。
     """
     decorated = api_retry_decorator(
-        max_attempts=max_attempts, min_wait=min_wait, max_wait=max_wait,
+        max_attempts=max_attempts,
+        min_wait=min_wait,
+        max_wait=max_wait,
         description=f"{provider} chat",
     )(lambda: call_chat(provider, **kwargs))
     return decorated()
 
 
 # ── DashScope 原生 multimodal 调用（qwen-vl-plus）───────────────────────
+
 
 def call_dashscope_multimodal(
     *,
@@ -240,12 +242,7 @@ def call_dashscope_multimodal(
     )
     resp.raise_for_status()
     data = resp.json()
-    return (
-        data.get("output", {})
-        .get("choices", [{}])[0]
-        .get("message", {})
-        .get("content", "")
-    )
+    return data.get("output", {}).get("choices", [{}])[0].get("message", {}).get("content", "")
 
 
 # ── 辅助：从可能含 ```json 代码块标记的文本中提取 JSON ──────────────────

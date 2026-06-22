@@ -75,6 +75,7 @@ def filter_literature(
 
     # 全量打分（不只 top_k）
     from lab_analysis.evidence_grader import grade_paper
+
     all_graded = [grade_paper(p, scenario=scenario, topic=topic) for p in papers]
     all_graded.sort(key=lambda x: x.score, reverse=True)
 
@@ -90,7 +91,7 @@ def filter_literature(
         filtered_papers.append(merged)
 
     # 踢出分类汇总
-    kicked = all_graded[len(kept):] if top_k else []
+    kicked = all_graded[len(kept) :] if top_k else []
     kicked_summary = _classify_kicked(kicked, pmid_to_paper)
 
     result = {
@@ -106,9 +107,7 @@ def filter_literature(
     # 输出
     if output_path is None:
         output_path = inp.parent / f"{inp.stem}.filtered.json"
-    Path(output_path).write_text(
-        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    Path(output_path).write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     result["output_file"] = str(output_path)
     return result
 
@@ -119,9 +118,14 @@ def _classify_kicked(kicked: list[GradedPaper], pmid_to_paper: dict) -> dict:
     for g in kicked:
         original = pmid_to_paper.get(g.pmid, {})
         # 解析失败：缺标题或标题是噪声（IRB/作者列表）
-        if not original.get("title") or "approval" in original.get("title", "").lower() \
-                or "author" in original.get("title", "").lower()[:30]:
-            summary["parse_failed"].append({"pmid": g.pmid, "title": g.title[:60], "score": g.score})
+        if (
+            not original.get("title")
+            or "approval" in original.get("title", "").lower()
+            or "author" in original.get("title", "").lower()[:30]
+        ):
+            summary["parse_failed"].append(
+                {"pmid": g.pmid, "title": g.title[:60], "score": g.score}
+            )
             continue
         # 主题偏移：topic_match 极低
         if g.subscores.get("topic_match", 0) < 0.3:
@@ -161,15 +165,23 @@ def _resolve_output_path(args, inp: Path) -> Path:
 
 def _cli():
     parser = argparse.ArgumentParser(description="文献 evidence-grading 二次筛选")
-    parser.add_argument("--in", dest="inp", default=None,
-                        help="literature_results.json 路径（与 --id-card 二选一）")
-    parser.add_argument("--id-card", default=None,
-                        help="脱敏 ID（pipeline 模式，配合 ANALYSIS_TS 环境变量自动定位路径）")
-    parser.add_argument("--scenario", default="differential_diagnosis",
-                        choices=["early_diagnosis", "differential_diagnosis", "prognosis"])
+    parser.add_argument(
+        "--in", dest="inp", default=None, help="literature_results.json 路径（与 --id-card 二选一）"
+    )
+    parser.add_argument(
+        "--id-card",
+        default=None,
+        help="脱敏 ID（pipeline 模式，配合 ANALYSIS_TS 环境变量自动定位路径）",
+    )
+    parser.add_argument(
+        "--scenario",
+        default="differential_diagnosis",
+        choices=["early_diagnosis", "differential_diagnosis", "prognosis"],
+    )
     parser.add_argument("--topic", default="sepsis_gn_gp", choices=list(TOPIC_KEYWORDS.keys()))
-    parser.add_argument("--top-k", type=int, default=None,
-                        help="保留前 k 篇；不指定则全部排序但踢出最低分")
+    parser.add_argument(
+        "--top-k", type=int, default=None, help="保留前 k 篇；不指定则全部排序但踢出最低分"
+    )
     parser.add_argument("--out", default=None, help="输出 JSON 路径")
     args = parser.parse_args()
 

@@ -1,10 +1,11 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 qwen_vl_report_check.py
 上腹部MRI报告印证分析 — 每个部位选1-2张代表性DICOM图
 用法: python qwen_vl_report_check.py --id-card <脱敏ID>
 """
+
 import base64
 import json
 import os
@@ -30,12 +31,12 @@ REPORT_FINDINGS = """【纸质报告关键发现 - 2026-04-11，检查号Y000022
 # 6个代表性序列：seq_XX → (解剖部位描述, 选取逻辑, DICOM文件后缀关键词)
 # 从19个序列中选出最相关的6个
 SEQ_SELECTIONS = [
-    ("seq_01", "肝胆胰脾T2加权横断面",     "T2WI横断面，代表层面"),
-    ("seq_02", "T2/扩散加权（DWI）",         "DWI序列，肝右后叶区域"),
-    ("seq_06", "动脉期增强扫描",             "动脉期，胰头区域"),
-    ("seq_09", "门脉期增强扫描",             "门脉期，肝内胆管/胆囊"),
-    ("seq_12", "胰胆管薄层MRCP",            "MRCP，胰管+胆管"),
-    ("seq_18", "延迟期/肾脏层面",            "延迟期，右肾区域"),
+    ("seq_01", "肝胆胰脾T2加权横断面", "T2WI横断面，代表层面"),
+    ("seq_02", "T2/扩散加权（DWI）", "DWI序列，肝右后叶区域"),
+    ("seq_06", "动脉期增强扫描", "动脉期，胰头区域"),
+    ("seq_09", "门脉期增强扫描", "门脉期，肝内胆管/胆囊"),
+    ("seq_12", "胰胆管薄层MRCP", "MRCP，胰管+胆管"),
+    ("seq_18", "延迟期/肾脏层面", "延迟期，右肾区域"),
 ]
 
 PROMPT_TEMPLATE = """你是一位资深放射科医生。请仔细分析这张上腹部MRI影像，并结合以下【纸质报告描述】进行印证分析。
@@ -66,6 +67,7 @@ def load_dicom_image(path: Path) -> str:
 
         import pydicom
         from PIL import Image
+
         dcm = pydicom.dcmread(str(path))
         img = dcm.pixel_array
         # 归一化到0-255
@@ -97,6 +99,7 @@ def analyze_single(image_b64: str, seq_name: str, seq_desc: str, finding: str) -
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="上腹部MRI报告印证分析")
     parser.add_argument("--id-card", required=True)
     args = parser.parse_args()
@@ -134,9 +137,12 @@ def main():
             continue
 
         import random
+
         idx = random.randint(0, len(dcm_files) - 1)
         img_path = dcm_files[idx]
-        print(f"[图片] 选取: {seq_dir_name}/{img_path.name} ({seq_desc}) 第{idx+1}/{len(dcm_files)}帧")
+        print(
+            f"[图片] 选取: {seq_dir_name}/{img_path.name} ({seq_desc}) 第{idx + 1}/{len(dcm_files)}帧"
+        )
 
         try:
             b64 = load_dicom_image(img_path)
@@ -151,7 +157,9 @@ def main():
             results.append(r)
             print("  [成功] 完成")
         except Exception as e:
-            results.append({"status": "error", "seq_name": seq_dir_name, "seq_desc": seq_desc, "error": str(e)})
+            results.append(
+                {"status": "error", "seq_name": seq_dir_name, "seq_desc": seq_desc, "error": str(e)}
+            )
             print(f"  [失败] 失败: {e}")
 
         time.sleep(1)
@@ -159,12 +167,17 @@ def main():
     # 保存
     output_path = lit_dir / "mri_report_check_results.json"
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump({
-            "test_date": datetime.now().isoformat(),
-            "model": "qwen-vl-plus",
-            "report_findings": REPORT_FINDINGS,
-            "results": results
-        }, f, ensure_ascii=False, indent=2)
+        json.dump(
+            {
+                "test_date": datetime.now().isoformat(),
+                "model": "qwen-vl-plus",
+                "report_findings": REPORT_FINDINGS,
+                "results": results,
+            },
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
 
     print(f"\n[保存] 结果已保存: {output_path}")
 
@@ -187,9 +200,9 @@ def main():
                 f.write(f"## {r['seq_name']} — [失败] 失败: {r.get('error', '')}\n\n")
     print(f"[报告] Markdown 已保存: {md_path}")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("[摘要] 分析摘要")
-    print("="*60)
+    print("=" * 60)
     for r in results:
         if r["status"] == "success":
             print(f"\n[成功] {r['seq_name']} ({r['seq_desc']})")

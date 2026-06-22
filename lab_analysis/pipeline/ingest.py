@@ -20,37 +20,44 @@ def auto_ingest_from_origin_data(
         print(f"[INFO] Origin_data 目录不存在: {origin_data_dir}")
         return False
 
-    lab_images  = list(origin_data_dir.glob("lab_*.jpg")) + list(origin_data_dir.glob("lab_*.png"))
-    mri_images  = list(origin_data_dir.glob("mri_*.jpg"))  + list(origin_data_dir.glob("mri_*.png"))
-    dicom_zips  = list(origin_data_dir.glob("export_*.zip")) + list(origin_data_dir.glob("dicom_*.zip"))
-    dcm_files   = list(origin_data_dir.glob("*.dcm"))
+    lab_images = list(origin_data_dir.glob("lab_*.jpg")) + list(origin_data_dir.glob("lab_*.png"))
+    mri_images = list(origin_data_dir.glob("mri_*.jpg")) + list(origin_data_dir.glob("mri_*.png"))
+    dicom_zips = list(origin_data_dir.glob("export_*.zip")) + list(
+        origin_data_dir.glob("dicom_*.zip")
+    )
+    dcm_files = list(origin_data_dir.glob("*.dcm"))
 
     if not any([lab_images, mri_images, dicom_zips, dcm_files]):
         print("[INFO] Origin_data 目录中没有找到任何可处理的文件")
         return False
 
-    print(f"\n{'='*60}\n[STEP ①] 自动数据摄入 - 从 Origin_data 目录\n{'='*60}")
-    print(f"发现 {len(lab_images)} 张检验报告图片, {len(mri_images)} 张MRI报告图片, "
-          f"{len(dicom_zips)} 个DICOM压缩包, {len(dcm_files)} 个DICOM文件")
+    print(f"\n{'=' * 60}\n[STEP ①] 自动数据摄入 - 从 Origin_data 目录\n{'=' * 60}")
+    print(
+        f"发现 {len(lab_images)} 张检验报告图片, {len(mri_images)} 张MRI报告图片, "
+        f"{len(dicom_zips)} 个DICOM压缩包, {len(dcm_files)} 个DICOM文件"
+    )
 
     total_success = 0
 
     # ── 检验报告图片 ─────────────────────────────────────────
     if lab_images:
-        print(f"\n{'─'*60}\n【检验报告处理】\n{'─'*60}")
+        print(f"\n{'─' * 60}\n【检验报告处理】\n{'─' * 60}")
         for idx, img_path in enumerate(lab_images, 1):
             print(f"\n[{idx}/{len(lab_images)}] 处理: {img_path.name}")
             try:
                 filename = img_path.stem
-                parts = filename.split('_')
-                extracted_date = next((p for p in parts if '-' in p and len(p) == 10), None)
-                extracted_type = next((p for p in parts if p in ['outpatient', 'inpatient']), None)
+                parts = filename.split("_")
+                extracted_date = next((p for p in parts if "-" in p and len(p) == 10), None)
+                extracted_type = next((p for p in parts if p in ["outpatient", "inpatient"]), None)
                 final_date = report_date or extracted_date
                 final_type = report_type or extracted_type or "outpatient"
                 print(f"  报告日期: {final_date or '未指定'}\n  报告类型: {final_type}")
 
                 from lab_analysis import extract_lab_data
-                args_lab = argparse.Namespace(image=str(img_path), id_card=id_card, no_interactive=no_interactive)
+
+                args_lab = argparse.Namespace(
+                    image=str(img_path), id_card=id_card, no_interactive=no_interactive
+                )
                 if extract_lab_data.main_with_args(args_lab):
                     total_success += 1
                     print("  [OK] 摄入成功")
@@ -62,17 +69,20 @@ def auto_ingest_from_origin_data(
 
     # ── MRI 报告图片 ─────────────────────────────────────────
     if mri_images:
-        print(f"\n{'─'*60}\n【MRI报告处理】\n{'─'*60}")
+        print(f"\n{'─' * 60}\n【MRI报告处理】\n{'─' * 60}")
         for idx, img_path in enumerate(mri_images, 1):
             print(f"\n[{idx}/{len(mri_images)}] 处理: {img_path.name}")
             try:
-                parts = img_path.stem.split('_')
-                extracted_date = next((p for p in parts if '-' in p and len(p) == 10), None)
+                parts = img_path.stem.split("_")
+                extracted_date = next((p for p in parts if "-" in p and len(p) == 10), None)
                 final_date = report_date or extracted_date
                 print(f"  报告日期: {final_date or '未指定'}")
 
                 from lab_analysis import ingest_data
-                if ingest_data.ingest_mri_report(report_path=img_path, patient_id=id_card, report_date=final_date):
+
+                if ingest_data.ingest_mri_report(
+                    report_path=img_path, patient_id=id_card, report_date=final_date
+                ):
                     total_success += 1
                     print("  [OK] MRI报告摄入成功")
                 else:
@@ -83,17 +93,20 @@ def auto_ingest_from_origin_data(
 
     # ── DICOM 压缩包 ─────────────────────────────────────────
     if dicom_zips:
-        print(f"\n{'─'*60}\n【DICOM压缩包处理】\n{'─'*60}")
+        print(f"\n{'─' * 60}\n【DICOM压缩包处理】\n{'─' * 60}")
         for idx, zip_path in enumerate(dicom_zips, 1):
             print(f"\n[{idx}/{len(dicom_zips)}] 处理: {zip_path.name}")
             try:
-                parts = zip_path.stem.split('_')
-                extracted_date = next((p for p in parts if '-' in p and len(p) == 10), None)
+                parts = zip_path.stem.split("_")
+                extracted_date = next((p for p in parts if "-" in p and len(p) == 10), None)
                 final_date = report_date or extracted_date
                 print(f"  报告日期: {final_date or '未指定'}")
 
                 from lab_analysis import ingest_data
-                if ingest_data.ingest_mri_dicom(zip_path=zip_path, patient_id=id_card, report_date=final_date):
+
+                if ingest_data.ingest_mri_dicom(
+                    zip_path=zip_path, patient_id=id_card, report_date=final_date
+                ):
                     total_success += 1
                     print("  [OK] DICOM压缩包摄入成功")
                 else:
@@ -104,11 +117,15 @@ def auto_ingest_from_origin_data(
 
     # ── DICOM 散文件 ─────────────────────────────────────────
     if dcm_files:
-        print(f"\n{'─'*60}\n【DICOM文件处理】\n{'─'*60}")
-        print(f"  [WARNING] 发现 {len(dcm_files)} 个DICOM文件在根目录\n"
-              "  [INFO] 建议将DICOM文件组织到子目录或使用ZIP压缩包\n"
-              "  [INFO] 跳过直接处理，请使用 --ingest-dicom-dir 手动指定")
+        print(f"\n{'─' * 60}\n【DICOM文件处理】\n{'─' * 60}")
+        print(
+            f"  [WARNING] 发现 {len(dcm_files)} 个DICOM文件在根目录\n"
+            "  [INFO] 建议将DICOM文件组织到子目录或使用ZIP压缩包\n"
+            "  [INFO] 跳过直接处理，请使用 --ingest-dicom-dir 手动指定"
+        )
 
     total_files = len(lab_images) + len(mri_images) + len(dicom_zips)
-    print(f"\n{'='*60}\n数据摄入完成: 共处理 {total_files} 个文件，成功 {total_success} 个\n{'='*60}\n")
+    print(
+        f"\n{'=' * 60}\n数据摄入完成: 共处理 {total_files} 个文件，成功 {total_success} 个\n{'=' * 60}\n"
+    )
     return total_success > 0

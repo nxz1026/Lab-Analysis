@@ -35,7 +35,7 @@ def meta_paper():
         "pmid": "1",
         "title": "Meta-analysis of procalcitonin and CRP in sepsis diagnosis",
         "abstract": "BACKGROUND: We performed a meta-analysis. METHODS: 12 RCTs included. "
-                    "RESULTS: PCT sensitivity 0.85. CONCLUSIONS: PCT is superior to CRP.",
+        "RESULTS: PCT sensitivity 0.85. CONCLUSIONS: PCT is superior to CRP.",
         "year": "2024",
         "journal": "Crit Care",
     }
@@ -155,9 +155,7 @@ class TestScoreRecency:
 # ---------------------------------------------------------------------------
 class TestScoreSampleSize:
     def test_large_sample(self):
-        score, reason = score_sample_size({
-            "abstract": "We enrolled 1500 patients in this study."
-        })
+        score, reason = score_sample_size({"abstract": "We enrolled 1500 patients in this study."})
         assert score == 1.0
         assert "1500" in reason
 
@@ -268,13 +266,14 @@ class TestRankPapers:
 class TestScenarioWeights:
     def test_all_three_scenarios_defined(self):
         assert set(SCENARIO_WEIGHTS.keys()) == {
-            "early_diagnosis", "differential_diagnosis", "prognosis"
+            "early_diagnosis",
+            "differential_diagnosis",
+            "prognosis",
         }
 
     def test_weights_sum_to_one(self):
         for name, weights in SCENARIO_WEIGHTS.items():
-            assert abs(sum(weights.values()) - 1.0) < 1e-9, \
-                f"{name} 权重和 != 1.0: {weights}"
+            assert abs(sum(weights.values()) - 1.0) < 1e-9, f"{name} 权重和 != 1.0: {weights}"
 
     def test_scenarios_produce_different_results(self, meta_paper, rct_paper, no_abstract_paper):
         """不同 scenario 下同一篇论文的 score 应不同（至少对某些论文）"""
@@ -307,8 +306,9 @@ class TestScenarioWeights:
         old_meta_large = {
             "pmid": "B1",
             "title": "Meta-analysis of PCT and CRP in differential diagnosis of sepsis",
-            "abstract": ("BACKGROUND: meta-analysis. METHODS: "
-                         "We included 2500 patients from 20 RCTs."),
+            "abstract": (
+                "BACKGROUND: meta-analysis. METHODS: We included 2500 patients from 20 RCTs."
+            ),
             "year": "2018",
             "journal": "Critical Care",
         }
@@ -316,8 +316,10 @@ class TestScenarioWeights:
         cohort_large = {
             "pmid": "C1",
             "title": "Prospective cohort study of inflammatory biomarkers predicting prognosis in sepsis",
-            "abstract": ("We conducted a prospective cohort study of 5000 patients "
-                         "with sepsis evaluating PCT and CRP as prognostic markers."),
+            "abstract": (
+                "We conducted a prospective cohort study of 5000 patients "
+                "with sepsis evaluating PCT and CRP as prognostic markers."
+            ),
             "year": "2021",
             "journal": "Lancet",
         }
@@ -328,9 +330,7 @@ class TestScenarioWeights:
             for sc in ["early_diagnosis", "differential_diagnosis", "prognosis"]:
                 g = grade_paper(paper, scenario=sc, topic="sepsis_gn_gp")
                 scores.add(round(g.score, 4))
-            assert len(scores) >= 2, (
-                f"论文 {paper['pmid']} 在三 scenario 下分数完全相同: {scores}"
-            )
+            assert len(scores) >= 2, f"论文 {paper['pmid']} 在三 scenario 下分数完全相同: {scores}"
 
 
 # ---------------------------------------------------------------------------

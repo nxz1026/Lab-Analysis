@@ -34,20 +34,14 @@ st.sidebar.title("📊 Lab-Analysis")
 def _list_patients() -> list[str]:
     if not _DATA_DIR.exists():
         return []
-    return sorted(
-        d.name for d in _DATA_DIR.iterdir()
-        if d.is_dir() and not d.name.startswith(".")
-    )
+    return sorted(d.name for d in _DATA_DIR.iterdir() if d.is_dir() and not d.name.startswith("."))
 
 
 def _list_runs(patient_id: str) -> list[str]:
     p = _DATA_DIR / patient_id
     if not p.exists():
         return []
-    return sorted(
-        d.name for d in p.iterdir()
-        if d.is_dir() and d.name[:8].isdigit()
-    )
+    return sorted(d.name for d in p.iterdir() if d.is_dir() and d.name[:8].isdigit())
 
 
 patients = _list_patients()
@@ -76,6 +70,7 @@ st.sidebar.button("🔄 刷新", on_click=st.rerun)
 
 # ── 数据加载 ────────────────────────────────────────────────────────
 
+
 @st.cache_data
 def _load_json(path: Path) -> dict:
     if path.exists():
@@ -86,6 +81,7 @@ def _load_json(path: Path) -> dict:
 @st.cache_data
 def _load_csv_df(path: Path):
     import pandas as pd
+
     if path.exists():
         return pd.read_csv(path)
     return None
@@ -106,9 +102,7 @@ final_report_md = _load_md(reports_dir / "final_integrated_report.md")
 
 # ── Tab 布局 ────────────────────────────────────────────────────────
 
-tab1, tab2, tab3, tab4 = st.tabs(
-    ["📋 统计概览", "📈 图表", "📊 检验数据", "📄 最终报告"]
-)
+tab1, tab2, tab3, tab4 = st.tabs(["📋 统计概览", "📈 图表", "📊 检验数据", "📄 最终报告"])
 
 # ═════════════════════════════════════════════════════════════════════
 # Tab 1: 概览
@@ -141,10 +135,8 @@ with tab1:
             with cols[i]:
                 icon = color_map.get(lbl, "⚪")
                 st.markdown(f"**{d}**")
-                st.markdown(f"<h1 style='text-align:center'>{icon}</h1>",
-                            unsafe_allow_html=True)
-                st.markdown(f"<p style='text-align:center'>{lbl}</p>",
-                            unsafe_allow_html=True)
+                st.markdown(f"<h1 style='text-align:center'>{icon}</h1>", unsafe_allow_html=True)
+                st.markdown(f"<p style='text-align:center'>{lbl}</p>", unsafe_allow_html=True)
 
     # 异常指标
     abnormal = analysis_results.get("abnormal_summary", {})
@@ -152,14 +144,17 @@ with tab1:
         st.subheader("异常指标")
         ab_data = []
         for metric, info in abnormal.items():
-            ab_data.append({
-                "指标": metric,
-                "参考范围": info.get("ref_range", "?"),
-                "异常次数": info.get("n_abnormal", 0),
-                "异常日期": ", ".join(info.get("abnormal_dates", [])),
-            })
+            ab_data.append(
+                {
+                    "指标": metric,
+                    "参考范围": info.get("ref_range", "?"),
+                    "异常次数": info.get("n_abnormal", 0),
+                    "异常日期": ", ".join(info.get("abnormal_dates", [])),
+                }
+            )
         if ab_data:
             import pandas as pd
+
             st.dataframe(pd.DataFrame(ab_data), use_container_width=True)
 
     # 告警摘要
@@ -168,13 +163,16 @@ with tab1:
         alert_df = []
         for a in alerts:
             icons = {"CRITICAL": "🚨", "WARNING": "⚠️", "INFO": "ℹ️"}
-            alert_df.append({
-                "级别": f"{icons.get(a['level'], '')} {a['level']}",
-                "来源": a.get("source", ""),
-                "指标": a.get("metric", ""),
-                "消息": a["message"],
-            })
+            alert_df.append(
+                {
+                    "级别": f"{icons.get(a['level'], '')} {a['level']}",
+                    "来源": a.get("source", ""),
+                    "指标": a.get("metric", ""),
+                    "消息": a["message"],
+                }
+            )
         import pandas as pd
+
         st.dataframe(pd.DataFrame(alert_df), use_container_width=True)
 
 
@@ -225,12 +223,15 @@ with tab3:
         for metric, info in cv_data.items():
             risk = info.get("risk_level", "")
             icon = {"高": "🔴", "中": "🟡", "低": "🟢"}.get(risk, "⚪")
-            cv_rows.append({
-                "指标": metric,
-                "CV": f"{info.get('cv', 0):.4f}",
-                f"{icon} 稳定性": info.get("stability", ""),
-            })
+            cv_rows.append(
+                {
+                    "指标": metric,
+                    "CV": f"{info.get('cv', 0):.4f}",
+                    f"{icon} 稳定性": info.get("stability", ""),
+                }
+            )
         import pandas as pd
+
         st.dataframe(pd.DataFrame(cv_rows), use_container_width=True)
 
     # 回归趋势
@@ -240,13 +241,16 @@ with tab3:
         trend_rows = []
         for metric, info in trend.items():
             arrow = "↑" if info.get("slope", 0) > 0 else "↓" if info.get("slope", 0) < 0 else "→"
-            trend_rows.append({
-                "指标": metric,
-                f"{arrow} 趋势": info.get("trend", "?"),
-                "斜率": f"{info.get('slope', 0):.4f}",
-                "R²": f"{info.get('r2', 0):.3f}",
-            })
+            trend_rows.append(
+                {
+                    "指标": metric,
+                    f"{arrow} 趋势": info.get("trend", "?"),
+                    "斜率": f"{info.get('slope', 0):.4f}",
+                    "R²": f"{info.get('r2', 0):.3f}",
+                }
+            )
         import pandas as pd
+
         st.dataframe(pd.DataFrame(trend_rows), use_container_width=True)
 
 

@@ -11,6 +11,7 @@
 注意：此脚本仅为便捷入口，核心逻辑在 lab_analysis.pipeline 中实现。
       推荐直接使用 python -m lab_analysis 以保持统一。
 """
+
 from __future__ import annotations
 
 import sys

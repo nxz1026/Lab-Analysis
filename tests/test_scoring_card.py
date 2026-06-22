@@ -74,10 +74,18 @@ def remission_results():
 @pytest.fixture
 def sample_alerts():
     return [
-        {"level": "CRITICAL", "source": "inflammation", "metric": "hs-CRP",
-         "message": "hs-CRP 急性期"},
-        {"level": "WARNING", "source": "reference_range", "metric": "WBC",
-         "message": "WBC 超出参考范围"},
+        {
+            "level": "CRITICAL",
+            "source": "inflammation",
+            "metric": "hs-CRP",
+            "message": "hs-CRP 急性期",
+        },
+        {
+            "level": "WARNING",
+            "source": "reference_range",
+            "metric": "WBC",
+            "message": "WBC 超出参考范围",
+        },
     ]
 
 
@@ -177,10 +185,19 @@ class TestScoreVariabilityRisk:
 
 
 class TestComputeDimensionScores:
-    def test_returns_all_5_dims(self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results):
-        dims = compute_dimension_scores(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results)
-        expected_keys = {"inflammation", "lab_abnormality", "literature_support",
-                         "imaging_consistency", "variability_stability"}
+    def test_returns_all_5_dims(
+        self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+    ):
+        dims = compute_dimension_scores(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+        )
+        expected_keys = {
+            "inflammation",
+            "lab_abnormality",
+            "literature_support",
+            "imaging_consistency",
+            "variability_stability",
+        }
         assert set(dims.keys()) == expected_keys
         for v in dims.values():
             assert 0 <= v <= 100
@@ -192,27 +209,51 @@ class TestComputeDimensionScores:
 
 
 class TestEvaluateHypotheses:
-    def test_acute_produces_hypotheses(self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results):
-        dims = compute_dimension_scores(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results)
-        hyps = evaluate_hypotheses(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims)
+    def test_acute_produces_hypotheses(
+        self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+    ):
+        dims = compute_dimension_scores(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+        )
+        hyps = evaluate_hypotheses(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims
+        )
         assert len(hyps) >= 1
         assert hyps[0]["confidence"] > 0
 
-    def test_remission_produces_different_hypotheses(self, remission_results, sample_alerts, sample_lit_filtered, sample_mri_results):
-        dims = compute_dimension_scores(remission_results, sample_alerts, sample_lit_filtered, sample_mri_results)
-        hyps = evaluate_hypotheses(remission_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims)
+    def test_remission_produces_different_hypotheses(
+        self, remission_results, sample_alerts, sample_lit_filtered, sample_mri_results
+    ):
+        dims = compute_dimension_scores(
+            remission_results, sample_alerts, sample_lit_filtered, sample_mri_results
+        )
+        hyps = evaluate_hypotheses(
+            remission_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims
+        )
         # remission should match different rules than acute
         # at minimum, should not crash and produce valid output
         assert isinstance(hyps, list)
 
-    def test_max_3_hypotheses(self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results):
-        dims = compute_dimension_scores(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results)
-        hyps = evaluate_hypotheses(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims)
+    def test_max_3_hypotheses(
+        self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+    ):
+        dims = compute_dimension_scores(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+        )
+        hyps = evaluate_hypotheses(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims
+        )
         assert len(hyps) <= 3
 
-    def test_hypotheses_have_required_fields(self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results):
-        dims = compute_dimension_scores(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results)
-        hyps = evaluate_hypotheses(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims)
+    def test_hypotheses_have_required_fields(
+        self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+    ):
+        dims = compute_dimension_scores(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+        )
+        hyps = evaluate_hypotheses(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims
+        )
         for h in hyps:
             assert "hypothesis" in h
             assert "confidence" in h
@@ -226,9 +267,15 @@ class TestEvaluateHypotheses:
 
 
 class TestGenerateOverallAssessment:
-    def test_returns_string(self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results):
-        dims = compute_dimension_scores(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results)
-        hyps = evaluate_hypotheses(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims)
+    def test_returns_string(
+        self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+    ):
+        dims = compute_dimension_scores(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+        )
+        hyps = evaluate_hypotheses(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims
+        )
         assessment = generate_overall_assessment(dims, hyps)
         assert isinstance(assessment, str)
         assert len(assessment) > 10
@@ -240,9 +287,15 @@ class TestGenerateOverallAssessment:
 
 
 class TestScoringCardFormat:
-    def test_json_serializable(self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results):
-        dims = compute_dimension_scores(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results)
-        hyps = evaluate_hypotheses(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims)
+    def test_json_serializable(
+        self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+    ):
+        dims = compute_dimension_scores(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+        )
+        hyps = evaluate_hypotheses(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims
+        )
         card = {
             "generated": "2026-06-20T12:00:00",
             "patient_id": "test",
@@ -256,9 +309,15 @@ class TestScoringCardFormat:
         assert "dimension_scores" in loaded
         assert "top_hypotheses" in loaded
 
-    def test_format_md_produces_output(self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results):
-        dims = compute_dimension_scores(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results)
-        hyps = evaluate_hypotheses(acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims)
+    def test_format_md_produces_output(
+        self, acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+    ):
+        dims = compute_dimension_scores(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results
+        )
+        hyps = evaluate_hypotheses(
+            acute_results, sample_alerts, sample_lit_filtered, sample_mri_results, dims
+        )
         card = {
             "generated": "2026-06-20T12:00:00",
             "patient_id": "test",

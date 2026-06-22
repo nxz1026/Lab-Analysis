@@ -16,6 +16,7 @@ from lab_analysis.feedback import (
 def mock_feedback_path(tmp_path, monkeypatch):
     """临时改 WORK_ROOT 避免写入真实 data/"""
     import lab_analysis.feedback as fb
+
     original_root = fb.WORK_ROOT
     fb.WORK_ROOT = tmp_path
     yield tmp_path

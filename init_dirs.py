@@ -5,6 +5,7 @@ init_dirs.py - 初始化项目目录结构
 
 根据 WORK_ROOT 环境变量创建必要的目录结构
 """
+
 import os
 from pathlib import Path
 
@@ -16,17 +17,18 @@ load_dotenv()
 # 获取工作区根目录
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
+
 def create_directories():
     """创建必要的目录结构"""
     print(f"工作区根目录: {WORK_ROOT}")
     print("=" * 60)
-    
+
     # 定义需要创建的目录
     dirs_to_create = [
         WORK_ROOT / "raw" / "Origin_data",
         WORK_ROOT / "data",
     ]
-    
+
     # 创建目录
     for dir_path in dirs_to_create:
         try:
@@ -34,7 +36,7 @@ def create_directories():
             print(f"[OK] 已创建: {dir_path}")
         except Exception as e:
             print(f"[FAIL] 创建失败 {dir_path}: {e}")
-    
+
     print("=" * 60)
     print("目录结构初始化完成！")
     print("\n完整目录结构:")
@@ -46,6 +48,7 @@ def create_directories():
     print("│       └── imaging/          # 医学影像")
     print("└── data/                     # 分析输出（自动生成）")
     print("    └── {ID}/{TIMESTAMP}/")
+
 
 if __name__ == "__main__":
     create_directories()

@@ -48,6 +48,7 @@ ScoringResult = dict[str, Any]
 # 5 维评分函数
 # ═════════════════════════════════════════════════════════════════════════
 
+
 def score_inflammation(results: dict) -> float:
     """炎症活动度评分 (0-100)。
 
@@ -191,6 +192,7 @@ def compute_dimension_scores(
 # 诊断规则引擎
 # ═════════════════════════════════════════════════════════════════════════
 
+
 def _is_acute(labels: list[str]) -> bool:
     return "急性期" in labels[-3:] if labels else False
 
@@ -210,8 +212,7 @@ DIAGNOSTIC_RULES: list[tuple[str, callable, str, list[str], float]] = [
             and _has_trend(r, "hs-CRP", "上升")
         ),
         "慢性胰腺炎（活动期）",
-        ["建议复查淀粉酶/脂肪酶", "影像学随访评估胰腺形态变化",
-         "考虑抗炎治疗或胰酶替代治疗"],
+        ["建议复查淀粉酶/脂肪酶", "影像学随访评估胰腺形态变化", "考虑抗炎治疗或胰酶替代治疗"],
         0.30,
     ),
     (
@@ -228,40 +229,31 @@ DIAGNOSTIC_RULES: list[tuple[str, callable, str, list[str], float]] = [
         "systemic_inflammation_infection",
         lambda r, a, l, m: (
             _is_acute(r.get("inflammation_classification", {}).get("labels", []))
-            and ("WBC" in r.get("abnormal_summary", {})
-                 or "NEUT#" in r.get("abnormal_summary", {}))
+            and ("WBC" in r.get("abnormal_summary", {}) or "NEUT#" in r.get("abnormal_summary", {}))
         ),
         "系统性炎症/感染",
-        ["建议 PCT 检测鉴别细菌感染", "血培养 + 感染灶筛查",
-         "根据病原学结果调整抗生素"],
+        ["建议 PCT 检测鉴别细菌感染", "血培养 + 感染灶筛查", "根据病原学结果调整抗生素"],
         0.25,
     ),
     (
         "high_variability_risk",
         lambda r, a, l, m: (
-            sum(1 for v in r.get("cv_stability", {}).values()
-                if v.get("risk_level") == "高") >= 3
+            sum(1 for v in r.get("cv_stability", {}).values() if v.get("risk_level") == "高") >= 3
         ),
         "指标波动显著（需关注稳定性）",
-        ["增加复查频率", "排查影响指标波动的干扰因素",
-         "考虑短期固定时间点复查以减少变异"],
+        ["增加复查频率", "排查影响指标波动的干扰因素", "考虑短期固定时间点复查以减少变异"],
         0.10,
     ),
     (
         "imaging_lab_conflict",
-        lambda r, a, l, m: (
-            score_imaging_consistency(m) < 40
-        ),
+        lambda r, a, l, m: score_imaging_consistency(m) < 40,
         "影像-检验结论不一致",
-        ["建议复核影像资料与原始检验报告",
-         "多学科会诊评估一致性"],
+        ["建议复核影像资料与原始检验报告", "多学科会诊评估一致性"],
         0.0,
     ),
     (
         "literature_well_supported",
-        lambda r, a, l, m: (
-            score_literature_support(l) >= 70
-        ),
+        lambda r, a, l, m: score_literature_support(l) >= 70,
         "文献证据充分支持当前诊疗方向",
         ["继续遵循循证指南制定治疗方案"],
         0.15,
@@ -275,8 +267,7 @@ DIAGNOSTIC_RULES: list[tuple[str, callable, str, list[str], float]] = [
             and "WBC" not in r.get("abnormal_summary", {})
         ),
         "非炎症性血液系统异常",
-        ["建议完善贫血相关检查（铁蛋白、VitB12、叶酸）",
-         "排查慢性病贫血或骨髓造血功能"],
+        ["建议完善贫血相关检查（铁蛋白、VitB12、叶酸）", "排查慢性病贫血或骨髓造血功能"],
         0.10,
     ),
 ]
@@ -329,21 +320,21 @@ def evaluate_hypotheses(
         supporting = _collect_supporting_signals(results, alerts, rule_name)
         contradicting = _collect_contradicting_signals(results, rule_name)
 
-        hypotheses.append({
-            "hypothesis": hypothesis_text,
-            "confidence": round(confidence, 3),
-            "supporting_signals": supporting,
-            "contradicting_signals": contradicting,
-            "suggested_actions": actions,
-        })
+        hypotheses.append(
+            {
+                "hypothesis": hypothesis_text,
+                "confidence": round(confidence, 3),
+                "supporting_signals": supporting,
+                "contradicting_signals": contradicting,
+                "suggested_actions": actions,
+            }
+        )
 
     hypotheses.sort(key=lambda h: h["confidence"], reverse=True)
     return hypotheses[:3]
 
 
-def _collect_supporting_signals(
-    results: dict, alerts: list[dict], rule_name: str
-) -> list[str]:
+def _collect_supporting_signals(results: dict, alerts: list[dict], rule_name: str) -> list[str]:
     """收集支持假设的信号。"""
     signals: list[str] = []
 
@@ -362,9 +353,7 @@ def _collect_supporting_signals(
     reg = results.get("linear_regression", {})
     for metric, info in reg.items():
         if info.get("r2", 0) >= 0.7:
-            signals.append(
-                f"{metric} {info['trend']}（slope={info['slope']:.3f}）"
-            )
+            signals.append(f"{metric} {info['trend']}（slope={info['slope']:.3f}）")
 
     return signals[:8]
 
@@ -398,9 +387,7 @@ def generate_overall_assessment(
 
     if hypotheses:
         top = hypotheses[0]
-        parts.append(
-            f"主要诊断假设：{top['hypothesis']}（置信度 {top['confidence']:.0%}）。"
-        )
+        parts.append(f"主要诊断假设：{top['hypothesis']}（置信度 {top['confidence']:.0%}）。")
 
     inflam = dim_scores.get("inflammation", 0)
     if inflam >= 70:
@@ -414,6 +401,7 @@ def generate_overall_assessment(
 # ═════════════════════════════════════════════════════════════════════════
 # 数据加载
 # ═════════════════════════════════════════════════════════════════════════
+
 
 def _load_json(path: Path) -> dict:
     if path.exists():
@@ -456,6 +444,7 @@ def build_scoring_card(
     fb_adjustments = {}
     try:
         from lab_analysis.feedback import get_confidence_adjustments
+
         fb_adjustments = get_confidence_adjustments(patient_id)
         if fb_adjustments:
             print(f"  [FEEDBACK] 已加载 {len(fb_adjustments)} 条置信度调整")
@@ -464,7 +453,11 @@ def build_scoring_card(
 
     dim_scores = compute_dimension_scores(results, alerts, lit_filtered, mri_results)
     hypotheses = evaluate_hypotheses(
-        results, alerts, lit_filtered, mri_results, dim_scores,
+        results,
+        alerts,
+        lit_filtered,
+        mri_results,
+        dim_scores,
         confidence_adjustments=fb_adjustments,
     )
     assessment = generate_overall_assessment(dim_scores, hypotheses)
@@ -518,19 +511,23 @@ def format_scoring_md(card: ScoringResult) -> str:
         }.get(dim, dim)
         lines.append(f"| {label} | {score}/100 | {_status(score)} |")
 
-    lines.extend([
-        "",
-        "---\n",
-        "## 诊断假设（按置信度排序）\n",
-    ])
+    lines.extend(
+        [
+            "",
+            "---\n",
+            "## 诊断假设（按置信度排序）\n",
+        ]
+    )
 
     for h in card.get("top_hypotheses", []):
-        lines.extend([
-            f"### {h['hypothesis']}",
-            f"- **置信度**: {h['confidence']:.1%}",
-            "",
-            "**支持信号**:",
-        ])
+        lines.extend(
+            [
+                f"### {h['hypothesis']}",
+                f"- **置信度**: {h['confidence']:.1%}",
+                "",
+                "**支持信号**:",
+            ]
+        )
         for s in h.get("supporting_signals", []):
             lines.append(f"  - {s}")
         lines.append("")
@@ -544,20 +541,22 @@ def format_scoring_md(card: ScoringResult) -> str:
             lines.append(f"  - [ ] {a}")
         lines.append("")
 
-    lines.extend([
-        "---\n",
-        "## 综合评估\n",
-        card.get("overall_assessment", ""),
-        "\n",
-        "---\n",
-        "## 数据质量\n",
-        f"- 分析结果: {'✅' if card.get('data_quality', {}).get('has_analysis_results') else '❌'}",
-        f"- 异常告警: {'✅' if card.get('data_quality', {}).get('has_alerts') else '❌'}",
-        f"- 文献证据: {'✅' if card.get('data_quality', {}).get('has_literature') else '❌'}",
-        f"- 影像数据: {'✅' if card.get('data_quality', {}).get('has_mri') else '❌'}",
-        f"- 告警数量: {card.get('data_quality', {}).get('n_alerts', 0)}",
-        f"- 诊断假设: {card.get('data_quality', {}).get('n_hypotheses', 0)} 条",
-    ])
+    lines.extend(
+        [
+            "---\n",
+            "## 综合评估\n",
+            card.get("overall_assessment", ""),
+            "\n",
+            "---\n",
+            "## 数据质量\n",
+            f"- 分析结果: {'✅' if card.get('data_quality', {}).get('has_analysis_results') else '❌'}",
+            f"- 异常告警: {'✅' if card.get('data_quality', {}).get('has_alerts') else '❌'}",
+            f"- 文献证据: {'✅' if card.get('data_quality', {}).get('has_literature') else '❌'}",
+            f"- 影像数据: {'✅' if card.get('data_quality', {}).get('has_mri') else '❌'}",
+            f"- 告警数量: {card.get('data_quality', {}).get('n_alerts', 0)}",
+            f"- 诊断假设: {card.get('data_quality', {}).get('n_hypotheses', 0)} 条",
+        ]
+    )
 
     return "\n".join(lines)
 

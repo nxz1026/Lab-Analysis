@@ -6,30 +6,23 @@
 
 # 章节定义：(字段名后缀, 章节中文标题, DSPy OutputField 描述)
 REPORT_SECTIONS = [
-    ("basic_info",          "一、患者基本信息与就诊背景",
-     "患者基本信息与就诊背景"),
-    ("lab_analysis",        "二、检验数据与炎症状态综合分析",
-     "检验数据与炎症状态综合分析"),
-    ("mri_analysis",        "三、MRI影像学综合分析",
-     "MRI影像学综合分析"),
-    ("multidisciplinary",   "四、多学科联合诊断意见",
-     "多学科联合诊断意见"),
-    ("diagnosis",           "五、核心诊断结论与鉴别诊断",
-     "核心诊断结论与鉴别诊断"),
-    ("consistency",         "六、结论一致性评估",
-     "结论一致性评估"),
-    ("action_plan",         "七、行动计划（紧急[URGENT] / 重要[IMPORTANT] / 常规[ROUTINE]）",
-     "行动计划（紧急/重要/常规）"),
-    ("followup",            "八、随访与监测计划",
-     "随访与监测计划"),
-    ("prognosis",           "九、预后评估",
-     "预后评估"),
+    ("basic_info", "一、患者基本信息与就诊背景", "患者基本信息与就诊背景"),
+    ("lab_analysis", "二、检验数据与炎症状态综合分析", "检验数据与炎症状态综合分析"),
+    ("mri_analysis", "三、MRI影像学综合分析", "MRI影像学综合分析"),
+    ("multidisciplinary", "四、多学科联合诊断意见", "多学科联合诊断意见"),
+    ("diagnosis", "五、核心诊断结论与鉴别诊断", "核心诊断结论与鉴别诊断"),
+    ("consistency", "六、结论一致性评估", "结论一致性评估"),
+    (
+        "action_plan",
+        "七、行动计划（紧急[URGENT] / 重要[IMPORTANT] / 常规[ROUTINE]）",
+        "行动计划（紧急/重要/常规）",
+    ),
+    ("followup", "八、随访与监测计划", "随访与监测计划"),
+    ("prognosis", "九、预后评估", "预后评估"),
 ]
 
 # 标准版 prompt 中的章节模板（供 gen_final_report.py 拼接 USER_PROMPT 用）
-PROMPT_SECTION_TEMPLATES = "\n".join(
-    f"## {header}\n" for _, header, _ in REPORT_SECTIONS
-)
+PROMPT_SECTION_TEMPLATES = "\n".join(f"## {header}\n" for _, header, _ in REPORT_SECTIONS)
 
 # Markdown 报告组装模板（供两版本共用，用 str.format 填充）
 REPORT_MD_TEMPLATE = """# {report_title}

@@ -32,9 +32,7 @@ def _setup_pipeline_logging(ts: str) -> None:
     log_file = log_dir / f"pipeline_{ts}.log"
 
     handler = logging.FileHandler(log_file, encoding="utf-8")
-    handler.setFormatter(logging.Formatter(
-        "%(asctime)s [%(levelname)-7s] %(name)s: %(message)s"
-    ))
+    handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)-7s] %(name)s: %(message)s"))
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
     logger.info("Pipeline 日志初始化: %s", log_file)
@@ -84,7 +82,12 @@ def main():
             no_interactive=args.no_interactive,
         )
 
-        if args.ingest_lab or args.ingest_dicom_zip or args.ingest_dicom_dir or args.ingest_mri_report:
+        if (
+            args.ingest_lab
+            or args.ingest_dicom_zip
+            or args.ingest_dicom_dir
+            or args.ingest_mri_report
+        ):
             print("\n① 数据摄入 (手动指定)")
             python = pick_python_exe()
             root = Path(__file__).resolve().parent.parent.parent
@@ -94,8 +97,17 @@ def main():
 
             if args.ingest_lab:
                 for lab_path in args.ingest_lab:
-                    cmd = [python, "-m", "lab_analysis.ingest_data", "--type", "lab_image",
-                           "--path", lab_path, "--id-card", raw_id]
+                    cmd = [
+                        python,
+                        "-m",
+                        "lab_analysis.ingest_data",
+                        "--type",
+                        "lab_image",
+                        "--path",
+                        lab_path,
+                        "--id-card",
+                        raw_id,
+                    ]
                     if args.report_date:
                         cmd += ["--report-date", args.report_date]
                     if args.report_type:
@@ -106,8 +118,15 @@ def main():
                         print(f"  [!] 摄入失败: {lab_path}")
 
             if args.ingest_dicom_zip or args.ingest_dicom_dir:
-                cmd = [python, "-m", "lab_analysis.ingest_data", "--type", "mri_dicom",
-                       "--id-card", raw_id]
+                cmd = [
+                    python,
+                    "-m",
+                    "lab_analysis.ingest_data",
+                    "--type",
+                    "mri_dicom",
+                    "--id-card",
+                    raw_id,
+                ]
                 if args.ingest_dicom_zip:
                     cmd += ["--zip-path", args.ingest_dicom_zip]
                 if args.ingest_dicom_dir:
@@ -119,8 +138,17 @@ def main():
                     print("  [!] DICOM摄入失败")
 
             if args.ingest_mri_report:
-                cmd = [python, "-m", "lab_analysis.ingest_data", "--type", "mri_report",
-                       "--path", args.ingest_mri_report, "--id-card", raw_id]
+                cmd = [
+                    python,
+                    "-m",
+                    "lab_analysis.ingest_data",
+                    "--type",
+                    "mri_report",
+                    "--path",
+                    args.ingest_mri_report,
+                    "--id-card",
+                    raw_id,
+                ]
                 if args.report_date:
                     cmd += ["--report-date", args.report_date]
                 r = subprocess.run(cmd, cwd=str(root), env=full_env)
@@ -137,7 +165,9 @@ def main():
         wr = WORK_ROOT
         print(f"\n[ERROR] 病人ID [{deid}] 没有找到对应的原始数据，请确认目录结构：")
         print(f"   {wr / 'raw' / f'patient_{deid}' / 'lab'}/        ← 检验报告截图")
-        print(f"   {wr / 'raw' / f'patient_{deid}' / 'papers'}/    ← 结构化报告（lab_report_*/metrics.md）")
+        print(
+            f"   {wr / 'raw' / f'patient_{deid}' / 'papers'}/    ← 结构化报告（lab_report_*/metrics.md）"
+        )
         print(f"   {wr / 'raw' / f'patient_{deid}' / 'imaging'}/   ← MRI 影像序列（可选）")
         sys.exit(1)
 
@@ -162,11 +192,15 @@ def main():
         print("\n[跳过] 文献二次筛选（--skip-lit-filter）")
     else:
         rc = run_step(
-            "⑤b 文献二次筛选", "literature_filter",
+            "⑤b 文献二次筛选",
+            "literature_filter",
             env=ts_env,
-            extra_args=pid_arg + [
-                "--scenario", args.lit_filter_scenario,
-                "--top-k", str(args.lit_filter_top_k),
+            extra_args=pid_arg
+            + [
+                "--scenario",
+                args.lit_filter_scenario,
+                "--top-k",
+                str(args.lit_filter_top_k),
             ],
         )
         if rc != 0:
@@ -176,8 +210,12 @@ def main():
         print("\n[跳过] 循证解读（--skip-llm）")
     else:
         if args.use_dspy:
-            rc = run_step("⑥ 循证解读", "literature_interpreter_dspy",
-                          env=ts_env, extra_args=pid_arg + ["--use-dspy"])
+            rc = run_step(
+                "⑥ 循证解读",
+                "literature_interpreter_dspy",
+                env=ts_env,
+                extra_args=pid_arg + ["--use-dspy"],
+            )
         else:
             rc = run_step("⑥ 循证解读", "literature_interpreter", pid_arg, ts_env)
         if rc != 0:
@@ -188,8 +226,12 @@ def main():
         print("\n[跳过] 影像分析（--skip-imaging）")
     else:
         if args.use_dspy:
-            rc = run_step("⑦ 影像分析", "qwen_vl_report_check_dspy",
-                          env=ts_env, extra_args=pid_arg + ["--use-dspy"])
+            rc = run_step(
+                "⑦ 影像分析",
+                "qwen_vl_report_check_dspy",
+                env=ts_env,
+                extra_args=pid_arg + ["--use-dspy"],
+            )
         else:
             rc = run_step("⑦ 影像分析", "qwen_vl_report_check", pid_arg, ts_env)
         if rc != 0:
@@ -197,8 +239,9 @@ def main():
             sys.exit(1)
 
     if args.use_dspy:
-        rc = run_step("⑧ 生成报告", "gen_final_report_dspy",
-                      env=ts_env, extra_args=pid_arg + ["--use-dspy"])
+        rc = run_step(
+            "⑧ 生成报告", "gen_final_report_dspy", env=ts_env, extra_args=pid_arg + ["--use-dspy"]
+        )
     else:
         rc = run_step("⑧ 生成报告", "gen_final_report", pid_arg, ts_env)
     if rc != 0:
@@ -215,34 +258,51 @@ def main():
 
     # ⑨a 双模式对比报告（--compare-report-modes）
     if args.compare_report_modes and not args.use_dspy:
-        print(f"\n{'='*60}\n[COMPARE] 生成 DSPy 对比报告\n{'='*60}")
+        print(f"\n{'=' * 60}\n[COMPARE] 生成 DSPy 对比报告\n{'=' * 60}")
         dspy_ts = ts + "_dspy_compare"
         dspy_ts_env = {"ANALYSIS_TS": dspy_ts}
         dspy_pid = ["--id-card", deid]
 
-        run_step("⑧ DSPy 循证解读", "literature_interpreter_dspy",
-                 env=dspy_ts_env, extra_args=dspy_pid + ["--use-dspy"])
-        run_step("⑧ DSPy 影像分析", "qwen_vl_report_check_dspy",
-                 env=dspy_ts_env, extra_args=dspy_pid + ["--use-dspy"])
-        rc = run_step("⑧ DSPy 生成报告", "gen_final_report_dspy",
-                      env=dspy_ts_env, extra_args=dspy_pid + ["--use-dspy"])
+        run_step(
+            "⑧ DSPy 循证解读",
+            "literature_interpreter_dspy",
+            env=dspy_ts_env,
+            extra_args=dspy_pid + ["--use-dspy"],
+        )
+        run_step(
+            "⑧ DSPy 影像分析",
+            "qwen_vl_report_check_dspy",
+            env=dspy_ts_env,
+            extra_args=dspy_pid + ["--use-dspy"],
+        )
+        rc = run_step(
+            "⑧ DSPy 生成报告",
+            "gen_final_report_dspy",
+            env=dspy_ts_env,
+            extra_args=dspy_pid + ["--use-dspy"],
+        )
         if rc != 0:
             print("[!] DSPy gen_final_report 失败（非致命，继续）")
 
         std_md = WORK_ROOT / "data" / ts_dir / "04_reports" / "final_integrated_report.md"
-        dspy_json = WORK_ROOT / "data" / f"{deid}/{dspy_ts}" / "04_reports" / "final_integrated_report.json"
+        dspy_json = (
+            WORK_ROOT / "data" / f"{deid}/{dspy_ts}" / "04_reports" / "final_integrated_report.json"
+        )
         if std_md.exists() and dspy_json.exists():
             try:
                 from lab_analysis.compare_report_modes import (
                     compare_reports_from_files,
                     format_comparison_md,
                 )
+
                 cmp = compare_reports_from_files(std_md, dspy_json)
                 cmp_dir = WORK_ROOT / "data" / ts_dir / "04_reports"
                 (cmp_dir / "mode_comparison.json").write_text(
-                    json.dumps(cmp, ensure_ascii=False, indent=2), encoding="utf-8")
+                    json.dumps(cmp, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
                 (cmp_dir / "mode_comparison_report.md").write_text(
-                    format_comparison_md(cmp), encoding="utf-8")
+                    format_comparison_md(cmp), encoding="utf-8"
+                )
                 print(f"[COMPARE] 对比报告已保存: {cmp_dir}/mode_comparison_report.md")
             except Exception as e:
                 print(f"[!] 对比报告生成失败（非致命）: {e}")
@@ -268,6 +328,7 @@ def main():
         print(f"\n⑩ 旧产物清理（保留最近 {args.keep_last} 次）")
         try:
             from lab_analysis.cleanup_runs import cleanup_all, print_summary
+
             clean_results = cleanup_all(keep_last=args.keep_last, dry_run=False, id_card=deid)
             print_summary(clean_results)
         except Exception as e:

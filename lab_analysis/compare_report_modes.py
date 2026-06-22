@@ -22,9 +22,22 @@ from lab_analysis.report_schema import REPORT_SECTIONS
 
 # 关键医疗实体列表（用于实体级对比）
 _KEY_ENTITIES = [
-    "hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV",
-    "PCT", "PLT", "急性期", "缓解期", "过渡期", "炎症",
-    "慢性胰腺炎", "胰腺", "感染",
+    "hs-CRP",
+    "CRP",
+    "WBC",
+    "NEUT#",
+    "MONO%",
+    "RDW-SD",
+    "RDW-CV",
+    "PCT",
+    "PLT",
+    "急性期",
+    "缓解期",
+    "过渡期",
+    "炎症",
+    "慢性胰腺炎",
+    "胰腺",
+    "感染",
 ]
 
 
@@ -38,7 +51,7 @@ def _parse_std_sections(std_md: str) -> list[tuple[str, str]]:
     """
     sections: list[tuple[str, str]] = []
     # 找所有 `## ` 标题
-    heading_pattern = re.compile(r'^##\s+(.+)$', re.MULTILINE)
+    heading_pattern = re.compile(r"^##\s+(.+)$", re.MULTILINE)
     matches = list(heading_pattern.finditer(std_md))
 
     for idx, (_, header_cn, _) in enumerate(REPORT_SECTIONS):
@@ -60,8 +73,15 @@ def _parse_std_sections(std_md: str) -> list[tuple[str, str]]:
 
 # 章节后缀（对应 REPORT_SECTIONS 索引位）
 _REPORT_SECTIONS_SUFFIXES = [
-    "basic_info", "lab_analysis", "mri_analysis", "multidisciplinary",
-    "diagnosis", "consistency", "action_plan", "followup", "prognosis",
+    "basic_info",
+    "lab_analysis",
+    "mri_analysis",
+    "multidisciplinary",
+    "diagnosis",
+    "consistency",
+    "action_plan",
+    "followup",
+    "prognosis",
 ]
 
 
@@ -127,24 +147,36 @@ def compare_reports(
         std_entities = _count_entities(std_content, _KEY_ENTITIES)
         dspy_entities = _count_entities(dspy_content, _KEY_ENTITIES)
         # 谁更长
-        longer = std_mode_name if std_len > dspy_len else dspy_mode_name if dspy_len > std_len else "持平"
-        section_diffs.append({
-            "section": field,
-            "header": header_cn,
-            f"{std_mode_name}_length": std_len,
-            f"{dspy_mode_name}_length": dspy_len,
-            "overlap_rate": round(overlap, 4),
-            "longer": longer,
-            f"{std_mode_name}_entities": std_entities,
-            f"{dspy_mode_name}_entities": dspy_entities,
-        })
+        longer = (
+            std_mode_name
+            if std_len > dspy_len
+            else dspy_mode_name
+            if dspy_len > std_len
+            else "持平"
+        )
+        section_diffs.append(
+            {
+                "section": field,
+                "header": header_cn,
+                f"{std_mode_name}_length": std_len,
+                f"{dspy_mode_name}_length": dspy_len,
+                "overlap_rate": round(overlap, 4),
+                "longer": longer,
+                f"{std_mode_name}_entities": std_entities,
+                f"{dspy_mode_name}_entities": dspy_entities,
+            }
+        )
 
     # 总体统计
-    std_total_len = sum(s["Standard_length"] for s in section_diffs) if std_mode_name == "Standard" else 0
+    std_total_len = (
+        sum(s["Standard_length"] for s in section_diffs) if std_mode_name == "Standard" else 0
+    )
     dspy_total_len = sum(s[std_mode_name == "DSPy" or "DSPy_length"] for s in section_diffs)
     std_total_len = sum(s.get("Standard_length", 0) for s in section_diffs)
     dspy_total_len = sum(s.get("DSPy_length", 0) for s in section_diffs)
-    avg_overlap = sum(s["overlap_rate"] for s in section_diffs) / len(section_diffs) if section_diffs else 0
+    avg_overlap = (
+        sum(s["overlap_rate"] for s in section_diffs) / len(section_diffs) if section_diffs else 0
+    )
 
     result: dict[str, Any] = {
         "std_mode": std_mode_name,

@@ -51,25 +51,29 @@ def _alert_inflammation(results: dict) -> list[AlertDict]:
     latest_label = labels[-1]
     latest_date = dates[-1] if dates else "?"
     if latest_label == "急性期":
-        alerts.append({
-            "level": "CRITICAL",
-            "source": "inflammation",
-            "metric": "hs-CRP",
-            "value": None,  # 调用方可补充
-            "threshold": 3.0,
-            "date": latest_date,
-            "message": f"hs-CRP 急性期（{latest_date}），炎症活跃，超过阈值 3.0",
-        })
+        alerts.append(
+            {
+                "level": "CRITICAL",
+                "source": "inflammation",
+                "metric": "hs-CRP",
+                "value": None,  # 调用方可补充
+                "threshold": 3.0,
+                "date": latest_date,
+                "message": f"hs-CRP 急性期（{latest_date}），炎症活跃，超过阈值 3.0",
+            }
+        )
     elif latest_label == "过渡期":
-        alerts.append({
-            "level": "WARNING",
-            "source": "inflammation",
-            "metric": "hs-CRP",
-            "value": None,
-            "threshold": (1.0, 3.0),
-            "date": latest_date,
-            "message": f"hs-CRP 过渡期（{latest_date}），hs-CRP 在 1.0-3.0 之间",
-        })
+        alerts.append(
+            {
+                "level": "WARNING",
+                "source": "inflammation",
+                "metric": "hs-CRP",
+                "value": None,
+                "threshold": (1.0, 3.0),
+                "date": latest_date,
+                "message": f"hs-CRP 过渡期（{latest_date}），hs-CRP 在 1.0-3.0 之间",
+            }
+        )
     return alerts
 
 
@@ -83,15 +87,17 @@ def _alert_reference_range(results: dict) -> list[AlertDict]:
         dates = info.get("abnormal_dates", [])
         dates_str = ", ".join(dates) if dates else f"{n}次"
         level = "CRITICAL" if n >= 3 else "WARNING"
-        alerts.append({
-            "level": level,
-            "source": "reference_range",
-            "metric": metric,
-            "ref_range": ref,
-            "n_abnormal": n,
-            "dates": dates,
-            "message": f"{metric} 超出参考范围（{ref}），异常 {n} 次（{dates_str}）",
-        })
+        alerts.append(
+            {
+                "level": level,
+                "source": "reference_range",
+                "metric": metric,
+                "ref_range": ref,
+                "n_abnormal": n,
+                "dates": dates,
+                "message": f"{metric} 超出参考范围（{ref}），异常 {n} 次（{dates_str}）",
+            }
+        )
     return alerts
 
 
@@ -108,31 +114,37 @@ def _alert_zscore(results: dict) -> list[AlertDict]:
         if severe_cnt > 0:
             dates = severe.get("dates", [])
             vals = severe.get("values", [])
-            details = "; ".join(
-                f"{d}={v}" for d, v in zip(dates, vals, strict=True)
-            ) if dates and vals else f"{severe_cnt}次"
+            details = (
+                "; ".join(f"{d}={v}" for d, v in zip(dates, vals, strict=True))
+                if dates and vals
+                else f"{severe_cnt}次"
+            )
             max_dev = info.get("max_deviation", {})
             max_z = max_dev.get("z_score", "?")
-            alerts.append({
-                "level": "CRITICAL",
-                "source": "zscore",
-                "metric": metric,
-                "count": severe_cnt,
-                "max_z_score": max_z,
-                "dates": dates,
-                "values": vals,
-                "message": f"{metric} 严重异常值 {severe_cnt}次（|Z|>3），最大 Z={max_z}（{details}）",
-            })
+            alerts.append(
+                {
+                    "level": "CRITICAL",
+                    "source": "zscore",
+                    "metric": metric,
+                    "count": severe_cnt,
+                    "max_z_score": max_z,
+                    "dates": dates,
+                    "values": vals,
+                    "message": f"{metric} 严重异常值 {severe_cnt}次（|Z|>3），最大 Z={max_z}（{details}）",
+                }
+            )
         elif mild_cnt > 0:
             dates = mild.get("dates", [])
-            alerts.append({
-                "level": "INFO",
-                "source": "zscore",
-                "metric": metric,
-                "count": mild_cnt,
-                "dates": dates,
-                "message": f"{metric} 轻度异常值 {mild_cnt}次（|Z|>2）",
-            })
+            alerts.append(
+                {
+                    "level": "INFO",
+                    "source": "zscore",
+                    "metric": metric,
+                    "count": mild_cnt,
+                    "dates": dates,
+                    "message": f"{metric} 轻度异常值 {mild_cnt}次（|Z|>2）",
+                }
+            )
     return alerts
 
 
@@ -144,14 +156,16 @@ def _alert_variability(results: dict) -> list[AlertDict]:
         risk = info.get("risk_level", "")
         cv = info.get("cv", 0)
         if risk == "高":
-            alerts.append({
-                "level": "WARNING",
-                "source": "variability",
-                "metric": metric,
-                "cv": cv,
-                "risk_level": risk,
-                "message": f"{metric} CV={cv:.4f}（高变异，需关注波动）",
-            })
+            alerts.append(
+                {
+                    "level": "WARNING",
+                    "source": "variability",
+                    "metric": metric,
+                    "cv": cv,
+                    "risk_level": risk,
+                    "message": f"{metric} CV={cv:.4f}（高变异，需关注波动）",
+                }
+            )
     return alerts
 
 
@@ -164,25 +178,29 @@ def _alert_trend(results: dict) -> list[AlertDict]:
         trend = info.get("trend", "平稳")
         r2 = info.get("r2", 0)
         if trend == "上升" and r2 >= 0.7:
-            alerts.append({
-                "level": "WARNING",
-                "source": "trend",
-                "metric": metric,
-                "slope": slope,
-                "r2": r2,
-                "trend": trend,
-                "message": f"{metric} 显著上升趋势（slope={slope:.4f}, R²={r2:.3f}）",
-            })
+            alerts.append(
+                {
+                    "level": "WARNING",
+                    "source": "trend",
+                    "metric": metric,
+                    "slope": slope,
+                    "r2": r2,
+                    "trend": trend,
+                    "message": f"{metric} 显著上升趋势（slope={slope:.4f}, R²={r2:.3f}）",
+                }
+            )
         elif trend == "下降" and r2 >= 0.7:
-            alerts.append({
-                "level": "INFO",
-                "source": "trend",
-                "metric": metric,
-                "slope": slope,
-                "r2": r2,
-                "trend": trend,
-                "message": f"{metric} 显著下降趋势（slope={slope:.4f}, R²={r2:.3f}）",
-            })
+            alerts.append(
+                {
+                    "level": "INFO",
+                    "source": "trend",
+                    "metric": metric,
+                    "slope": slope,
+                    "r2": r2,
+                    "trend": trend,
+                    "message": f"{metric} 显著下降趋势（slope={slope:.4f}, R²={r2:.3f}）",
+                }
+            )
     return alerts
 
 
@@ -243,8 +261,7 @@ if __name__ == "__main__":
     from pathlib import Path
 
     parser = argparse.ArgumentParser(description="生成结构化异常告警摘要")
-    parser.add_argument("--in", dest="inp", required=True,
-                        help="analysis_results.json 路径")
+    parser.add_argument("--in", dest="inp", required=True, help="analysis_results.json 路径")
     parser.add_argument("--out", default=None, help="alerts.json 输出路径（可选）")
     args = parser.parse_args()
 

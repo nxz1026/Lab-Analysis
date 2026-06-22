@@ -9,6 +9,4 @@ _TEST_KEY = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("ascii")
 os.environ.setdefault("LAB_DEID_KEY", _TEST_KEY)
 
 # 设置 WORK_ROOT 指向仓库根，确保路径一致
-os.environ.setdefault("WORK_ROOT", os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..")
-))
+os.environ.setdefault("WORK_ROOT", os.path.normpath(os.path.join(os.path.dirname(__file__), "..")))

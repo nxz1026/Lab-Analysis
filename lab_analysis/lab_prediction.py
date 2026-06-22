@@ -19,7 +19,7 @@ KEY_METRICS = ["hs-CRP", "CRP", "WBC", "NEUT#", "RDW-SD", "RDW-CV", "PCT"]
 
 # 各指标的已知阈值（用于 alert）
 _ALERT_THRESHOLDS: dict[str, tuple[float, float | None] | None] = {
-    "hs-CRP": (3.0, None),   # 超过 3.0 → 急性期
+    "hs-CRP": (3.0, None),  # 超过 3.0 → 急性期
     "CRP": (10.0, None),
     "WBC": (9.5, 3.5),
     "NEUT#": (6.3, 1.8),
@@ -46,7 +46,7 @@ def predict_metric(series: pd.Series, metric: str) -> dict:
 
     # 线性回归 + 置信区间
     slope, intercept, r_value, p_value, std_err = scipy_stats.linregress(x, y)
-    r2 = r_value ** 2
+    r2 = r_value**2
 
     # 预测下一个点（x = n）
     x_pred = n
@@ -137,6 +137,6 @@ def print_predictions(predictions: dict):
         return
     print("\n--- 指标预测 ---")
     for metric, p in predictions.items():
-        ci = f"[{p['ci_95_lower']:.2f}, {p['ci_95_upper']:.2f}]" if p.get('ci_95_lower') else "N/A"
-        alert_str = f" ⚠️ {p['alert']}" if p.get('alert') else ""
+        ci = f"[{p['ci_95_lower']:.2f}, {p['ci_95_upper']:.2f}]" if p.get("ci_95_lower") else "N/A"
+        alert_str = f" ⚠️ {p['alert']}" if p.get("alert") else ""
         print(f"  {metric}: 下次预测={p['next_value']:.3f}  95%CI={ci}  {p['trend']}{alert_str}")

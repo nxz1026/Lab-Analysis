@@ -46,12 +46,10 @@ analysis_results = {
         "hs-CRP_RDW": 0.92,
         "WBC_NEUT%": 0.85,
     },
-    "linear_regression": {
-        "RDW_vs_time": {"slope": 0.65, "r_squared": 0.94}
-    }
+    "linear_regression": {"RDW_vs_time": {"slope": 0.65, "r_squared": 0.94}},
 }
 analysis_path = ANALYZED_DIR / "analysis_results.json"
-with open(analysis_path, 'w', encoding='utf-8') as f:
+with open(analysis_path, "w", encoding="utf-8") as f:
     json.dump(analysis_results, f, ensure_ascii=False, indent=2)
 print(f"[OK] Created: {analysis_path}")
 
@@ -66,7 +64,7 @@ literature_results = {
             "abstract": "This study investigates the relationship between red cell distribution width (RDW) and chronic inflammatory conditions. RDW elevation correlates with disease severity and poor prognosis...",
             "year": "2023",
             "journal": "J Inflamm Res",
-            "url": "https://pubmed.ncbi.nlm.nih.gov/12345678"
+            "url": "https://pubmed.ncbi.nlm.nih.gov/12345678",
         },
         {
             "pmid": "23456789",
@@ -74,25 +72,34 @@ literature_results = {
             "abstract": "We report a series of patients showing hs-CRP elevation without corresponding WBC increase, suggesting immune dysregulation...",
             "year": "2024",
             "journal": "Autoimmun Rev",
-            "url": "https://pubmed.ncbi.nlm.nih.gov/23456789"
+            "url": "https://pubmed.ncbi.nlm.nih.gov/23456789",
         },
-    ]
+    ],
 }
 lit_path = LIT_DIR / "literature_results.json"
-with open(lit_path, 'w', encoding='utf-8') as f:
+with open(lit_path, "w", encoding="utf-8") as f:
     json.dump(literature_results, f, ensure_ascii=False, indent=2)
 print(f"[OK] Created: {lit_path}")
 
 # 3. 运行标准模式 (不传 --use-dspy)
 print("\n[Step 1] Running standard mode...")
 result = subprocess.run(
-    [sys.executable, "-m", "lab_analysis.literature_interpreter_dspy",
-     "--id-card", "846552421134373347",
-     "--analysis", str(analysis_path), "--lit", str(lit_path),
-     "--out", str(LIT_DIR / "literature_interpretation.json")],
+    [
+        sys.executable,
+        "-m",
+        "lab_analysis.literature_interpreter_dspy",
+        "--id-card",
+        "846552421134373347",
+        "--analysis",
+        str(analysis_path),
+        "--lit",
+        str(lit_path),
+        "--out",
+        str(LIT_DIR / "literature_interpretation.json"),
+    ],
     cwd=str(WORK_ROOT),
     capture_output=True,
-    text=True
+    text=True,
 )
 print(f"  Return code: {result.returncode}")
 if result.stdout:
@@ -103,13 +110,23 @@ if result.stderr:
 # 4. 运行 DSPy 模式 (传 --use-dspy)
 print("\n[Step 2] Running DSPy mode...")
 result = subprocess.run(
-    [sys.executable, "-m", "lab_analysis.literature_interpreter_dspy",
-     "--id-card", "846552421134373347", "--use-dspy",
-     "--analysis", str(analysis_path), "--lit", str(lit_path),
-     "--out", str(LIT_DIR / "literature_interpretation_dspy.json")],
+    [
+        sys.executable,
+        "-m",
+        "lab_analysis.literature_interpreter_dspy",
+        "--id-card",
+        "846552421134373347",
+        "--use-dspy",
+        "--analysis",
+        str(analysis_path),
+        "--lit",
+        str(lit_path),
+        "--out",
+        str(LIT_DIR / "literature_interpretation_dspy.json"),
+    ],
     cwd=str(WORK_ROOT),
     capture_output=True,
-    text=True
+    text=True,
 )
 print(f"  Return code: {result.returncode}")
 if result.stdout:
@@ -121,11 +138,15 @@ if result.stderr:
 # 5. 运行对比工具
 print("\n[Step 3] Running comparison tool...")
 result = subprocess.run(
-    [sys.executable, str(WORK_ROOT / "examples" / "dspy_prompt_comparison.py"),
-     "--data-dir", str(DATA_DIR)],
+    [
+        sys.executable,
+        str(WORK_ROOT / "examples" / "dspy_prompt_comparison.py"),
+        "--data-dir",
+        str(DATA_DIR),
+    ],
     cwd=str(WORK_ROOT),
     capture_output=True,
-    text=True
+    text=True,
 )
 print(f"  Return code: {result.returncode}")
 if result.stdout:

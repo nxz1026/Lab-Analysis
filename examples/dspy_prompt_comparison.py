@@ -48,13 +48,13 @@ def load_standard_prompt(prompts_dir: Path, module_name: str) -> Optional[Dict]:
     for filename in candidates:
         path = prompts_dir / filename
         if path.exists():
-            content = path.read_text(encoding='utf-8')
+            content = path.read_text(encoding="utf-8")
             return {
                 "type": "standard",
                 "path": str(path),
                 "content": content,
                 "length": len(content),
-                "lines": content.count('\n') + 1,
+                "lines": content.count("\n") + 1,
                 "filename": filename,
             }
     return None
@@ -68,7 +68,7 @@ def load_dspy_prompts(prompts_dir: Path, module_name: str) -> Optional[Dict]:
     if not json_path.exists():
         return None
 
-    data = json.loads(json_path.read_text(encoding='utf-8'))
+    data = json.loads(json_path.read_text(encoding="utf-8"))
 
     # 提取关键信息
     summary = {
@@ -82,17 +82,19 @@ def load_dspy_prompts(prompts_dir: Path, module_name: str) -> Optional[Dict]:
 
     for pred in data.get("predictors", []):
         sig = pred.get("signature", {})
-        summary["predictors"].append({
-            "name": pred.get("predictor_name", ""),
-            "type": pred.get("predictor_type", ""),
-            "signature_name": sig.get("signature_name", ""),
-            "instructions": sig.get("instructions", ""),
-            "instructions_length": len(sig.get("instructions", "")),
-            "input_fields": sig.get("input_fields", {}),
-            "output_fields": sig.get("output_fields", {}),
-            "num_demos": pred.get("num_demos", 0),
-            "demos": pred.get("demos", []),
-        })
+        summary["predictors"].append(
+            {
+                "name": pred.get("predictor_name", ""),
+                "type": pred.get("predictor_type", ""),
+                "signature_name": sig.get("signature_name", ""),
+                "instructions": sig.get("instructions", ""),
+                "instructions_length": len(sig.get("instructions", "")),
+                "input_fields": sig.get("input_fields", {}),
+                "output_fields": sig.get("output_fields", {}),
+                "num_demos": pred.get("num_demos", 0),
+                "demos": pred.get("demos", []),
+            }
+        )
 
     # 估算优化后的总 prompt 长度
     total_length = 0
@@ -106,7 +108,7 @@ def load_dspy_prompts(prompts_dir: Path, module_name: str) -> Optional[Dict]:
         # 加上 demos 的长度
         for demo in pred["demos"]:
             for k, v in demo.items():
-                if not k.startswith('_'):
+                if not k.startswith("_"):
                     total_length += len(str(v))
 
     # 加上标准的 ChainOfThought 模板 (~ 500字符)
@@ -196,7 +198,9 @@ def generate_markdown_report(comparisons: List[Dict], output_path: Path):
         ratio = cmp["differences"].get("length_ratio", "N/A")
         demos = cmp["dspy_mode"]["total_demos"]
         improvements = len(cmp["key_improvements"])
-        lines.append(f"| {module_name} | {std_len} | {dspy_len} | {ratio}x | {demos} | {improvements} |")
+        lines.append(
+            f"| {module_name} | {std_len} | {dspy_len} | {ratio}x | {demos} | {improvements} |"
+        )
 
     lines.append("")
     lines.append("---")
@@ -230,9 +234,11 @@ def generate_markdown_report(comparisons: List[Dict], output_path: Path):
         lines.append("")
         diff = cmp["differences"]
         if "length_ratio" in diff:
-            lines.append(f"- **Prompt 长度变化**: {diff['length_ratio']}x "
-                        f"({'增加' if diff.get('length_increase', 0) > 0 else '减少'} "
-                        f"{abs(diff.get('length_increase', 0))} 字符)")
+            lines.append(
+                f"- **Prompt 长度变化**: {diff['length_ratio']}x "
+                f"({'增加' if diff.get('length_increase', 0) > 0 else '减少'} "
+                f"{abs(diff.get('length_increase', 0))} 字符)"
+            )
         lines.append("")
 
         # 改进点
@@ -249,13 +255,15 @@ def generate_markdown_report(comparisons: List[Dict], output_path: Path):
     lines.append("")
     lines.append("### DSPy 框架的关键优势:")
     lines.append("")
-    lines.append("1. **自动 Few-shot 示例选择**: 通过 BootstrapFewShot 优化器自动从训练数据中选择高质量示例")
+    lines.append(
+        "1. **自动 Few-shot 示例选择**: 通过 BootstrapFewShot 优化器自动从训练数据中选择高质量示例"
+    )
     lines.append("2. **结构化 Signature**: 使用声明式 Signature 定义输入输出,自动生成优化的指令")
     lines.append("3. **可解释的优化**: 所有 prompts 和示例都被结构化保存,便于审查和改进")
     lines.append("4. **模型无关**: 同一套 prompt 可适配不同 LLM (DeepSeek, Qwen-VL 等)")
     lines.append("")
 
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
 
@@ -266,19 +274,27 @@ def generate_json_report(comparisons: List[Dict], output_path: Path):
         "total_comparisons": len(comparisons),
         "comparisons": comparisons,
     }
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
 
 def main():
     parser = argparse.ArgumentParser(description="DSPy Prompt 对比工具")
-    parser.add_argument("--data-dir", type=str, required=True,
-                        help="数据目录路径,例如: data/846552421134373347/20260611_170121")
-    parser.add_argument("--module", type=str,
-                        choices=["literature_interpreter", "mri_analyzer", "final_report_generator"],
-                        help="指定要对比的模块 (默认全部)")
-    parser.add_argument("--output-dir", type=str, default=None,
-                        help="报告输出目录 (默认: data_dir/reports/)")
+    parser.add_argument(
+        "--data-dir",
+        type=str,
+        required=True,
+        help="数据目录路径,例如: data/846552421134373347/20260611_170121",
+    )
+    parser.add_argument(
+        "--module",
+        type=str,
+        choices=["literature_interpreter", "mri_analyzer", "final_report_generator"],
+        help="指定要对比的模块 (默认全部)",
+    )
+    parser.add_argument(
+        "--output-dir", type=str, default=None, help="报告输出目录 (默认: data_dir/reports/)"
+    )
     args = parser.parse_args()
 
     data_dir = Path(args.data_dir)
@@ -295,7 +311,9 @@ def main():
     prompts_dirs = find_dspy_prompts_dirs(data_dir)
     if not prompts_dirs:
         print("[错误] 未找到任何 dspy_prompts 目录")
-        print("  请先运行 DSPy 优化模式: python -m lab_analysis.literature_interpreter_dspy --use-dspy")
+        print(
+            "  请先运行 DSPy 优化模式: python -m lab_analysis.literature_interpreter_dspy --use-dspy"
+        )
         sys.exit(1)
 
     print(f"[信息] 找到 {len(prompts_dirs)} 个 prompts 目录:")
@@ -343,18 +361,20 @@ def main():
             comparisons.append(comparison)
         elif dspy_data:
             print("  [信息] 仅 DSPy 数据,生成独立报告")
-            comparisons.append({
-                "module_name": module_name,
-                "standard_mode": {"length": 0, "lines": 0, "path": "(未运行标准模式)"},
-                "dspy_mode": {
-                    "estimated_length": dspy_data.get("estimated_total_length", 0),
-                    "total_demos": dspy_data.get("total_demos", 0),
-                    "predictors": len(dspy_data.get("predictors", [])),
-                    "path": dspy_data.get("path", ""),
-                },
-                "differences": {},
-                "key_improvements": ["仅 DSPy 模式数据,未运行标准模式进行对比"],
-            })
+            comparisons.append(
+                {
+                    "module_name": module_name,
+                    "standard_mode": {"length": 0, "lines": 0, "path": "(未运行标准模式)"},
+                    "dspy_mode": {
+                        "estimated_length": dspy_data.get("estimated_total_length", 0),
+                        "total_demos": dspy_data.get("total_demos", 0),
+                        "predictors": len(dspy_data.get("predictors", [])),
+                        "path": dspy_data.get("path", ""),
+                    },
+                    "differences": {},
+                    "key_improvements": ["仅 DSPy 模式数据,未运行标准模式进行对比"],
+                }
+            )
 
     if not comparisons:
         print("\n[错误] 没有可对比的数据")

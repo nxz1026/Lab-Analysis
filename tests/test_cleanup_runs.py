@@ -1,6 +1,5 @@
 """tests.test_cleanup_runs — 产物清理工具测试"""
 
-
 import pytest
 
 from lab_analysis.cleanup_runs import (
@@ -14,8 +13,13 @@ def mock_data_dir(tmp_path):
     """模拟 data/<deid>/ 下 N 个时间戳子目录，每个含一个占位文件。"""
     deid = "test_deid_001"
     base = tmp_path / "data" / deid
-    for ts in ["20260620_000230", "20260618_120000", "20260615_080000",
-               "20260610_090000", "20260601_100000"]:
+    for ts in [
+        "20260620_000230",
+        "20260618_120000",
+        "20260615_080000",
+        "20260610_090000",
+        "20260601_100000",
+    ]:
         d = base / ts / "02_analyzed"
         d.mkdir(parents=True)
         (d / "analysis_results.json").write_text('{"test": 1}', encoding="utf-8")
@@ -74,6 +78,7 @@ class TestCleanupPatient:
         monkeypatch.chdir(tmp)
         # 临时改 WORK_ROOT 指向 tmp
         import lab_analysis.cleanup_runs as cr
+
         original = cr._DATA_DIR
         cr._DATA_DIR = tmp / "data"
 
@@ -88,6 +93,7 @@ class TestCleanupPatient:
     def test_keep_last_10_all_kept(self, mock_data_dir, monkeypatch):
         tmp, deid = mock_data_dir
         import lab_analysis.cleanup_runs as cr
+
         original = cr._DATA_DIR
         cr._DATA_DIR = tmp / "data"
 
@@ -101,6 +107,7 @@ class TestCleanupPatient:
     def test_empty_patient_no_crash(self, mock_empty_patient, monkeypatch):
         tmp, deid = mock_empty_patient
         import lab_analysis.cleanup_runs as cr
+
         original = cr._DATA_DIR
         cr._DATA_DIR = tmp / "data"
 
@@ -114,6 +121,7 @@ class TestCleanupPatient:
     def test_dry_run_does_not_delete(self, mock_data_dir, monkeypatch):
         tmp, deid = mock_data_dir
         import lab_analysis.cleanup_runs as cr
+
         original = cr._DATA_DIR
         cr._DATA_DIR = tmp / "data"
 
@@ -136,12 +144,12 @@ class TestCleanupAll:
         p1 = tmp_path / "data" / "pat1"
         p2 = tmp_path / "data" / "pat2"
         for p in [p1, p2]:
-            for ts in ["20260620_000230", "20260618_120000",
-                        "20260615_080000", "20260610_090000"]:
+            for ts in ["20260620_000230", "20260618_120000", "20260615_080000", "20260610_090000"]:
                 (p / ts).mkdir(parents=True)
                 (p / ts / "file.txt").write_text("x")
 
         import lab_analysis.cleanup_runs as cr
+
         original = cr._DATA_DIR
         cr._DATA_DIR = tmp_path / "data"
 
@@ -162,6 +170,7 @@ class TestCleanupAll:
                 (p / ts).mkdir(parents=True)
 
         import lab_analysis.cleanup_runs as cr
+
         original = cr._DATA_DIR
         cr._DATA_DIR = tmp_path / "data"
 

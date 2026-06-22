@@ -40,20 +40,23 @@ def _compute_stats(df: pd.DataFrame) -> dict:
         "n_reports": len(df),
         "date_range": {
             "start": df["report_date"].min().strftime("%Y-%m-%d"),
-            "end":   df["report_date"].max().strftime("%Y-%m-%d"),
+            "end": df["report_date"].max().strftime("%Y-%m-%d"),
         },
     }
 
     # ── 1. 炎症状态分类 ──────────────────────────────────────
-    inflammation_status = [classify_inflammation(
-        row["hs-CRP"] if pd.notna(row.get("hs-CRP")) else None)
-        for _, row in df.iterrows()]
+    inflammation_status = [
+        classify_inflammation(row["hs-CRP"] if pd.notna(row.get("hs-CRP")) else None)
+        for _, row in df.iterrows()
+    ]
     df["inflammation_status"] = inflammation_status
     results["inflammation_classification"] = {
         "labels": inflammation_status,
         "report_dates": df["report_date"].dt.strftime("%Y-%m-%d").tolist(),
     }
-    print(f"炎症分类: {dict(zip(df['report_date'].dt.strftime('%m-%d'), inflammation_status, strict=True))}")
+    print(
+        f"炎症分类: {dict(zip(df['report_date'].dt.strftime('%m-%d'), inflammation_status, strict=True))}"
+    )
 
     # ── 2. 线性回归趋势 ──────────────────────────────────────
     trend_results = {}
@@ -92,10 +95,11 @@ def _compute_stats(df: pd.DataFrame) -> dict:
         col = df[metric].dropna()
         if len(col) == 0:
             continue
-        abnormal_dates = df.loc[
-            df[metric].notna() & ((df[metric] < low) | (df[metric] > high)),
-            "report_date"
-        ].dt.strftime("%Y-%m-%d").tolist()
+        abnormal_dates = (
+            df.loc[df[metric].notna() & ((df[metric] < low) | (df[metric] > high)), "report_date"]
+            .dt.strftime("%Y-%m-%d")
+            .tolist()
+        )
         if abnormal_dates:
             abnormal_summary[metric] = {
                 "ref_range": f"{low}-{high}",
@@ -116,7 +120,7 @@ def _compute_stats(df: pd.DataFrame) -> dict:
     cv_results = cv_stability_analysis(df)
     results["cv_stability"] = cv_results
     print(f"\nCV稳定性分析完成: {len(cv_results)} 个指标")
-    high_cv = [(m, d) for m, d in cv_results.items() if d['risk_level'] == '高']
+    high_cv = [(m, d) for m, d in cv_results.items() if d["risk_level"] == "高"]
     if high_cv:
         print(f"  [警告] 高变异指标: {', '.join([m for m, _ in high_cv])}")
     else:
@@ -126,8 +130,8 @@ def _compute_stats(df: pd.DataFrame) -> dict:
     zscore_results = zscore_outlier_detection(df, threshold=2.0)
     results["zscore_outliers"] = zscore_results
     print(f"\nZ-score异常检测完成: {len(zscore_results)} 个指标")
-    total_outliers = sum(d['outliers_mild']['count'] for d in zscore_results.values())
-    severe_outliers = sum(d['outliers_severe']['count'] for d in zscore_results.values())
+    total_outliers = sum(d["outliers_mild"]["count"] for d in zscore_results.values())
+    severe_outliers = sum(d["outliers_severe"]["count"] for d in zscore_results.values())
     if severe_outliers > 0:
         print(f"  [ALERT] 发现 {severe_outliers} 个严重异常值 (|Z|>3)")
     if total_outliers > 0:
@@ -136,6 +140,7 @@ def _compute_stats(df: pd.DataFrame) -> dict:
     # ── 9. 检验指标预测 ───────────────────────────────────────
     try:
         from lab_analysis.lab_prediction import predict_metrics, print_predictions
+
         preds = predict_metrics(results, df)
         if preds:
             results["predictions"] = preds
@@ -184,10 +189,9 @@ def _generate_md_report(results: dict, patient_id: str) -> str:
     # 相关
     md_lines.append("\n## 强相关性（|r| ≥ 0.9）\n")
     corr = results.get("correlation_matrix", {})
-    strong = [(p, r) for p, r in corr.items()
-              if isinstance(r, (int, float)) and abs(r) >= 0.9]
+    strong = [(p, r) for p, r in corr.items() if isinstance(r, (int, float)) and abs(r) >= 0.9]
     for pair, r in sorted(strong, key=lambda x: -abs(x[1])):
-        md_lines.append(f"- {pair}: r={r:.3f}（{'正' if r>0 else '负'}相关）\n")
+        md_lines.append(f"- {pair}: r={r:.3f}（{'正' if r > 0 else '负'}相关）\n")
 
     # 移动平均
     md_lines.append("\n## 移动平均趋势分析\n")
@@ -200,45 +204,48 @@ def _generate_md_report(results: dict, patient_id: str) -> str:
     # CV
     md_lines.append("\n## 指标稳定性分析（变异系数CV）\n")
     cv_data = results.get("cv_stability", {})
-    high_risk = [(m, d) for m, d in cv_data.items() if d.get('risk_level') == '高']
-    medium_risk = [(m, d) for m, d in cv_data.items() if d.get('risk_level') == '中']
-    stable = [(m, d) for m, d in cv_data.items() if d.get('risk_level') == '低']
+    high_risk = [(m, d) for m, d in cv_data.items() if d.get("risk_level") == "高"]
+    medium_risk = [(m, d) for m, d in cv_data.items() if d.get("risk_level") == "中"]
+    stable = [(m, d) for m, d in cv_data.items() if d.get("risk_level") == "低"]
     if high_risk:
         md_lines.append("### ⚠ 高变异指标（需关注）\n")
         for metric, info in high_risk:
-            md_lines.append(f"- **{metric}**: CV={info.get('cv',0):.4f}（波动较大）\n")
+            md_lines.append(f"- **{metric}**: CV={info.get('cv', 0):.4f}（波动较大）\n")
     if medium_risk:
         md_lines.append("\n### 中等变异指标\n")
         for metric, info in medium_risk:
-            md_lines.append(f"- {metric}: CV={info.get('cv',0):.4f}\n")
+            md_lines.append(f"- {metric}: CV={info.get('cv', 0):.4f}\n")
     if stable:
         md_lines.append(f"\n### 稳定指标（{len(stable)}个）\n")
-        md_lines.append(f"- {', '.join([m for m,_ in stable[:5]])}"
-                        f"{' 等'+str(len(stable))+'个' if len(stable)>5 else ''}\n")
+        md_lines.append(
+            f"- {', '.join([m for m, _ in stable[:5]])}"
+            f"{' 等' + str(len(stable)) + '个' if len(stable) > 5 else ''}\n"
+        )
 
     # Z-score
     md_lines.append("\n## Z-score异常检测结果\n")
     severe_items, mild_items = [], []
     for metric, info in results.get("zscore_outliers", {}).items():
-        s = info.get('outliers_severe', {})
-        m = info.get('outliers_mild', {})
-        if s.get('count', 0) > 0:
+        s = info.get("outliers_severe", {})
+        m = info.get("outliers_mild", {})
+        if s.get("count", 0) > 0:
             severe_items.append((metric, s))
-        elif m.get('count', 0) > 0:
+        elif m.get("count", 0) > 0:
             mild_items.append((metric, m))
     if severe_items:
         md_lines.append("### 🚨 严重异常值（|Z| > 3）\n")
         for metric, info in severe_items:
-            dt_list = ', '.join(info.get('dates', []))
-            val_list = ', '.join([str(v) for v in info.get('values', [])])
+            dt_list = ", ".join(info.get("dates", []))
+            val_list = ", ".join([str(v) for v in info.get("values", [])])
             md_lines.append(f"- **{metric}**: {info['count']}次异常\n")
             md_lines.append(f"  - 日期: {dt_list}\n")
             md_lines.append(f"  - 数值: {val_list}\n")
     if mild_items:
         md_lines.append("\n### ⚠ 轻度异常值（|Z| > 2）\n")
         for metric, info in mild_items:
-            md_lines.append(f"- {metric}: {info['count']}次异常"
-                            f"（{', '.join(info.get('dates', []))}）\n")
+            md_lines.append(
+                f"- {metric}: {info['count']}次异常（{', '.join(info.get('dates', []))}）\n"
+            )
     if not severe_items and not mild_items:
         md_lines.append("- ✅ 未发现统计学异常值\n")
 
