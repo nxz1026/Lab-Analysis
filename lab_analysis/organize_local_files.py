@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 本地文件组织脚本 — Pipeline 最终步骤
@@ -73,10 +73,10 @@ def copy_file_to_folder(local_path: Path, target_folder: Path, rename: str = Non
     if not local_path.exists():
         print(f"  [警告] 文件不存在，跳过: {local_path}")
         return False
-    
+
     target_name = rename or local_path.name
     target_path = target_folder / target_name
-    
+
     try:
         shutil.copy2(local_path, target_path)
         size = target_path.stat().st_size
@@ -93,40 +93,40 @@ def main():
     paths = build_paths(patient_id)
     data_dir = paths["data"]
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"[日期] 当天日期: {TODAY}")
     print(f"[患者] 病人ID: {patient_id}")
     print(f"[目录] 本地上传根目录: {LOCAL_UPLOAD_ROOT}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # 动态构建文件清单，文件名加病人ID前缀
     analyzed_dir = data_dir / "02_analyzed"
     lit_dir = data_dir / "03_literature"
     reports_dir = data_dir / "04_reports"
     figures_dir = analyzed_dir / "figures"
-    
+
     upload_map = [
         # --- 原始数据 ---
-        (analyzed_dir / "lab_metrics.csv",                  "原始数据",  None),
-        (analyzed_dir / "lab_metrics.json",                 "原始数据",  None),
+        (analyzed_dir / "lab_metrics.csv", "原始数据", None),
+        (analyzed_dir / "lab_metrics.json", "原始数据", None),
         # --- 文献参考 ---
-        (lit_dir / "literature_results.md",                 "文献参考",  None),
+        (lit_dir / "literature_results.md", "文献参考", None),
         # --- 中间结果 ---
-        (lit_dir / "literature_interpretation.md",          "中间结果",  None),
-        (lit_dir / "mri_report_check_results.md",            "中间结果",  None),
-        (analyzed_dir / "analysis_results_report.md",       "中间结果",  None),
+        (lit_dir / "literature_interpretation.md", "中间结果", None),
+        (lit_dir / "mri_report_check_results.md", "中间结果", None),
+        (analyzed_dir / "analysis_results_report.md", "中间结果", None),
         # --- 统计结果 ---
-        (figures_dir / "fig_01_trend_regression.png",       "统计结果",  None),
-        (figures_dir / "fig_02_correlation_heatmap.png",     "统计结果",  None),
-        (figures_dir / "fig_03_inflammation_status.png",     "统计结果",  None),
-        (figures_dir / "fig_04_abnormal_indicators.png",     "统计结果",  None),
-        (figures_dir / "fig_05_moving_average.png",         "统计结果",  None),
-        (figures_dir / "fig_06_cv_stability.png",           "统计结果",  None),
-        (figures_dir / "fig_07_zscore_distribution.png",     "统计结果",  None),
+        (figures_dir / "fig_01_trend_regression.png", "统计结果", None),
+        (figures_dir / "fig_02_correlation_heatmap.png", "统计结果", None),
+        (figures_dir / "fig_03_inflammation_status.png", "统计结果", None),
+        (figures_dir / "fig_04_abnormal_indicators.png", "统计结果", None),
+        (figures_dir / "fig_05_moving_average.png", "统计结果", None),
+        (figures_dir / "fig_06_cv_stability.png", "统计结果", None),
+        (figures_dir / "fig_07_zscore_distribution.png", "统计结果", None),
         # --- 最终报告（当天根目录）---
-        (reports_dir / "final_integrated_report.md",         None,        None),
+        (reports_dir / "final_integrated_report.md", None, None),
     ]
-    
+
     # Step 1: 创建当天日期文件夹
     day_folder = LOCAL_UPLOAD_ROOT / TODAY
     print(f"① 创建当天文件夹: {day_folder}")
@@ -175,9 +175,9 @@ def main():
     dspy_target = subfolders.get("中间结果") / "dspy_prompts"
     dspy_target.mkdir(parents=True, exist_ok=True)
     dspy_sources = [
-        lit_dir / "dspy_prompts",                       # 03_literature/dspy_prompts
-        reports_dir / "dspy_prompts",                   # 04_reports/dspy_prompts
-        WORK_ROOT / "data" / "mri_dspy_prompts",         # 散落: mri_analyzer 旧产物
+        lit_dir / "dspy_prompts",  # 03_literature/dspy_prompts
+        reports_dir / "dspy_prompts",  # 04_reports/dspy_prompts
+        WORK_ROOT / "data" / "mri_dspy_prompts",  # 散落: mri_analyzer 旧产物
         WORK_ROOT / "data" / "lab_extractor_dspy_prompts",  # 散落: lab_data_extractor 旧产物
     ]
     dspy_merged = 0
@@ -202,13 +202,13 @@ def main():
     else:
         print(f"  [完成] 共合并 {dspy_merged} 个 DSPy 产物")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("[完成] 全部完成！")
     print(f"   [成功] 成功复制: {copied_count} 个文件")
     print(f"   [DSPy] 合并: {dspy_merged} 个 DSPy 产物")
     print(f"   [警告] 跳过: {skipped_count} 个文件")
     print(f"   [目录] 本地路径: {day_folder}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
 
 if __name__ == "__main__":

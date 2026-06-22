@@ -61,17 +61,34 @@ SCENARIO_WEIGHTS: dict[str, dict[str, float]] = {
 # ---------------------------------------------------------------------------
 TOPIC_KEYWORDS: dict[str, list[str]] = {
     "sepsis_gn_gp": [
-        "gram-negative", "gram-positive", "gn sepsis", "gp sepsis",
-        "procalcitonin", "pct", "c-reactive protein", "crp",
-        "biomarker", "differential", "distinguish", "sepsis",
+        "gram-negative",
+        "gram-positive",
+        "gn sepsis",
+        "gp sepsis",
+        "procalcitonin",
+        "pct",
+        "c-reactive protein",
+        "crp",
+        "biomarker",
+        "differential",
+        "distinguish",
+        "sepsis",
     ],
     "inflammation": [
-        "inflammation", "crp", "biomarker", "cytokine",
-        "il-6", "tnf", "acute phase",
+        "inflammation",
+        "crp",
+        "biomarker",
+        "cytokine",
+        "il-6",
+        "tnf",
+        "acute phase",
     ],
     "rdw": [
-        "rdw", "red cell distribution width", "mortality",
-        "prognostic", "inflammation",
+        "rdw",
+        "red cell distribution width",
+        "mortality",
+        "prognostic",
+        "inflammation",
     ],
 }
 
@@ -117,29 +134,29 @@ def score_evidence_level(paper: dict) -> tuple[float, str]:
     """证据等级：从标题/摘要推断研究类型"""
     text = f"{paper.get('title', '')} {paper.get('abstract', '')}".lower()
     # 优先级从高到低
-    if re.search(r'\b(meta[-\s]?analysis|systematic\s+review)\b', text):
+    if re.search(r"\b(meta[-\s]?analysis|systematic\s+review)\b", text):
         return 1.0, "meta-analysis / systematic review"
-    if re.search(r'\b(randomized|randomised|rct)\b', text):
+    if re.search(r"\b(randomized|randomised|rct)\b", text):
         return 0.9, "RCT"
-    if re.search(r'\b(cohort|prospective|longitudinal)\b', text):
+    if re.search(r"\b(cohort|prospective|longitudinal)\b", text):
         return 0.7, "cohort / prospective"
-    if re.search(r'\b(case[-\s]?control|retrospective)\b', text):
+    if re.search(r"\b(case[-\s]?control|retrospective)\b", text):
         return 0.55, "case-control / retrospective"
-    if re.search(r'\b(cross[-\s]?sectional)\b', text):
+    if re.search(r"\b(cross[-\s]?sectional)\b", text):
         return 0.5, "cross-sectional"
-    if re.search(r'\b(case\s+report)\b', text):
+    if re.search(r"\b(case\s+report)\b", text):
         return 0.3, "case report"
-    if re.search(r'\b(review|narrative)\b', text):
+    if re.search(r"\b(review|narrative)\b", text):
         return 0.4, "narrative review"
     # 有 abstract 但未识别出研究类型 → 推测为原创研究
-    if paper.get('abstract'):
+    if paper.get("abstract"):
         return 0.5, "原创研究（未识别具体类型）"
     return 0.2, "无摘要，研究类型未知"
 
 
 def score_recency(paper: dict) -> tuple[float, str]:
     """时效性：基于发表年份"""
-    year_str = paper.get('year', '')
+    year_str = paper.get("year", "")
     if not year_str or not year_str.isdigit():
         return 0.3, "年份缺失"
     year = int(year_str)
@@ -162,11 +179,11 @@ def score_recency(paper: dict) -> tuple[float, str]:
 
 def score_sample_size(paper: dict) -> tuple[float, str]:
     """样本量：从摘要提取最大数字作为样本量估计"""
-    abstract = paper.get('abstract', '')
+    abstract = paper.get("abstract", "")
     if not abstract:
         return 0.3, "无摘要无法评估样本量"
     # 匹配所有 2-5 位数字
-    nums = [int(n) for n in re.findall(r'\b(\d{2,5})\b', abstract)]
+    nums = [int(n) for n in re.findall(r"\b(\d{2,5})\b", abstract)]
     if not nums:
         return 0.4, "摘要中未提取到样本数字"
     # 取最大数字（通常是患者数/事件数）
@@ -190,10 +207,10 @@ def score_sample_size(paper: dict) -> tuple[float, str]:
 
 def score_parse_quality(paper: dict) -> tuple[float, str]:
     """解析质量：标题/摘要/期刊/年份是否齐全"""
-    title = bool(paper.get('title', '').strip())
-    abstract = bool(paper.get('abstract', '').strip())
-    journal = bool(paper.get('journal', '').strip())
-    year = bool(paper.get('year', '').strip())
+    title = bool(paper.get("title", "").strip())
+    abstract = bool(paper.get("abstract", "").strip())
+    journal = bool(paper.get("journal", "").strip())
+    year = bool(paper.get("year", "").strip())
     missing = []
     if not title:
         missing.append("标题")
@@ -225,8 +242,9 @@ def _tier_from_score(score: float) -> str:
     return "C"
 
 
-def grade_paper(paper: dict, scenario: ScenarioName = "differential_diagnosis",
-                topic: str = "sepsis_gn_gp") -> GradedPaper:
+def grade_paper(
+    paper: dict, scenario: ScenarioName = "differential_diagnosis", topic: str = "sepsis_gn_gp"
+) -> GradedPaper:
     """对单篇论文打分。返回 GradedPaper。
 
     Parameters
@@ -280,8 +298,8 @@ def grade_paper(paper: dict, scenario: ScenarioName = "differential_diagnosis",
     # 加权汇总
     total = sum(subscores[k] * weights[k] for k in weights)
     return GradedPaper(
-        pmid=paper.get('pmid', ''),
-        title=paper.get('title', ''),
+        pmid=paper.get("pmid", ""),
+        title=paper.get("title", ""),
         score=round(total, 4),
         tier=_tier_from_score(total),
         reasons=reasons,
@@ -290,9 +308,12 @@ def grade_paper(paper: dict, scenario: ScenarioName = "differential_diagnosis",
     )
 
 
-def rank_papers(papers: list[dict], scenario: ScenarioName = "differential_diagnosis",
-                topic: str = "sepsis_gn_gp",
-                top_k: int = 5) -> list[GradedPaper]:
+def rank_papers(
+    papers: list[dict],
+    scenario: ScenarioName = "differential_diagnosis",
+    topic: str = "sepsis_gn_gp",
+    top_k: int = 5,
+) -> list[GradedPaper]:
     """批量打分并按 score 倒序排，返 top_k。
 
     Parameters
@@ -331,8 +352,9 @@ def _cli():
 
     parser = argparse.ArgumentParser(description="论文证据等级打分")
     parser.add_argument("--in", dest="inp", required=True, help="输入 JSON 路径（含 all_papers）")
-    parser.add_argument("--scenario", default="differential_diagnosis",
-                        choices=list(SCENARIO_WEIGHTS.keys()))
+    parser.add_argument(
+        "--scenario", default="differential_diagnosis", choices=list(SCENARIO_WEIGHTS.keys())
+    )
     parser.add_argument("--topic", default="sepsis_gn_gp", choices=list(TOPIC_KEYWORDS.keys()))
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--out", default=None, help="输出 JSON 路径")

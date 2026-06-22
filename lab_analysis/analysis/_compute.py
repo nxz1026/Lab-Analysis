@@ -20,25 +20,29 @@ def classify_inflammation(hs_crp):
 def linear_regression_trend(series: pd.Series) -> dict:
     valid = series.dropna()
     if len(valid) < 2:
-        return {"slope": None, "intercept": None, "r2": None,
-                "trend": "数据不足", "slope_per_day": None}
+        return {
+            "slope": None,
+            "intercept": None,
+            "r2": None,
+            "trend": "数据不足",
+            "slope_per_day": None,
+        }
 
     x = np.arange(len(valid))
     y = valid.values.astype(float)
     x_mean, y_mean = x.mean(), y.mean()
 
-    numerator   = np.sum((x - x_mean) * (y - y_mean))
+    numerator = np.sum((x - x_mean) * (y - y_mean))
     denominator = np.sum((x - x_mean) ** 2)
 
     if denominator == 0:
-        return {"slope": 0, "intercept": y_mean, "r2": 0,
-                "trend": "无变化", "slope_per_day": 0}
+        return {"slope": 0, "intercept": y_mean, "r2": 0, "trend": "无变化", "slope_per_day": 0}
 
-    slope     = numerator / denominator
+    slope = numerator / denominator
     intercept = y_mean - slope * x_mean
-    ss_res    = np.sum((y - (slope * x + intercept)) ** 2)
-    ss_tot    = np.sum((y - y_mean) ** 2)
-    r2        = 1 - ss_res / ss_tot if ss_tot != 0 else 0
+    ss_res = np.sum((y - (slope * x + intercept)) ** 2)
+    ss_tot = np.sum((y - y_mean) ** 2)
+    r2 = 1 - ss_res / ss_tot if ss_tot != 0 else 0
 
     trend = "上升" if slope > 0.1 else "下降" if slope < -0.1 else "平稳"
 
@@ -54,7 +58,7 @@ def linear_regression_trend(series: pd.Series) -> dict:
 
 def correlation_matrix_calc(df: pd.DataFrame, metrics: list) -> dict:
     cols = [m for m in metrics if m in df.columns]
-    sub  = df[cols].apply(pd.to_numeric, errors="coerce")
+    sub = df[cols].apply(pd.to_numeric, errors="coerce")
     corr = sub.corr(method="pearson")
     result = {}
     for col in cols:
@@ -70,11 +74,10 @@ def correlation_matrix_calc(df: pd.DataFrame, metrics: list) -> dict:
 def descriptive_stats(series: pd.Series) -> dict:
     valid = series.dropna().astype(float)
     if len(valid) == 0:
-        return {"count": 0, "mean": None, "std": None,
-                "min": None, "max": None, "cv": None}
+        return {"count": 0, "mean": None, "std": None, "min": None, "max": None, "cv": None}
     mean = float(valid.mean())
-    std  = float(valid.std(ddof=1)) if len(valid) > 1 else 0
-    cv   = round(std / mean, 4) if mean != 0 else None
+    std = float(valid.std(ddof=1)) if len(valid) > 1 else 0
+    cv = round(std / mean, 4) if mean != 0 else None
     return {
         "count": int(len(valid)),
         "mean": round(mean, 3),
@@ -96,18 +99,23 @@ def moving_average_analysis(df: pd.DataFrame, window: int = 2) -> dict:
         if len(series) < window:
             continue
 
-        ma      = series.rolling(window=window, min_periods=1).mean()
-        std_r   = series.rolling(window=window, min_periods=1).std().fillna(0)
+        ma = series.rolling(window=window, min_periods=1).mean()
+        std_r = series.rolling(window=window, min_periods=1).std().fillna(0)
 
         if len(ma) >= 2:
             ma_vals = ma.values
-            trend = "上升" if ma_vals[-1] > ma_vals[0] * 1.05 else \
-                    "下降" if ma_vals[-1] < ma_vals[0] * 0.95 else "平稳"
+            trend = (
+                "上升"
+                if ma_vals[-1] > ma_vals[0] * 1.05
+                else "下降"
+                if ma_vals[-1] < ma_vals[0] * 0.95
+                else "平稳"
+            )
         else:
             trend = "数据不足"
 
         results[metric] = {
-            "moving_avg":  [round(v, 3) if pd.notna(v) else None for v in ma],
+            "moving_avg": [round(v, 3) if pd.notna(v) else None for v in ma],
             "rolling_std": [round(v, 3) if pd.notna(v) else None for v in std_r],
             "trend": trend,
             "window": window,
@@ -124,7 +132,7 @@ def cv_stability_analysis(df: pd.DataFrame) -> dict:
         if len(series) < 3:
             continue
         mean = series.mean()
-        std  = series.std(ddof=1)
+        std = series.std(ddof=1)
         if mean == 0:
             continue
         cv = std / mean
@@ -140,8 +148,11 @@ def cv_stability_analysis(df: pd.DataFrame) -> dict:
             lambda x: x.std() / x.mean() if x.mean() != 0 and len(x) >= 2 else np.nan
         )
         results[metric] = {
-            "cv": round(cv, 4), "mean": round(mean, 3), "std": round(std, 3),
-            "stability": stability, "risk_level": risk_level,
+            "cv": round(cv, 4),
+            "mean": round(mean, 3),
+            "std": round(std, 3),
+            "stability": stability,
+            "risk_level": risk_level,
             "n_points": len(series),
             "rolling_cv": [round(v, 4) if pd.notna(v) else None for v in rolling_cv],
         }
@@ -157,18 +168,24 @@ def zscore_outlier_detection(df: pd.DataFrame, threshold: float = 2.0) -> dict:
         if len(series) < 3:
             continue
         mean = series.mean()
-        std  = series.std(ddof=1)
+        std = series.std(ddof=1)
         if std == 0:
             continue
 
         zscores = (series - mean) / std
-        outliers_mild   = zscores[zscores.abs() > threshold]
+        outliers_mild = zscores[zscores.abs() > threshold]
         outliers_severe = zscores[zscores.abs() > 3.0]
 
-        outlier_dates_mild   = df.loc[outliers_mild.index, "report_date"] \
-                                 .dt.strftime("%Y-%m-%d").tolist() if len(outliers_mild) else []
-        outlier_dates_severe = df.loc[outliers_severe.index, "report_date"] \
-                                 .dt.strftime("%Y-%m-%d").tolist() if len(outliers_severe) else []
+        outlier_dates_mild = (
+            df.loc[outliers_mild.index, "report_date"].dt.strftime("%Y-%m-%d").tolist()
+            if len(outliers_mild)
+            else []
+        )
+        outlier_dates_severe = (
+            df.loc[outliers_severe.index, "report_date"].dt.strftime("%Y-%m-%d").tolist()
+            if len(outliers_severe)
+            else []
+        )
 
         max_dev_idx = zscores.abs().idxmax()
         results[metric] = {

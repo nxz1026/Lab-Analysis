@@ -40,9 +40,7 @@ except Exception:  # pragma: no cover - utils 不可用时降级为本地正则
     def _is_valid_id_card(s: str) -> bool:  # type: ignore[no-redef]
         if not s:
             return False
-        return bool(
-            re.match(r"^\d{17}[\dXx]$", s) or re.match(r"^\d{15}$", s)
-        )
+        return bool(re.match(r"^\d{17}[\dXx]$", s) or re.match(r"^\d{15}$", s))
 
 
 # ── master_key 解析 ──────────────────────────────────────────────────
@@ -57,9 +55,7 @@ def _load_or_create_master_key() -> bytes:
     if env_val:
         key = _decode_key(env_val)
         if len(key) != 32:
-            raise ValueError(
-                "LAB_DEID_KEY 解码后必须为 32 字节（base64 编码）。"
-            )
+            raise ValueError("LAB_DEID_KEY 解码后必须为 32 字节（base64 编码）。")
         return key
 
     if _KEY_FILE.is_file():
@@ -71,9 +67,7 @@ def _load_or_create_master_key() -> bytes:
     # 首次运行：自动生成
     _KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
     new_key = secrets.token_bytes(32)
-    _KEY_FILE.write_text(
-        base64.urlsafe_b64encode(new_key).decode("ascii"), encoding="utf-8"
-    )
+    _KEY_FILE.write_text(base64.urlsafe_b64encode(new_key).decode("ascii"), encoding="utf-8")
     with contextlib.suppress(OSError):
         os.chmod(_KEY_FILE, stat.S_IRUSR | stat.S_IWUSR)  # 0600，Windows 上为 no-op
     print(
@@ -96,6 +90,7 @@ def _decode_key(s: str) -> bytes:
 
 
 # ── 脱敏 / 还原 ──────────────────────────────────────────────────────
+
 
 def encode(id_card: str) -> str:
     """原始身份证号 → 脱敏 ID（确定性、可逆）。
@@ -126,6 +121,7 @@ def decode(deid: str) -> str:
 
 
 # ── 身份证号统一校验 ──────────────────────────────────────────────────
+
 
 def validate_id_card(
     id_card: Optional[str],
@@ -164,8 +160,7 @@ def validate_id_card(
             print("[ERROR] 非交互模式且身份证号不一致，放弃此数据")
             return None
         return _choose_id_card(
-            options=[("使用命令行身份证号", id_card),
-                     ("使用图片识别身份证号", extracted_id)]
+            options=[("使用命令行身份证号", id_card), ("使用图片识别身份证号", extracted_id)]
         )
 
     # 情况 3：仅 OCR 合法
@@ -210,9 +205,7 @@ def _prompt_manual_input() -> Optional[str]:
     """交互式要求用户手动输入一个合法身份证号（最多 3 次）。"""
     for attempt in range(3):
         try:
-            val = input(
-                f"请输入正确的身份证号（18 位或 15 位，第 {attempt + 1}/3 次）: "
-            ).strip()
+            val = input(f"请输入正确的身份证号（18 位或 15 位，第 {attempt + 1}/3 次）: ").strip()
         except (EOFError, KeyboardInterrupt):
             print("\n[ERROR] 无法读取输入，放弃此数据")
             return None

@@ -17,12 +17,14 @@ from pathlib import Path
 # ── 依赖可用性检测 ──────────────────────────────────────────────────
 try:
     import markdown
+
     HAS_MARKDOWN = True
 except ImportError:
     HAS_MARKDOWN = False
 
 try:
     import weasyprint
+
     HAS_WEASYPRINT = True
 except ImportError:
     HAS_WEASYPRINT = False
@@ -103,6 +105,7 @@ def md_to_pdf(
     # 2. 修正图片路径（相对 → 绝对）
     if img_dir:
         import re
+
         def _fix_img_path(match):
             src = match.group(1)
             if not src.startswith(("http://", "https://", "/")):
@@ -110,8 +113,17 @@ def md_to_pdf(
                 if abs_src.exists():
                     return f'<img src="file:///{abs_src.as_posix()}" />'
             return match.group(0)
+
         md_text = re.sub(r'<img\s+src="([^"]+)"\s*/>', _fix_img_path, md_text)
-        md_text = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', lambda m: f'<img src="{_fix_img_path_wrapper(m, img_dir)}" alt="{m.group(1)}" />' if _fix_img_path_wrapper(m, img_dir) else m.group(0), md_text)
+        md_text = re.sub(
+            r"!\[([^\]]*)\]\(([^)]+)\)",
+            lambda m: (
+                f'<img src="{_fix_img_path_wrapper(m, img_dir)}" alt="{m.group(1)}" />'
+                if _fix_img_path_wrapper(m, img_dir)
+                else m.group(0)
+            ),
+            md_text,
+        )
 
     # 3. MD → HTML
     html_body = markdown.markdown(

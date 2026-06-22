@@ -49,16 +49,40 @@ def acute_results():
             },
         },
         "cv_stability": {
-            "PLT": {"cv": 0.31, "mean": 200, "std": 62,
-                    "stability": "高变异", "risk_level": "高", "n_points": 4},
-            "WBC": {"cv": 0.08, "mean": 6.5, "std": 0.52,
-                    "stability": "稳定", "risk_level": "低", "n_points": 4},
+            "PLT": {
+                "cv": 0.31,
+                "mean": 200,
+                "std": 62,
+                "stability": "高变异",
+                "risk_level": "高",
+                "n_points": 4,
+            },
+            "WBC": {
+                "cv": 0.08,
+                "mean": 6.5,
+                "std": 0.52,
+                "stability": "稳定",
+                "risk_level": "低",
+                "n_points": 4,
+            },
         },
         "linear_regression": {
-            "hs-CRP": {"slope": 2.5, "intercept": 0.5, "r2": 0.89,
-                       "trend": "上升", "slope_per_day": 2.5, "n_points": 3},
-            "CRP": {"slope": -0.3, "intercept": 15, "r2": 0.92,
-                    "trend": "下降", "slope_per_day": -0.3, "n_points": 3},
+            "hs-CRP": {
+                "slope": 2.5,
+                "intercept": 0.5,
+                "r2": 0.89,
+                "trend": "上升",
+                "slope_per_day": 2.5,
+                "n_points": 3,
+            },
+            "CRP": {
+                "slope": -0.3,
+                "intercept": 15,
+                "r2": 0.92,
+                "trend": "下降",
+                "slope_per_day": -0.3,
+                "n_points": 3,
+            },
         },
     }
 
@@ -74,12 +98,24 @@ def clean_results():
         "abnormal_summary": {},
         "zscore_outliers": {},
         "cv_stability": {
-            "WBC": {"cv": 0.05, "mean": 6.0, "std": 0.3,
-                    "stability": "稳定", "risk_level": "低", "n_points": 2},
+            "WBC": {
+                "cv": 0.05,
+                "mean": 6.0,
+                "std": 0.3,
+                "stability": "稳定",
+                "risk_level": "低",
+                "n_points": 2,
+            },
         },
         "linear_regression": {
-            "WBC": {"slope": 0.01, "intercept": 6.0, "r2": 0.2,
-                    "trend": "平稳", "slope_per_day": 0.01, "n_points": 2},
+            "WBC": {
+                "slope": 0.01,
+                "intercept": 6.0,
+                "r2": 0.2,
+                "trend": "平稳",
+                "slope_per_day": 0.01,
+                "n_points": 2,
+            },
         },
     }
 

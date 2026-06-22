@@ -18,6 +18,7 @@ class PipelineContext:
         patient_dir: 原始数据目录 raw/patient_{deid}/
         data_dir: 输出目录 data/{deid}/{timestamp}/
     """
+
     deid: str
     timestamp: str
 

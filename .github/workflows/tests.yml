@@ -32,9 +32,8 @@ jobs:
         run: python -m ruff check .
 
       - name: Lint (ruff format)
-        # 警告而非阳断：现有代码还未大范围过 formatter，后续 PR 逐迁
-        continue-on-error: true
-        run: python -m ruff format --check . || echo "::warning::ruff format 需要调优，请运行 'ruff format .' 后提交"
+        # 仓库已完成全量 format 迁移，严格阳断保证不再回退
+        run: python -m ruff format --check .
 
       - name: Test with pytest + coverage
         run: python -m pytest --cov=lab_analysis --cov-report=term-missing --cov-report=xml:coverage.xml --cov-branch

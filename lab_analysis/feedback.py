@@ -97,7 +97,9 @@ def record_correction(
         "original_hypothesis": original_hypothesis,
         "original_confidence": original_confidence,
         "corrected_hypothesis": corrected_hypothesis,
-        "corrected_confidence": corrected_confidence if corrected_confidence is not None else original_confidence,
+        "corrected_confidence": corrected_confidence
+        if corrected_confidence is not None
+        else original_confidence,
         "user_comment": user_comment or "",
         "corrected_at": datetime.now().isoformat(),
     }
@@ -142,9 +144,11 @@ def _auto_adjust_confidence(feedback: FeedbackData, correction: dict):
         adjustment[rule] = adjustment.get(rule, 0) - 0.05
 
     # 如果纠正的假设与原假设完全不同 → 下调原规则
-    if correction.get("corrected_hypothesis") and \
-       correction["corrected_hypothesis"] != orig and \
-       orig:
+    if (
+        correction.get("corrected_hypothesis")
+        and correction["corrected_hypothesis"] != orig
+        and orig
+    ):
         adjustment[rule] = adjustment.get(rule, 0) - 0.10
 
 
@@ -173,8 +177,12 @@ def print_feedback(feedback: FeedbackData):
     else:
         for i, c in enumerate(corrections, 1):
             print(f"  [{i}] {c['run_timestamp']}")
-            print(f"      原假设: {c['original_hypothesis']} (置信度 {c['original_confidence']:.0%})")
-            print(f"      纠正为: {c['corrected_hypothesis']} (置信度 {c['corrected_confidence']:.0%})")
+            print(
+                f"      原假设: {c['original_hypothesis']} (置信度 {c['original_confidence']:.0%})"
+            )
+            print(
+                f"      纠正为: {c['corrected_hypothesis']} (置信度 {c['corrected_confidence']:.0%})"
+            )
             if c.get("user_comment"):
                 print(f"      备注: {c['user_comment']}")
 

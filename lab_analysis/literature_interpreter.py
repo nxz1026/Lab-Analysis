@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 文献解读模块 — 结合统计分析结果 + PubMed 文献，给出循证医学综合解读
 用法: python literature_interpreter.py [--analysis JSON] [--lit JSON] [--out JSON]
@@ -15,9 +15,9 @@ from lab_analysis.llm_client import call_chat_with_retry
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 _DEEPSEEK_SYSTEM_PROMPT = (
-    "你是一位专业的医学检验科和重症医学科临床顾问，"
-    "结合循证医学证据为患者的检验数据提供深入解读。"
+    "你是一位专业的医学检验科和重症医学科临床顾问，结合循证医学证据为患者的检验数据提供深入解读。"
 )
+
 
 def load_json(path: str, default=None):
     try:
@@ -42,7 +42,9 @@ def build_prompt(analysis_path: str, lit_path: str) -> str:
         if isinstance(info, dict) and info.get("n_abnormal", 0) > 0:
             dates = info.get("abnormal_dates", [])
             rr = info.get("ref_range", "?")
-            abnormal_items.append(f"- {metric}: 异常{dates[0] if dates else ''}, n={info['n_abnormal']}, 参考区间 {rr}")
+            abnormal_items.append(
+                f"- {metric}: 异常{dates[0] if dates else ''}, n={info['n_abnormal']}, 参考区间 {rr}"
+            )
     abnormal_text = "\n".join(abnormal_items) if abnormal_items else "无"
 
     # 收集相关性发现（|r| >= 0.9）
@@ -57,10 +59,7 @@ def build_prompt(analysis_path: str, lit_path: str) -> str:
     papers = lit.get("all_papers", [])[:8]
     for p in papers:
         abstract = p.get("abstract", "")[:400]
-        lit_texts.append(
-            f"PMID:{p['pmid']} | {p.get('title','')[:100]}\n"
-            f"摘要: {abstract}"
-        )
+        lit_texts.append(f"PMID:{p['pmid']} | {p.get('title', '')[:100]}\n摘要: {abstract}")
     lit_abstracts = "\n\n---\n\n".join(lit_texts)
 
     prompt = f"""你是一位医学检验科 + 重症医学科双背景的临床顾问，正在为一名慢性胰腺炎患者的检验数据进行循证医学解读。
@@ -103,7 +102,9 @@ def call_deepseek(prompt: str) -> str:
             "deepseek",
             user_prompt=prompt,
             system_prompt=_DEEPSEEK_SYSTEM_PROMPT,
-            max_attempts=3, min_wait=2.0, max_wait=30.0,
+            max_attempts=3,
+            min_wait=2.0,
+            max_wait=30.0,
         )
     except Exception as e:
         # 密钥缺失 / 所有重试均失败时，返回错误说明（与原实现行为一致）
@@ -113,23 +114,24 @@ def call_deepseek(prompt: str) -> str:
 def main():
     import argparse
     from pathlib import Path
+
     parser = argparse.ArgumentParser(description="文献解读")
-    parser.add_argument("--analysis", default=None,
-                        help="analysis_results.json 路径")
-    parser.add_argument("--lit", default=None,
-                        help="literature_results.json 路径")
-    parser.add_argument("--out", default=None,
-                        help="输出 JSON 路径")
+    parser.add_argument("--analysis", default=None, help="analysis_results.json 路径")
+    parser.add_argument("--lit", default=None, help="literature_results.json 路径")
+    parser.add_argument("--out", default=None, help="输出 JSON 路径")
     parser.add_argument("--id-card", default=None, help="脱敏ID(由 pipeline 传入)")
     args = parser.parse_args()
 
     import os
+
     wiki_data = WORK_ROOT / "data"
     if args.id_card:
         raw_ts = os.environ.get("ANALYSIS_TS", "")
         ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
         lit_dir = wiki_data / args.id_card / ts / "03_literature"
-        args.analysis = args.analysis or str(lit_dir.parent / "02_analyzed" / "analysis_results.json")
+        args.analysis = args.analysis or str(
+            lit_dir.parent / "02_analyzed" / "analysis_results.json"
+        )
         args.lit = args.lit or str(lit_dir / "literature_results.json")
         args.out = args.out or str(lit_dir / "literature_interpretation.json")
     else:

@@ -1,4 +1,5 @@
 """生成最终综合临床报告 - 调用 DeepSeek API"""
+
 import argparse
 import json
 import os
@@ -12,6 +13,7 @@ WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 _FINAL_REPORT_SYSTEM_PROMPT = (
     "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"
 )
+
 
 # ============================================================
 # 患者信息从数据中动态读取
@@ -32,14 +34,17 @@ def _load_patient_info(lab_path: Path) -> dict:
         except Exception:
             pass
     return {"name": "患者", "age_sex": "未知", "exam_id": "未知"}
+
+
 # ============================================================
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="生成最终综合临床报告")
     parser.add_argument("--id-card", required=True, help="脱敏ID(由 pipeline 传入)")
-    parser.add_argument("--compare-mode", action="store_true",
-                        help="同时运行 Standard + DSPy 双模式并输出对比报告")
+    parser.add_argument(
+        "--compare-mode", action="store_true", help="同时运行 Standard + DSPy 双模式并输出对比报告"
+    )
     return parser.parse_args()
 
 
@@ -54,7 +59,7 @@ def assess_three_source_consistency(data_dir: Path) -> str:
     Returns:
         Markdown 格式质控段落
     """
-    signals = []   # (label, status, detail)
+    signals = []  # (label, status, detail)
 
     # ── 源1：检验数据 ───────────────────────────────────────────
     lab_path = data_dir / "02_analyzed" / "lab_metrics.json"
@@ -70,14 +75,15 @@ def assess_three_source_consistency(data_dir: Path) -> str:
                     flag = "↑" if hs_crp > 3 else ""
                     lab_summary = f"hs-CRP={hs_crp}{flag}"
                     if hs_crp > 10:
-                        signals.append(("检验-hsCRP", "ACUTE",
-                                       f"hs-CRP={hs_crp}↑↑，提示急性炎症/感染"))
+                        signals.append(
+                            ("检验-hsCRP", "ACUTE", f"hs-CRP={hs_crp}↑↑，提示急性炎症/感染")
+                        )
                     elif hs_crp > 3:
-                        signals.append(("检验-hsCRP", "ELEVATED",
-                                       f"hs-CRP={hs_crp}↑，提示炎症活跃"))
+                        signals.append(
+                            ("检验-hsCRP", "ELEVATED", f"hs-CRP={hs_crp}↑，提示炎症活跃")
+                        )
                     else:
-                        signals.append(("检验-hsCRP", "NORMAL",
-                                       f"hs-CRP={hs_crp}，炎症处于缓解期"))
+                        signals.append(("检验-hsCRP", "NORMAL", f"hs-CRP={hs_crp}，炎症处于缓解期"))
                 else:
                     lab_summary = "hs-CRP数据异常"
         except Exception:
@@ -95,11 +101,11 @@ def assess_three_source_consistency(data_dir: Path) -> str:
                 suspicious = sum(1 for c in checks if c.get("status") == "partial")
                 mri_summary = f"共{len(checks)}项，成功{confirmed}项，存疑{suspicious}项"
                 if confirmed > suspicious:
-                    signals.append(("影像印证", "SUPPORT",
-                                   f"{confirmed}项影像发现与报告一致，支持检验结论"))
+                    signals.append(
+                        ("影像印证", "SUPPORT", f"{confirmed}项影像发现与报告一致，支持检验结论")
+                    )
                 elif suspicious > 0:
-                    signals.append(("影像印证", "CONFLICT",
-                                   f"{suspicious}项影像发现与报告存疑"))
+                    signals.append(("影像印证", "CONFLICT", f"{suspicious}项影像发现与报告存疑"))
                 else:
                     signals.append(("影像印证", "NEUTRAL", "影像印证无显著异常"))
             else:
@@ -130,8 +136,7 @@ def assess_three_source_consistency(data_dir: Path) -> str:
             interp = json.loads(lit_interp_path.read_text(encoding="utf-8"))
             resp_text = interp.get("response", "") or interp.get("text", "")
             if resp_text and len(resp_text) > 50:
-                signals.append(("文献-循证解读", "SUPPORT",
-                               "文献检索+循证解读已完成，证据链完整"))
+                signals.append(("文献-循证解读", "SUPPORT", "文献检索+循证解读已完成，证据链完整"))
         except Exception:
             pass
 
@@ -157,9 +162,15 @@ def assess_three_source_consistency(data_dir: Path) -> str:
         detail = "部分源数据缺失，建议补充检查后再出报告。"
 
     # ── 拼段落 ─────────────────────────────────────────────────
-    status_icon = {"ACUTE": "[URGENT]", "ELEVATED": "[WARN]", "NORMAL": "[OK]",
-                   "SUPPORT": "[OK]", "CONFLICT": "[FAIL]", "NEUTRAL": "[WARN]",
-                   "UNKNOWN": "[WARN]"}.get
+    status_icon = {
+        "ACUTE": "[URGENT]",
+        "ELEVATED": "[WARN]",
+        "NORMAL": "[OK]",
+        "SUPPORT": "[OK]",
+        "CONFLICT": "[FAIL]",
+        "NEUTRAL": "[WARN]",
+        "UNKNOWN": "[WARN]",
+    }.get
 
     lines = [
         "## 附：三源质控段落\n",
@@ -169,7 +180,9 @@ def assess_three_source_consistency(data_dir: Path) -> str:
         f"| 影像印证 | {mri_summary} |",
         f"| 文献证据 | {lit_summary} |",
         "",
-        overall, detail, "",
+        overall,
+        detail,
+        "",
         "**信号详情**：",
     ]
     for label, status, desc in signals:
@@ -188,8 +201,17 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
             d = json.loads(lab_path.read_text(encoding="utf-8"))
             reports = d.get("reports", [])
             if reports:
-                cols = ["report_date", "hs-CRP", "CRP", "WBC", "NEUT#",
-                        "MONO%", "RDW-SD", "PCT", "PLT"]
+                cols = [
+                    "report_date",
+                    "hs-CRP",
+                    "CRP",
+                    "WBC",
+                    "NEUT#",
+                    "MONO%",
+                    "RDW-SD",
+                    "PCT",
+                    "PLT",
+                ]
                 rows = ["日期       hs-CRP  CRP     WBC     NEUT#   MONO%   RDW-SD  PCT     PLT"]
                 for r in reports:
                     vals = []
@@ -212,7 +234,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
             papers = lit.get("all_papers", [])[:6]
             if papers:
                 lit_lines = [
-                    f"- {p.get('year','?')} | {p.get('title','')[:60]}... (PMID:{p.get('pmid')})"
+                    f"- {p.get('year', '?')} | {p.get('title', '')[:60]}... (PMID:{p.get('pmid')})"
                     for p in papers
                 ]
                 lit_data = "\n".join(lit_lines)
@@ -240,7 +262,7 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
             checks = mri.get("results", []) if isinstance(mri, dict) else []
             if checks:
                 mri_lines = [
-                    f"- {c.get('seq_name','')}: {c.get('analysis', [{}])[0].get('text','')[:60]}"
+                    f"- {c.get('seq_name', '')}: {c.get('analysis', [{}])[0].get('text', '')[:60]}"
                     for c in checks[:5]
                 ]
                 mri_data = "\n".join(mri_lines)
@@ -253,8 +275,9 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
     qc = assess_three_source_consistency(data_dir)
 
     import datetime as dt
+
     today = dt.date.today().strftime("%Y年%m月%d日")
-    
+
     # 动态加载患者信息
     patient_info = _load_patient_info(lab_path)
     patient_name = patient_info["name"]
@@ -311,6 +334,7 @@ def main():
     args = parse_args()
     patient_id = args.id_card
     import os
+
     raw_ts = os.environ.get("ANALYSIS_TS", "")
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or patient_id)
     data_dir = WORK_ROOT / "data" / patient_id / ts
@@ -388,6 +412,7 @@ def main():
 
                 comp_json_path = reports_dir / "mode_comparison.json"
                 import json as _json
+
                 comp_json_path.write_text(
                     _json.dumps(comp, ensure_ascii=False, indent=2), encoding="utf-8"
                 )

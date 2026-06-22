@@ -40,11 +40,11 @@ def _format_size(bytes_: int) -> str:
     """可读的文件大小字符串。"""
     if bytes_ < 1024:
         return f"{bytes_} B"
-    elif bytes_ < 1024 ** 2:
+    elif bytes_ < 1024**2:
         return f"{bytes_ / 1024:.1f} KB"
-    elif bytes_ < 1024 ** 3:
-        return f"{bytes_ / 1024 ** 2:.1f} MB"
-    return f"{bytes_ / 1024 ** 3:.2f} GB"
+    elif bytes_ < 1024**3:
+        return f"{bytes_ / 1024**2:.1f} MB"
+    return f"{bytes_ / 1024**3:.2f} GB"
 
 
 def cleanup_patient(
@@ -105,8 +105,9 @@ def cleanup_patient(
     return result
 
 
-def cleanup_all(keep_last: int = 3, dry_run: bool = False,
-                id_card: str | None = None) -> list[dict]:
+def cleanup_all(
+    keep_last: int = 3, dry_run: bool = False, id_card: str | None = None
+) -> list[dict]:
     """清理所有（或指定）患者的旧运行产物。
 
     Args:
@@ -160,14 +161,10 @@ def print_summary(results: list[dict]):
 
 def _cli():
     parser = argparse.ArgumentParser(description="Pipeline 产物清理工具")
-    parser.add_argument("--keep-last", type=int, default=3,
-                        help="保留最近 N 次运行（默认 3）")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="仅预览不删除")
-    parser.add_argument("--id-card", default=None,
-                        help="仅清理指定患者（不指定则清理全部）")
-    parser.add_argument("--json", default=None,
-                        help="将清理结果保存为 JSON（可选）")
+    parser.add_argument("--keep-last", type=int, default=3, help="保留最近 N 次运行（默认 3）")
+    parser.add_argument("--dry-run", action="store_true", help="仅预览不删除")
+    parser.add_argument("--id-card", default=None, help="仅清理指定患者（不指定则清理全部）")
+    parser.add_argument("--json", default=None, help="将清理结果保存为 JSON（可选）")
     args = parser.parse_args()
 
     results = cleanup_all(

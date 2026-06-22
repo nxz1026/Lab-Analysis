@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 data_analyzer.py — 统计分析入口（薄 shim，代理到 lab_analysis.analysis 子包）
@@ -13,6 +13,7 @@ from lab_analysis.analysis.run import run
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="统计分析：生成分析结果 + 7 张图表")
     parser.add_argument("--id-card", required=True, help="脱敏ID(由 pipeline 传入)")
     args = parser.parse_args()

@@ -48,11 +48,13 @@ class TestPredictMetric:
 
 class TestPredictMetrics:
     def test_predicts_key_metrics(self):
-        df = pd.DataFrame({
-            "hs-CRP": [1.0, 2.0, 3.0, 4.0],
-            "CRP": [5.0, 6.0, 7.0, 8.0],
-            "WBC": [6.0, 6.5, 7.0, 7.5],
-        })
+        df = pd.DataFrame(
+            {
+                "hs-CRP": [1.0, 2.0, 3.0, 4.0],
+                "CRP": [5.0, 6.0, 7.0, 8.0],
+                "WBC": [6.0, 6.5, 7.0, 7.5],
+            }
+        )
         results = {}
         preds = predict_metrics(results, df)
         assert "hs-CRP" in preds
@@ -69,8 +71,13 @@ class TestPrintPredictions:
     def test_prints_without_error(self, capsys):
         preds = {
             "hs-CRP": {
-                "next_value": 5.0, "ci_95_lower": 3.0, "ci_95_upper": 7.0,
-                "n_used": 4, "method": "linear", "trend": "上升", "alert": None,
+                "next_value": 5.0,
+                "ci_95_lower": 3.0,
+                "ci_95_upper": 7.0,
+                "n_used": 4,
+                "method": "linear",
+                "trend": "上升",
+                "alert": None,
             }
         }
         print_predictions(preds)

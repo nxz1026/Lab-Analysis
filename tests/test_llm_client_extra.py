@@ -18,17 +18,20 @@ class TestLoadApiKey:
     def test_required_missing_raises(self, monkeypatch):
         monkeypatch.delenv("MY_TEST_KEY", raising=False)
         from lab_analysis.llm_client import load_api_key
+
         with pytest.raises(RuntimeError, match="未找到环境变量"):
             load_api_key("MY_TEST_KEY")
 
     def test_required_present(self, monkeypatch):
         monkeypatch.setenv("MY_TEST_KEY", "  abc123  ")
         from lab_analysis.llm_client import load_api_key
+
         assert load_api_key("MY_TEST_KEY") == "abc123"
 
     def test_optional_missing_returns_none(self, monkeypatch):
         monkeypatch.delenv("MY_TEST_KEY", raising=False)
         from lab_analysis.llm_client import load_api_key
+
         assert load_api_key("MY_TEST_KEY", required=False) is None
 
 
@@ -38,12 +41,14 @@ class TestLoadApiKey:
 class TestResolveProvider:
     def test_known_provider(self):
         from lab_analysis.llm_client import _resolve_provider
+
         cfg = _resolve_provider("deepseek")
         assert cfg["env_var"] == "DEEPSEEK_API_KEY"
         assert "base_url" in cfg
 
     def test_unknown_provider_raises(self):
         from lab_analysis.llm_client import _resolve_provider
+
         with pytest.raises(ValueError, match="未知 provider"):
             _resolve_provider("nonexistent_provider")
 
@@ -77,9 +82,7 @@ class TestCallChat:
         monkeypatch.setenv("ZHIPU_API_KEY", "fake")
         resp = self._mock_response("zhipu reply")
         with patch.object(llm_client.requests, "post", return_value=resp) as p:
-            result = llm_client.call_chat(
-                "zhipu", user_prompt="看图", image_b64="BASE64DATA"
-            )
+            result = llm_client.call_chat("zhipu", user_prompt="看图", image_b64="BASE64DATA")
         assert result == "zhipu reply"
         args, kwargs = p.call_args
         payload = kwargs["json"]
@@ -167,9 +170,7 @@ class TestCallChatWithRetry:
         resp.json.return_value = {"choices": [{"message": {"content": "ok"}}]}
         resp.raise_for_status = MagicMock()
         with patch.object(llm_client.requests, "post", return_value=resp):
-            result = llm_client.call_chat_with_retry(
-                "deepseek", user_prompt="hi", api_key="k"
-            )
+            result = llm_client.call_chat_with_retry("deepseek", user_prompt="hi", api_key="k")
         assert result == "ok"
 
 
@@ -182,11 +183,7 @@ class TestDashScopeMultimodal:
 
         resp = MagicMock()
         resp.json.return_value = {
-            "output": {
-                "choices": [
-                    {"message": {"content": [{"text": "qwen reply"}]}}
-                ]
-            }
+            "output": {"choices": [{"message": {"content": [{"text": "qwen reply"}]}}]}
         }
         resp.raise_for_status = MagicMock()
         with patch.object(llm_client.requests, "post", return_value=resp) as p:
@@ -224,8 +221,11 @@ class TestDashScopeMultimodal:
         resp.raise_for_status = MagicMock()
         with patch.object(llm_client.requests, "post", return_value=resp) as p:
             llm_client.call_dashscope_multimodal(
-                image_b64="x", text_prompt="p",
-                model="qwen-vl-max", timeout=300, api_key="k",
+                image_b64="x",
+                text_prompt="p",
+                model="qwen-vl-max",
+                timeout=300,
+                api_key="k",
             )
         payload = p.call_args.kwargs["json"]
         assert payload["model"] == "qwen-vl-max"
@@ -238,18 +238,22 @@ class TestDashScopeMultimodal:
 class TestStripCodeFence:
     def test_no_fence(self):
         from lab_analysis.llm_client import strip_code_fence
+
         assert strip_code_fence("plain text") == "plain text"
 
     def test_json_fence(self):
         from lab_analysis.llm_client import strip_code_fence
-        assert strip_code_fence("```json\n{\"a\": 1}\n```") == '{"a": 1}'
+
+        assert strip_code_fence('```json\n{"a": 1}\n```') == '{"a": 1}'
 
     def test_bare_fence(self):
         from lab_analysis.llm_client import strip_code_fence
+
         assert strip_code_fence("```\nhello\n```") == "hello"
 
     def test_strips_outer_whitespace(self):
         from lab_analysis.llm_client import strip_code_fence
+
         assert strip_code_fence("  ```json\n{}\n```  ") == "{}"
 
 
@@ -259,19 +263,23 @@ class TestStripCodeFence:
 class TestParseJsonResponse:
     def test_plain_json(self):
         from lab_analysis.llm_client import parse_json_response
+
         assert parse_json_response('{"a": 1, "b": [2,3]}') == {"a": 1, "b": [2, 3]}
 
     def test_fenced_json(self):
         from lab_analysis.llm_client import parse_json_response
+
         text = '```json\n{"k": "v"}\n```'
         assert parse_json_response(text) == {"k": "v"}
 
     def test_invalid_json_raises(self):
         from lab_analysis.llm_client import parse_json_response
+
         with pytest.raises(json.JSONDecodeError):
             parse_json_response("not json at all")
 
     def test_chinese_values(self):
         from lab_analysis.llm_client import parse_json_response
+
         text = '```json\n{"诊断": "胰腺炎"}\n```'
         assert parse_json_response(text) == {"诊断": "胰腺炎"}

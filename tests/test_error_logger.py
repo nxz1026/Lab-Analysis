@@ -59,10 +59,7 @@ class TestSetupErrorLogger:
         custom = tmp_path / "sub" / "custom.log"
         logger = setup_error_logger(log_file=custom)
         assert custom.parent.exists()
-        assert any(
-            Path(getattr(h, "baseFilename", "")) == custom
-            for h in logger.handlers
-        )
+        assert any(Path(getattr(h, "baseFilename", "")) == custom for h in logger.handlers)
         logging.getLogger("lab_analysis_error").handlers.clear()
 
     def test_no_duplicate_handlers(self, isolated_log):

@@ -43,7 +43,9 @@ class TestBuildObservation:
 
 class TestBuildInflammationObservation:
     def test_acute_status(self):
-        obs = _build_inflammation_observation("deid", ["缓解期", "急性期"], ["2026-03-01", "2026-04-01"])
+        obs = _build_inflammation_observation(
+            "deid", ["缓解期", "急性期"], ["2026-03-01", "2026-04-01"]
+        )
         assert obs is not None
         assert obs["valueCodeableConcept"]["coding"][0]["code"] == "acute"
         assert obs["effectiveDateTime"] == "2026-04-01"
@@ -81,7 +83,8 @@ class TestBuildFhirBundle:
             deid="test",
             analysis_results={
                 "inflammation_classification": {
-                    "labels": ["急性期"], "report_dates": ["2026-04-01"],
+                    "labels": ["急性期"],
+                    "report_dates": ["2026-04-01"],
                 },
                 "abnormal_summary": {},
             },

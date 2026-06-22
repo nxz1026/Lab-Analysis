@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 data_loader.py
@@ -22,21 +22,43 @@ from lab_analysis.utils import parse_metadata_table
 def build_paths(patient_id: str):
     """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
     paths = build_paths_utils(patient_id)
-    paths.update({
-        "csv": paths["analyzed_dir"] / "lab_metrics.csv",
-        "json": paths["analyzed_dir"] / "lab_metrics.json",
-    })
+    paths.update(
+        {
+            "csv": paths["analyzed_dir"] / "lab_metrics.csv",
+            "json": paths["analyzed_dir"] / "lab_metrics.json",
+        }
+    )
     return paths
 
 
 # 所有指标（顺序与表格列一致）
 ALL_METRICS = [
-    "WBC", "RBC", "HGB", "HCT", "PLT", "PCT", "P-LCR",
-    "MCV", "MCH", "MCHC",
-    "NEUT%", "LYMPH%", "MONO%", "EO%", "BASO%",
-    "NEUT#", "LYMPH#", "MONO#", "EO#", "BASO#",
-    "RDW-SD", "RDW-CV", "MPV", "PDW",
-    "CRP", "hs-CRP",
+    "WBC",
+    "RBC",
+    "HGB",
+    "HCT",
+    "PLT",
+    "PCT",
+    "P-LCR",
+    "MCV",
+    "MCH",
+    "MCHC",
+    "NEUT%",
+    "LYMPH%",
+    "MONO%",
+    "EO%",
+    "BASO%",
+    "NEUT#",
+    "LYMPH#",
+    "MONO#",
+    "EO#",
+    "BASO#",
+    "RDW-SD",
+    "RDW-CV",
+    "MPV",
+    "PDW",
+    "CRP",
+    "hs-CRP",
 ]
 
 # 参考范围（用于判断正常/异常，仅作参考，notes.md 中有精确值时以notes为准）
@@ -76,15 +98,15 @@ def parse_metrics_simple(text: str) -> dict:
     metrics = {}
     for line in text.splitlines():
         line = line.strip()
-        if not line or line.startswith('#'):
+        if not line or line.startswith("#"):
             continue
         # 匹配 "指标名: 数值" 格式，支持字母、数字、下划线、百分号、连字符、井号
-        m = re.match(r'^([\w%\-#]+)\s*:\s*(.+)$', line)
+        m = re.match(r"^([\w%\-#]+)\s*:\s*(.+)$", line)
         if m:
             key = m.group(1).strip()
             val_str = m.group(2).strip()
             # 处理 <10、>20 等特殊格式，提取其中的数字
-            num_match = re.search(r'([0-9]+\.?\d*)', val_str)
+            num_match = re.search(r"([0-9]+\.?\d*)", val_str)
             if num_match:
                 try:
                     metrics[key] = float(num_match.group(1))
@@ -238,8 +260,15 @@ def to_csv(reports, output_path):
         return
 
     # 列顺序：固定字段 + ALL_METRICS（数值 + 状态交替）
-    fixed_cols = ["report_id", "report_date", "diagnosis", "department",
-                  "physician", "visit_type", "is_inpatient"]
+    fixed_cols = [
+        "report_id",
+        "report_date",
+        "diagnosis",
+        "department",
+        "physician",
+        "visit_type",
+        "is_inpatient",
+    ]
     metric_cols = []
     for m in ALL_METRICS:
         metric_cols.append(m)

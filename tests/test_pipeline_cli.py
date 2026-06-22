@@ -50,9 +50,7 @@ class TestLoadPatientMapping:
 
         monkeypatch.setattr(cli_mod, "WORK_ROOT", tmp_path)
         (tmp_path / ".hermes").mkdir()
-        (tmp_path / ".hermes" / "patient_mapping.json").write_text(
-            "not json", encoding="utf-8"
-        )
+        (tmp_path / ".hermes" / "patient_mapping.json").write_text("not json", encoding="utf-8")
         from lab_analysis.pipeline.cli import _load_patient_mapping
 
         assert _load_patient_mapping() == {}
@@ -75,7 +73,8 @@ class TestLoadPatientMapping:
         monkeypatch.setattr(cli_mod, "WORK_ROOT", tmp_path)
         (tmp_path / ".hermes").mkdir()
         (tmp_path / ".hermes" / "patient_mapping.json").write_text(
-            json.dumps({123: 456}), encoding="utf-8"  # int keys/values
+            json.dumps({123: 456}),
+            encoding="utf-8",  # int keys/values
         )
         from lab_analysis.pipeline.cli import _load_patient_mapping
 
@@ -121,6 +120,7 @@ class TestParseArgs:
     def _run_parse(self, argv):
         sys.argv[:] = ["pipeline"] + argv
         from lab_analysis.pipeline.cli import parse_args
+
         return parse_args()
 
     def test_defaults(self):
@@ -134,15 +134,32 @@ class TestParseArgs:
         assert args.keep_last == 3
 
     def test_all_skip_flags(self):
-        args = self._run_parse([
-            "--skip-llm", "--skip-imaging", "--skip-ingest",
-            "--skip-lit-filter", "--skip-pdf", "--skip-fhir",
-            "--skip-scoring", "--skip-cleanup",
-            "--no-interactive", "--auto-queries",
-        ])
-        for f in ("skip_llm", "skip_imaging", "skip_ingest", "skip_lit_filter",
-                  "skip_pdf", "skip_fhir", "skip_scoring", "skip_cleanup",
-                  "no_interactive", "auto_queries"):
+        args = self._run_parse(
+            [
+                "--skip-llm",
+                "--skip-imaging",
+                "--skip-ingest",
+                "--skip-lit-filter",
+                "--skip-pdf",
+                "--skip-fhir",
+                "--skip-scoring",
+                "--skip-cleanup",
+                "--no-interactive",
+                "--auto-queries",
+            ]
+        )
+        for f in (
+            "skip_llm",
+            "skip_imaging",
+            "skip_ingest",
+            "skip_lit_filter",
+            "skip_pdf",
+            "skip_fhir",
+            "skip_scoring",
+            "skip_cleanup",
+            "no_interactive",
+            "auto_queries",
+        ):
             assert getattr(args, f) is True
 
     def test_use_dspy_and_compare(self):
@@ -151,10 +168,14 @@ class TestParseArgs:
         assert args.compare_report_modes is True
 
     def test_lit_filter_options(self):
-        args = self._run_parse([
-            "--lit-filter-scenario", "prognosis",
-            "--lit-filter-top-k", "15",
-        ])
+        args = self._run_parse(
+            [
+                "--lit-filter-scenario",
+                "prognosis",
+                "--lit-filter-top-k",
+                "15",
+            ]
+        )
         assert args.lit_filter_scenario == "prognosis"
         assert args.lit_filter_top_k == 15
 
@@ -169,13 +190,21 @@ class TestParseArgs:
             assert args.report_type == t
 
     def test_ingest_options(self):
-        args = self._run_parse([
-            "--ingest-lab", "a.jpg", "b.jpg",
-            "--ingest-dicom-zip", "x.zip",
-            "--ingest-dicom-dir", "y",
-            "--ingest-mri-report", "r.txt",
-            "--report-date", "2026-06-21",
-        ])
+        args = self._run_parse(
+            [
+                "--ingest-lab",
+                "a.jpg",
+                "b.jpg",
+                "--ingest-dicom-zip",
+                "x.zip",
+                "--ingest-dicom-dir",
+                "y",
+                "--ingest-mri-report",
+                "r.txt",
+                "--report-date",
+                "2026-06-21",
+            ]
+        )
         assert args.ingest_lab == ["a.jpg", "b.jpg"]
         assert args.ingest_dicom_zip == "x.zip"
         assert args.ingest_dicom_dir == "y"

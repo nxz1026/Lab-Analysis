@@ -11,6 +11,7 @@ import pytest
 # ── 跳过：DSPy 未安装时跳过所有测试 ──────────────────────────────────
 try:
     import dspy  # noqa: F401
+
     HAS_DSPY = True
 except ImportError:
     HAS_DSPY = False
@@ -29,14 +30,29 @@ class TestFinalReportSignature:
         in_fields = set(sig.input_fields.keys())
         out_fields = set(sig.output_fields.keys())
         # 输入字段
-        for f in ['patient_info', 'lab_summary', 'analysis_results',
-                  'literature_interpretation', 'mri_analysis', 'quality_control']:
+        for f in [
+            "patient_info",
+            "lab_summary",
+            "analysis_results",
+            "literature_interpretation",
+            "mri_analysis",
+            "quality_control",
+        ]:
             assert f in in_fields, f"缺少输入字段 {f}"
         # 输出字段
-        for f in ['report_title', 'section_1_basic_info', 'section_2_lab_analysis',
-                  'section_3_mri_analysis', 'section_4_multidisciplinary',
-                  'section_5_diagnosis', 'section_6_consistency', 'section_7_action_plan',
-                  'section_8_followup', 'section_9_prognosis', 'confidence']:
+        for f in [
+            "report_title",
+            "section_1_basic_info",
+            "section_2_lab_analysis",
+            "section_3_mri_analysis",
+            "section_4_multidisciplinary",
+            "section_5_diagnosis",
+            "section_6_consistency",
+            "section_7_action_plan",
+            "section_8_followup",
+            "section_9_prognosis",
+            "confidence",
+        ]:
             assert f in out_fields, f"缺少输出字段 {f}"
 
     def test_signature_input_output_field_counts(self):
@@ -50,7 +66,7 @@ class TestFinalReportSignature:
         from lab_analysis.dspy_modules.final_report_generator import FinalReportGenerator
 
         module = FinalReportGenerator()
-        assert hasattr(module, 'generate')
+        assert hasattr(module, "generate")
         assert module.generate is not None
 
 
@@ -63,17 +79,17 @@ class TestLiteratureInterpreterSignature:
         sig = LiteratureInterpretationSignature
         in_fields = set(sig.input_fields.keys())
         out_fields = set(sig.output_fields.keys())
-        assert 'patient_id' in in_fields
-        assert 'analysis_results' in in_fields
-        assert 'literature_results' in in_fields
-        assert 'interpretation' in out_fields
-        assert 'confidence' in out_fields
+        assert "patient_id" in in_fields
+        assert "analysis_results" in in_fields
+        assert "literature_results" in in_fields
+        assert "interpretation" in out_fields
+        assert "confidence" in out_fields
 
     def test_module_can_instantiate(self):
         from lab_analysis.dspy_modules.literature_interpreter import LiteratureInterpreterModule
 
         module = LiteratureInterpreterModule()
-        assert hasattr(module, 'interpret')
+        assert hasattr(module, "interpret")
 
 
 class TestMRIAnalyzerSignature:
@@ -83,18 +99,18 @@ class TestMRIAnalyzerSignature:
         sig = MRIAnalysisSignature
         in_fields = set(sig.input_fields.keys())
         out_fields = set(sig.output_fields.keys())
-        assert 'image_description' in in_fields
-        assert 'report_findings' in in_fields
-        assert 'clinical_context' in in_fields
-        assert 'consistency_evaluation' in out_fields
-        assert 'confidence_score' in out_fields
+        assert "image_description" in in_fields
+        assert "report_findings" in in_fields
+        assert "clinical_context" in in_fields
+        assert "consistency_evaluation" in out_fields
+        assert "confidence_score" in out_fields
 
     def test_module_can_instantiate(self):
         from lab_analysis.dspy_modules.mri_analyzer import MRIAnalysisModule
 
         module = MRIAnalysisModule()
-        assert hasattr(module, 'forward')
-        assert hasattr(module, 'predictor')
+        assert hasattr(module, "forward")
+        assert hasattr(module, "predictor")
 
 
 class TestLabDataExtractorSignature:
@@ -104,15 +120,15 @@ class TestLabDataExtractorSignature:
         sig = LabDataExtractionSignature
         in_fields = set(sig.input_fields.keys())
         out_fields = set(sig.output_fields.keys())
-        assert 'image_description' in in_fields
-        assert 'patient_id' in out_fields
-        assert 'report_date' in out_fields
+        assert "image_description" in in_fields
+        assert "patient_id" in out_fields
+        assert "report_date" in out_fields
 
     def test_module_can_instantiate(self):
         from lab_analysis.dspy_modules.lab_data_extractor import LabDataExtractor
 
         module = LabDataExtractor()
-        assert hasattr(module, 'extract')
+        assert hasattr(module, "extract")
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -166,14 +182,19 @@ class TestPromptInspector:
         assert path.exists()
         assert path.suffix == ".json"
         import json
+
         loaded = json.loads(path.read_text(encoding="utf-8"))
         assert loaded["module_name"] == "test"
 
     def test_save_prompts_to_markdown_creates_file(self, tmp_path):
         from lab_analysis.dspy_modules.prompt_inspector import save_prompts_to_markdown
 
-        data = {"module_name": "test", "module_type": "TestModule",
-                "predictors": [], "total_demos": 0}
+        data = {
+            "module_name": "test",
+            "module_type": "TestModule",
+            "predictors": [],
+            "total_demos": 0,
+        }
         path = save_prompts_to_markdown("test_module", data, tmp_path)
         assert path.exists()
         assert path.suffix == ".md"
@@ -190,6 +211,7 @@ class TestForwardWithMockedLM:
         from lab_analysis.dspy_modules.final_report_generator import FinalReportGenerator
 
         module = FinalReportGenerator()
+
         # monkeypatch forward to return a mock prediction
         class MockPrediction:
             report_title = "Test Title"
@@ -204,7 +226,7 @@ class TestForwardWithMockedLM:
             section_9_prognosis = "Prognosis"
             confidence = 0.85
 
-        monkeypatch.setattr(module, 'forward', lambda *a, **kw: MockPrediction())
+        monkeypatch.setattr(module, "forward", lambda *a, **kw: MockPrediction())
 
         result = module(
             patient_info={},
@@ -226,8 +248,10 @@ class TestForwardWithMockedLM:
             consistency_analysis = "consistent"
             confidence_score = 0.9
 
-        monkeypatch.setattr(module, 'forward', lambda *a, **kw: MockResult())
+        monkeypatch.setattr(module, "forward", lambda *a, **kw: MockResult())
 
-        result = module(image_description="MRI scan", report_findings="normal", clinical_context="adult male")
+        result = module(
+            image_description="MRI scan", report_findings="normal", clinical_context="adult male"
+        )
         assert result.consistency_analysis == "consistent"
         assert result.confidence_score == 0.9

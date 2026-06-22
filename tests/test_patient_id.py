@@ -71,14 +71,17 @@ class TestChineseIdValidation:
 
     def test_valid_18(self):
         from lab_analysis.utils import validate_chinese_id as f
+
         assert f("110101199003078888") is True
 
     def test_valid_15(self):
         from lab_analysis.utils import validate_chinese_id as f
+
         assert f("110101900307888") is True
 
     def test_invalid(self):
         from lab_analysis.utils import validate_chinese_id as f
+
         assert f("123") is False
         assert f("") is False
         assert f(None) is False
@@ -91,6 +94,7 @@ class TestDecodeKey:
         import base64
 
         from lab_analysis.patient_id import _decode_key
+
         raw = b"hello world test"
         encoded = base64.urlsafe_b64encode(raw).decode("ascii")
         assert _decode_key(encoded) == raw
@@ -99,6 +103,7 @@ class TestDecodeKey:
         import base64
 
         from lab_analysis.patient_id import _decode_key
+
         raw = b"hello world test"
         encoded = base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
         assert _decode_key(encoded) == raw
@@ -107,6 +112,7 @@ class TestDecodeKey:
         import base64
 
         from lab_analysis.patient_id import _decode_key
+
         # 标准 base64 可能带 +/ 而 urlsafe 带 -_
         raw = b"\xfb\xff\xfe"  # 触发 urlsafe/标准 分支
         encoded = base64.b64encode(raw).decode("ascii")
@@ -117,6 +123,7 @@ class TestDecodeKey:
         import base64
 
         from lab_analysis.patient_id import _decode_key
+
         raw = b"abc"
         encoded = base64.urlsafe_b64encode(raw).decode("ascii")
         assert _decode_key(f"  {encoded}\n") == raw
@@ -155,9 +162,7 @@ class TestLoadMasterKey:
 
         monkeypatch.delenv("LAB_DEID_KEY", raising=False)
         key_file = tmp_path / "master.key"
-        key_file.write_text(
-            base64.urlsafe_b64encode(b"y" * 32).decode("ascii"), encoding="utf-8"
-        )
+        key_file.write_text(base64.urlsafe_b64encode(b"y" * 32).decode("ascii"), encoding="utf-8")
         monkeypatch.setattr(pid, "_KEY_FILE", key_file)
         from lab_analysis.patient_id import _load_or_create_master_key
 
@@ -171,9 +176,7 @@ class TestLoadMasterKey:
         monkeypatch.delenv("LAB_DEID_KEY", raising=False)
         key_file = tmp_path / "master.key"
         # 16 字节 = 合法 base64 但 decode 后不是 32 字节
-        key_file.write_text(
-            base64.urlsafe_b64encode(b"x" * 16).decode("ascii"), encoding="utf-8"
-        )
+        key_file.write_text(base64.urlsafe_b64encode(b"x" * 16).decode("ascii"), encoding="utf-8")
         monkeypatch.setattr(pid, "_KEY_FILE", key_file)
         from lab_analysis.patient_id import _load_or_create_master_key
 
