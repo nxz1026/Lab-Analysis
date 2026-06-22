@@ -85,6 +85,7 @@ def sample_metrics() -> dict:
         "confidence": {"available": True, "dspy_confidence": 0.88},
         "failure_rate": {"available": True, "is_failure": False, "confidence": 0.88},
         "feedback_delta": {"available": False, "reason": "无 corrections"},
+        "cross_modality_consistency": {"available": False, "reason": "no dspy data"},
     }
 
 
@@ -346,6 +347,26 @@ def test_render_metrics_chart_with_real_fixture():
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
     html = render_metrics_html(report, chart_bytes=png)
     assert "CI_FIXTURE_PASS" in html
+
+
+def test_render_metrics_chart_with_cross_modality(sample_metrics):
+    """#7 cross_modality_consistency 可被画进 PNG."""
+    sample_metrics["cross_modality_consistency"] = {
+        "available": True, "accuracy": 0.85,
+    }
+    png = render_metrics_chart(sample_metrics)
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_render_metrics_html_with_cross_modality(sample_metrics):
+    """#7 cross_modality_consistency 出现在 HTML details 中."""
+    sample_metrics["cross_modality_consistency"] = {
+        "available": True, "accuracy": 0.85,
+    }
+    report = {"deid": "X", "metrics": sample_metrics}
+    html = render_metrics_html(report)
+    assert "cross_modality_consistency" in html
+    assert "accuracy=0.8500" in html
 
 
 def test_render_metrics_html_print_button(sample_metrics):

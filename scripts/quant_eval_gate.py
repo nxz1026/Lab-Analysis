@@ -52,6 +52,7 @@ DEFAULT_THRESHOLDS: dict[str, float] = {
     "recall_min": 0.70,            # entity_recall.recall_rate 下限
     "confidence_min": 0.60,        # confidence.dspy_confidence 下限
     "feedback_delta_abs_max": 0.30,  # |feedback_delta.avg_delta_confidence| 上限
+    "cross_modality_min": 0.70,    # cross_modality_consistency.accuracy 下限 (#7)
 }
 
 
@@ -200,8 +201,27 @@ def check_feedback_delta(metric: dict, *, abs_max: float) -> GateResult:
     )
 
 
+def check_cross_modality(metric: dict, *, accuracy_min: float) -> GateResult:
+    """#7 跨模态印证: dspy 报告是否引用 std top_hypothesis + 关键 lab 实体 (0-1)."""
+    if not metric.get("available"):
+        return GateResult(
+            metric="cross_modality_consistency",
+            passed=True,
+            skipped=True,
+            reason=metric.get("reason", "N/A"),
+        )
+    acc = metric.get("accuracy", 0.0)
+    return GateResult(
+        metric="cross_modality_consistency",
+        passed=acc >= accuracy_min,
+        actual=acc,
+        threshold=accuracy_min,
+        reason=f"accuracy={acc:.4f} {'≥' if acc >= accuracy_min else '<'} {accuracy_min}",
+    )
+
+
 def evaluate(report: dict, *, thresholds: dict[str, float] | None = None) -> GateReport:
-    """对单个 quant_eval_report.json 跑全部 6 指标阈值检查.
+    """对单个 quant_eval_report.json 跑全部 7 指标阈值检查.
 
     Args:
         report:  quant_eval_report.json 解析后的 dict
@@ -232,6 +252,12 @@ def evaluate(report: dict, *, thresholds: dict[str, float] | None = None) -> Gat
             metrics.get("feedback_delta", {}), abs_max=thr["feedback_delta_abs_max"]
         )
     )
+    results.append(
+        check_cross_modality(
+            metrics.get("cross_modality_consistency", {}),
+            accuracy_min=thr["cross_modality_min"],
+        )
+    )
 
     overall = all(r.passed for r in results)
     return GateReport(
@@ -256,7 +282,7 @@ def _resolve_report_path(id_card: str | None, std_ts: str | None, report_path: s
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="DSPy 6 指标阈值检查 (CI gate)")
+    parser = argparse.ArgumentParser(description="DSPy 7 指标阈值检查 (CI gate)")
     parser.add_argument("--id-card", help="脱敏患者 ID")
     parser.add_argument("--std-ts", help="std 模式时间戳")
     parser.add_argument("--report-path", help="直接指定 quant_eval_report.json 路径")
@@ -268,6 +294,12 @@ def main() -> int:
         "--feedback-delta-abs-max",
         type=float,
         default=DEFAULT_THRESHOLDS["feedback_delta_abs_max"],
+    )
+    parser.add_argument(
+        "--cross-modality-min",
+        type=float,
+        default=DEFAULT_THRESHOLDS["cross_modality_min"],
+        help="#7 跨模态印证 accuracy 下限",
     )
     parser.add_argument(
         "--dry-run",
@@ -282,6 +314,7 @@ def main() -> int:
         "recall_min": args.recall_min,
         "confidence_min": args.confidence_min,
         "feedback_delta_abs_max": args.feedback_delta_abs_max,
+        "cross_modality_min": args.cross_modality_min,
     }
 
     try:

@@ -33,6 +33,7 @@ DEFAULT_THRESHOLDS: dict[str, tuple[float, str]] = {
     "section_coverage": (0.80, "coverage ≥ 0.80"),
     "entity_recall": (0.70, "recall ≥ 0.70"),
     "confidence": (0.60, "dspy_conf ≥ 0.60"),
+    "cross_modality_consistency": (0.70, "cross_modality ≥ 0.70"),
 }
 
 
@@ -51,6 +52,9 @@ def _extract_metric_value(metric: dict, name: str) -> tuple[float | None, bool]:
     if name == "failure_rate":
         # failure_rate 用 0/1 表示: 0=PASS, 1=FAIL (图上越低越好)
         return float(1 if metric.get("is_failure") else 0), True
+    if name == "cross_modality_consistency":
+        # accuracy 0-1, 越高越好; 不达标返 0 不掩盖数据缺失
+        return float(metric.get("accuracy", 0.0)), True
     return None, False
 
 
@@ -213,6 +217,13 @@ def render_metrics_html(
             detail = (f"n_corrections={m.get('n_corrections', 0)}  "
                       f"avg_Δ={m.get('avg_delta_confidence', 0):+.4f}  "
                       f"max_Δ={m.get('max_delta', 0):+.4f}")
+        elif name == "cross_modality_consistency":
+            acc = m.get("accuracy", 0.0)
+            tag = "OK" if acc >= 0.7 else "FAIL"
+            detail = (f"accuracy={acc:.4f}  "
+                      f"mentions_top_hypo={m.get('mentions_top_hypothesis', False)}  "
+                      f"mentions_key_entity={m.get('mentions_key_entity', False)}  "
+                      f"matched={m.get('matched_entities', [])}")
         else:
             tag = "?"
             detail = ""

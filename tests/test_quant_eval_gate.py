@@ -144,7 +144,7 @@ def test_evaluate_all_pass():
     }
     g = evaluate(report)
     assert g.overall_pass is True
-    assert sum(1 for r in g.results if r.passed) == 6
+    assert sum(1 for r in g.results if r.passed) == 7
 
 
 def test_evaluate_mixed_skip():
@@ -163,7 +163,7 @@ def test_evaluate_mixed_skip():
     g = evaluate(report)
     assert g.overall_pass is True
     n_skip = sum(1 for r in g.results if r.skipped)
-    assert n_skip == 1
+    assert n_skip == 2
 
 
 def test_evaluate_one_fails_others_pass():
@@ -183,7 +183,7 @@ def test_evaluate_one_fails_others_pass():
     d = g.to_dict()
     assert d["n_failed"] == 1
     assert d["n_passed"] == 4
-    assert d["n_skipped"] == 1
+    assert d["n_skipped"] == 2
 
 
 def test_default_thresholds_all_defined():
@@ -214,8 +214,8 @@ def test_cli_pass_fixture(tmp_path: Path):
     assert result.returncode == 0
     assert "PASS" in result.stdout
     # PASS fixture: 5 真 pass + 1 skip (feedback_delta 无 corrections)
-    assert "5/6 passed" in result.stdout
-    assert "1 skipped" in result.stdout
+    assert "5/7 passed" in result.stdout
+    assert "2 skipped" in result.stdout
 
 
 def test_cli_fail_fixture(tmp_path: Path):
@@ -290,4 +290,4 @@ def test_cli_writes_gate_result_sidecar():
     assert sidecar.exists()
     d = json.loads(sidecar.read_text(encoding="utf-8"))
     assert d["overall_pass"] is True
-    assert d["n_total"] == 6
+    assert d["n_total"] == 7

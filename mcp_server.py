@@ -107,7 +107,7 @@ def run_quant_eval(
     render_visual: bool = True,
     out_dir: str = "",
 ) -> str:
-    """对 std + dspy 两次跑做 6 指标量化评估; 可选自动跑 gate 检查 + 生成可视化产物.
+    """对 std + dspy 两次跑做 7 指标量化评估; 可选自动跑 gate 检查 + 生成可视化产物.
 
     Args:
         id_card: 脱敏患者 ID, 形如 "846552421134373347"
@@ -118,12 +118,12 @@ def run_quant_eval(
         out_dir: 可视化产物输出目录 (默认 = data/{id_card}/{dspy_ts}/04_reports)
 
     Returns:
-        JSON 字符串, 含 6 个 metric + 可选 gate_result + 可选 artifacts 路径:
+        JSON 字符串, 含 7 个 metric + 可选 gate_result + 可选 artifacts 路径:
         {
           "id_card": str,
           "std_ts": str,
           "dspy_ts": str,
-          "metrics": { ... 6 metrics ... },
+          "metrics": { ... 7 metrics ... },
           "gate": {
             "passed": bool,
             "n_passed": int,
@@ -143,6 +143,7 @@ def run_quant_eval(
         from lab_analysis.utils import WORK_ROOT  # noqa: PLC0415
         from lab_analysis.quant_metrics import (  # noqa: PLC0415
             metric_confidence,
+            metric_cross_modality_consistency,
             metric_entity_f1,
             metric_entity_recall_breakdown,
             metric_failure_rate,
@@ -186,6 +187,9 @@ def run_quant_eval(
             "entity_recall": metric_entity_recall_breakdown(std_text, dspy_text),
             "confidence": metric_confidence(dspy_data, std_scoring),
             "feedback_delta": metric_feedback_delta(feedback),
+            "cross_modality_consistency": metric_cross_modality_consistency(
+                dspy_sections, std_scoring,
+            ),
         }
 
         result: dict = {
