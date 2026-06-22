@@ -85,3 +85,116 @@ class TestClearFeedback:
         assert (mock_feedback_path / "data" / "test_deid" / "feedback.json").exists()
         clear_feedback("test_deid")
         assert not (mock_feedback_path / "data" / "test_deid" / "feedback.json").exists()
+
+    def test_clear_nonexistent_is_noop(self, mock_feedback_path, capsys):
+        clear_feedback("never_recorded")
+        captured = capsys.readouterr()
+        assert "无反馈记录" in captured.out
+
+
+class TestRecordCorrectionBranches:
+    """覆盖 _auto_adjust_confidence 的各分支"""
+
+    def test_corrected_confidence_none_falls_back(self, mock_feedback_path):
+        fb = record_correction(
+            "test_deid",
+            original_hypothesis="慢性胰腺炎（活动期）",
+            corrected_hypothesis="急性腕腺炎",
+            original_confidence=0.5,
+            corrected_confidence=None,
+        )
+        c = fb["corrections"][0]
+        # corrected_confidence=None 时 fallback 到 original_confidence
+        assert c["corrected_confidence"] == 0.5
+
+    def test_unknown_hypothesis_no_adjustment(self, mock_feedback_path):
+        fb = record_correction(
+            "test_deid",
+            original_hypothesis="一个完全未知的假设",
+            corrected_hypothesis="另一个假设",
+            original_confidence=0.8,
+            corrected_confidence=0.8,
+        )
+        assert fb.get("confidence_adjustments", {}) == {}
+
+    def test_confidence_increase_above_threshold(self, mock_feedback_path):
+        fb = record_correction(
+            "test_deid",
+            original_hypothesis="慢性胰腺炎（活动期）",
+            corrected_hypothesis="慢性胰腺炎（活动期）",
+            original_confidence=0.5,
+            corrected_confidence=0.8,  # +0.3 > 0.1
+        )
+        adj = fb["confidence_adjustments"]
+        assert adj["chronic_pancreatitis_active"] >= 0.05
+
+    def test_confidence_decrease_below_threshold(self, mock_feedback_path):
+        fb = record_correction(
+            "test_deid",
+            original_hypothesis="慢性胰腺炎（活动期）",
+            corrected_hypothesis="慢性胰腺炎（活动期）",
+            original_confidence=0.8,
+            corrected_confidence=0.5,  # -0.3 < -0.1
+        )
+        adj = fb["confidence_adjustments"]
+        assert adj["chronic_pancreatitis_active"] <= -0.05
+
+    def test_user_comment_default_empty(self, mock_feedback_path):
+        fb = record_correction(
+            "test_deid",
+            original_hypothesis="a",
+            corrected_hypothesis="b",
+        )
+        assert fb["corrections"][0]["user_comment"] == ""
+
+    def test_run_timestamp_defaults_to_now(self, mock_feedback_path):
+        fb = record_correction(
+            "test_deid",
+            original_hypothesis="a",
+            corrected_hypothesis="b",
+        )
+        # 14位数字串 YYYYMMDD_HHMMSS
+        assert "_" in fb["corrections"][0]["run_timestamp"]
+
+
+class TestPrintFeedback:
+    def test_empty_corrections(self, mock_feedback_path, capsys):
+        from lab_analysis.feedback import load_feedback, print_feedback
+
+        print_feedback(load_feedback("empty_deid"))
+        out = capsys.readouterr().out
+        assert "无纠正记录" in out
+
+    def test_with_corrections_and_adjustments(self, mock_feedback_path, capsys):
+        from lab_analysis.feedback import print_feedback
+
+        record_correction(
+            "test_deid",
+            original_hypothesis="慢性胰腺炎（活动期）",
+            corrected_hypothesis="急性腕腺炎",
+            original_confidence=0.8,
+            corrected_confidence=0.5,
+            user_comment="确诊",
+        )
+        print_feedback(
+            {
+                "patient_id": "test_deid",
+                "generated": "2026-06-21T10:00:00",
+                "corrections": [
+                    {
+                        "run_timestamp": "20260621_100000",
+                        "original_hypothesis": "A",
+                        "original_confidence": 0.8,
+                        "corrected_hypothesis": "B",
+                        "corrected_confidence": 0.5,
+                        "user_comment": "备注",
+                    }
+                ],
+                "confidence_adjustments": {"chronic_pancreatitis_active": -0.15},
+            }
+        )
+        out = capsys.readouterr().out
+        assert "原假设: A" in out
+        assert "纠正为: B" in out
+        assert "备注" in out
+        assert "chronic_pancreatitis_active" in out
