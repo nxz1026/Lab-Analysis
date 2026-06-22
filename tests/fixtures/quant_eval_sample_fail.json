@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-06-22T12:00:00",
+  "deid": "CI_FIXTURE_FAIL",
+  "std_ts": "20260620_175252",
+  "dspy_ts": "20260620_175730",
+  "metrics": {
+    "entity_f1": {
+      "available": true,
+      "tp": 5,
+      "fp": 8,
+      "fn": 7,
+      "precision": 0.3846,
+      "recall": 0.4167,
+      "f1": 0.4,
+      "n_entities": 15
+    },
+    "section_coverage": {
+      "available": true,
+      "n_expected": 10,
+      "n_nonempty": 6,
+      "coverage_rate": 0.6
+    },
+    "failure_rate": {
+      "available": true,
+      "confidence": 0.3,
+      "is_failure": true,
+      "reasons": ["confidence < 0.6"]
+    },
+    "entity_recall": {
+      "available": true,
+      "n_std_entities": 12,
+      "n_recalled": 5,
+      "recall_rate": 0.4167
+    },
+    "confidence": {
+      "available": true,
+      "dspy_confidence": 0.3,
+      "std_top_confidence": 0.85,
+      "abs_diff": 0.55,
+      "calibration": "poor"
+    },
+    "feedback_delta": {
+      "available": true,
+      "n_corrections": 5,
+      "n_rewrites": 3,
+      "avg_delta_confidence": -0.4,
+      "max_delta": -0.7,
+      "min_delta": -0.1
+    }
+  }
+}

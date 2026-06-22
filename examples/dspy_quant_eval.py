@@ -47,6 +47,10 @@ from lab_analysis.quant_metrics import (  # noqa: E402
     metric_feedback_delta,
     metric_section_coverage,
 )
+from lab_analysis.quant_visualizer import (  # noqa: E402
+    render_metrics_chart,
+    render_metrics_html,
+)
 from lab_analysis.utils import WORK_ROOT  # noqa: E402
 
 # 工具函数
@@ -223,6 +227,18 @@ def run(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     (out_dir / "quant_eval_report.md").write_text(_format_md(report), encoding="utf-8")
+
+    # 可视化产物: PNG 条形图 + HTML 单文件报告
+    try:
+        chart_bytes = render_metrics_chart(report["metrics"])
+        (out_dir / "quant_eval_chart.png").write_bytes(chart_bytes)
+        html = render_metrics_html(report, chart_bytes=chart_bytes)
+        (out_dir / "quant_eval_report.html").write_text(html, encoding="utf-8")
+        print(f"  [visual] PNG={len(chart_bytes)}B + HTML={len(html)}B 已保存")
+    except Exception as e:
+        # 可视化失败不影响主报告 (md/json)
+        print(f"  [visual-warn] 可视化失败: {e}")
+
     print(f"  [quant] 报告已保存: {out_dir}/quant_eval_report.{{json,md}}")
     return report
 

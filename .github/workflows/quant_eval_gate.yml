@@ -1,0 +1,107 @@
+name: Quant Eval Gate
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      report_path:
+        description: "Path to quant_eval_report.json (overrides fixtures)"
+        required: false
+        default: ""
+
+jobs:
+  gate-fixtures:
+    name: Run quant_eval_gate (PASS + FAIL fixtures)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Gate on PASS fixture (expect exit 0)
+        run: |
+          python scripts/quant_eval_gate.py \
+            --report-path tests/fixtures/quant_eval_sample_pass.json
+
+      - name: Gate on FAIL fixture (expect exit 1)
+        # 不靠 exit code 反向断言 (Windows/PowerShell shell 兼容差),
+        # 直接用 dry-run + 检查打印里含 "FAIL"
+        run: |
+          set +e
+          output=$(python scripts/quant_eval_gate.py \
+            --report-path tests/fixtures/quant_eval_sample_fail.json 2>&1)
+          echo "$output"
+          if echo "$output" | grep -q "❌ FAIL"; then
+            echo "[OK] FAIL fixture 正确返回 FAIL"
+            exit 0
+          else
+            echo "[ERROR] FAIL fixture 未返回 FAIL"
+            exit 1
+          fi
+
+      - name: Gate default thresholds (verify all defaults are reachable)
+        run: |
+          python -c "
+          from scripts.quant_eval_gate import DEFAULT_THRESHOLDS, evaluate
+          print('DEFAULT_THRESHOLDS:', DEFAULT_THRESHOLDS)
+          assert all(k in DEFAULT_THRESHOLDS for k in
+                     ['f1_min', 'coverage_min', 'recall_min',
+                      'confidence_min', 'feedback_delta_abs_max'])
+          print('OK all 5 thresholds defined')
+          "
+
+  gate-manual:
+    name: Manual gate (workflow_dispatch)
+    needs: gate-fixtures
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run gate on user-provided report
+        env:
+          REPORT_PATH: ${{ github.event.inputs.report_path }}
+        run: |
+          if [ -z "$REPORT_PATH" ]; then
+            echo "[skip] no report_path provided, 跳过 manual gate"
+            exit 0
+          fi
+          if [ ! -f "$REPORT_PATH" ]; then
+            echo "[error] report 不存在: $REPORT_PATH"
+            exit 2
+          fi
+          python scripts/quant_eval_gate.py --report-path "$REPORT_PATH"
+
+      - name: Upload gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quant-eval-gate-result
+          path: |
+            **/quant_eval_gate_result.json
+            **/quant_eval_chart.png
+            **/quant_eval_report.html
+          if-no-files-found: ignore

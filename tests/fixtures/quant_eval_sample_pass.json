@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-06-22T12:00:00",
+  "deid": "CI_FIXTURE_PASS",
+  "std_ts": "20260620_175252",
+  "dspy_ts": "20260620_175730",
+  "metrics": {
+    "entity_f1": {
+      "available": true,
+      "tp": 11,
+      "fp": 2,
+      "fn": 1,
+      "precision": 0.8462,
+      "recall": 0.9167,
+      "f1": 0.88,
+      "n_entities": 15
+    },
+    "section_coverage": {
+      "available": true,
+      "n_expected": 10,
+      "n_nonempty": 10,
+      "coverage_rate": 1.0
+    },
+    "failure_rate": {
+      "available": true,
+      "confidence": 0.88,
+      "is_failure": false,
+      "reasons": []
+    },
+    "entity_recall": {
+      "available": true,
+      "n_std_entities": 12,
+      "n_recalled": 11,
+      "recall_rate": 0.9167
+    },
+    "confidence": {
+      "available": true,
+      "dspy_confidence": 0.88,
+      "std_top_confidence": 0.859,
+      "abs_diff": 0.021,
+      "calibration": "excellent"
+    },
+    "feedback_delta": {
+      "available": false,
+      "reason": "无 corrections 记录",
+      "n_corrections": 0
+    }
+  }
+}
