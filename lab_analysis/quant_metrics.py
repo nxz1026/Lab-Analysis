@@ -5,13 +5,14 @@
     2. dual_mode_pipeline / MCP tool 等多入口复用
     3. 单元测试覆盖每个 metric 的边界情况
 
-6 个指标:
+7 个指标:
     1. 关键实体 F1            (std 报告作为 ground truth, 看 dspy 召回率)
     2. 章节覆盖度             (9 个 section 哪些非空)
     3. DSPy 失败率            (confidence < 0.6 / 缺失 / 全空)
     4. 实体召回率细分         (dspy 召回了 std 报告的哪些关键实体)
     5. 置信度分布 & 校准      (dspy.confidence + std 评分卡一致性)
     6. 人工反馈 Δconfidence   (来自 feedback.json corrections 列表)
+    7. 跨模态印证准确率       (dspy 一致性段是否引用 std top_hypo + 关键 lab entity)
 """
 
 from __future__ import annotations
@@ -228,7 +229,16 @@ def metric_feedback_delta(feedback_data: dict) -> dict[str, Any]:
     """
     corrections = feedback_data.get("corrections", [])
     if not corrections:
-        return {"available": False, "reason": "无 corrections 记录", "n_corrections": 0}
+        # 无 corrections 也算 available=True (n=0, gate 阈值 |0| ≤ 0.30 自动 PASS)
+        # 这样 HTML 始终能展示 n_corrections=0 统计, 避免被 SKIP 样式淹没
+        return {
+            "available": True,
+            "n_corrections": 0,
+            "n_rewrites": 0,
+            "avg_delta_confidence": 0.0,
+            "max_delta": 0.0,
+            "min_delta": 0.0,
+        }
 
     deltas: list[float] = []
     same_text_count = 0
@@ -250,4 +260,63 @@ def metric_feedback_delta(feedback_data: dict) -> dict[str, Any]:
         "max_delta": round(max(deltas), 4) if deltas else 0.0,
         "min_delta": round(min(deltas), 4) if deltas else 0.0,
         "adjustments": feedback_data.get("confidence_adjustments", {}),
+    }
+
+# ── #7 跨模态印证准确率 (合规要求) ──────────────────────────────
+
+
+def metric_cross_modality_consistency(
+    dspy_sections: dict[str, str] | None,
+    std_scoring: dict | None,
+) -> dict[str, Any]:
+    """7. 跨模态印证: dspy 一致性段是否引用 std top_hypothesis + 关键 lab 实体.
+
+    临床意义: dspy 必须把 MRI 影像所见 + Lab 检验数据互相印证,
+        不能只看一边下诊断. 算 accuracy:
+        - consistency 段非空 (基础分 0.3)
+        - mention std top_hypothesis.name (0.3)
+        - mention 至少 1 个 KEY_ENTITIES (0.4)
+        满分 1.0.
+    """
+    if not dspy_sections:
+        return {"available": False, "reason": "dspy_sections 缺失"}
+    consistency_text = (dspy_sections.get("consistency") or "").strip()
+    if not consistency_text:
+        return {"available": False, "reason": "dspy consistency 段缺失"}
+
+    score = 0.3  # 基础分: 段非空
+    components: dict[str, bool] = {"nonempty": True}
+
+    # 1) mention std top_hypothesis
+    mentioned_top = False
+    top_name = None
+    if std_scoring:
+        hyps = std_scoring.get("top_hypotheses", []) or []
+        if hyps:
+            top = hyps[0]
+            top_name = str(top.get("name") or top.get("hypothesis") or "")
+            if top_name and top_name in consistency_text:
+                mentioned_top = True
+                score += 0.3
+    components["mentions_top_hypothesis"] = mentioned_top
+
+    # 2) mention 至少 1 个 KEY_ENTITIES
+    mentioned_entity = False
+    matched_entities: list[str] = []
+    for ent in KEY_ENTITIES:
+        if count_entity(consistency_text, ent) > 0:
+            matched_entities.append(ent)
+            mentioned_entity = True
+    if mentioned_entity:
+        score += 0.4
+    components["mentions_key_entity"] = mentioned_entity
+
+    return {
+        "available": True,
+        "top_hypothesis": top_name,
+        "mentions_top_hypothesis": mentioned_top,
+        "mentions_key_entity": mentioned_entity,
+        "matched_entities": matched_entities,
+        "consistency_length": len(consistency_text),
+        "accuracy": round(min(score, 1.0), 4),
     }

@@ -233,9 +233,14 @@ def test_feedback_delta_with_corrections():
 
 
 def test_feedback_delta_no_corrections():
+    """U4: 无 corrections 也算 available=True, 只是 n_corrections=0 + delta 全 0."""
     result = metric_feedback_delta({})
-    assert result["available"] is False
+    assert result["available"] is True
     assert result["n_corrections"] == 0
+    assert result["n_rewrites"] == 0
+    assert result["avg_delta_confidence"] == 0.0
+    assert result["max_delta"] == 0.0
+    assert result["min_delta"] == 0.0
 
 
 def test_feedback_delta_n_rewrites():

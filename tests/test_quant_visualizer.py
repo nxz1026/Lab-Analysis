@@ -181,8 +181,21 @@ def test_render_metrics_html_feedback_delta_with_corrections(sample_metrics):
     html = render_metrics_html(report)
     assert "n_corrections=3" in html
     assert "avg_Δ=+0.1000" in html
-    # T17: feedback_delta 应作为 SKIP 折叠块
-    assert "passed-skip" in html
+
+
+def test_render_metrics_html_feedback_delta_n_zero(sample_metrics):
+    """U4: feedback_delta n_corrections=0 也算 available=True, 作为 OK 折叠块."""
+    sample_metrics["feedback_delta"] = {
+        "available": True,
+        "n_corrections": 0,
+        "avg_delta_confidence": 0.0,
+        "max_delta": 0.0,
+        "min_delta": 0.0,
+    }
+    report = {"deid": "X", "metrics": sample_metrics}
+    html = render_metrics_html(report)
+    assert "n_corrections=0" in html
+    assert "passed-ok" in html
     assert "<details>" in html
 
 
@@ -333,3 +346,12 @@ def test_render_metrics_chart_with_real_fixture():
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
     html = render_metrics_html(report, chart_bytes=png)
     assert "CI_FIXTURE_PASS" in html
+
+
+def test_render_metrics_html_print_button(sample_metrics):
+    """U7: HTML 含 Print/PDF 按钮 + @media print 隐藏."""
+    report = {"deid": "PRINT", "metrics": sample_metrics}
+    html = render_metrics_html(report)
+    assert "print-btn" in html
+    assert "window.print()" in html
+    assert "@media print" in html

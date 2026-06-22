@@ -544,3 +544,18 @@ MIT License — 详见 [LICENSE](LICENSE)
 ---
 
 ⭐ 如果这个项目对您有帮助，请给个 Star！
+
+## MCP Server (LLM Agent 集成)
+
+`mcp_server.py` 暴露 **6 个 tool** 给 Claude Desktop / Cursor 等 LLM agent 调用:
+
+| # | Tool | 用途 |
+|---|------|------|
+| 1 | `audit_dspy_models` | 检查 4 个 DSPy compiled JSON 是否 STALE |
+| 2 | `run_quant_eval` | 跑 6 指标量化评估 (std vs dspy) + 自动 gate + 可视化 |
+| 3 | `list_patients` | 列出 data/ 下所有 patient + 样本统计 + std/dspy 配对 |
+| 4 | `get_pipeline_status` | 看指定 patient (可选 timestamp) 的 pipeline 运行状态 |
+| 5 | `trigger_dspy_recompile` | 触发增量/全量 DSPy 4 module recompile (subprocess) |
+| 6 | `render_quant_trend` | 串多 quant_eval_report.json 渲染多 run trend PNG |
+
+启动: `python mcp_server.py` (stdio transport 默认)
