@@ -107,10 +107,45 @@ jobs:
             exit 1
           fi
 
-      - name: Upload gate sidecar artifact
+      - name: Generate markdown summary (PR visible trend)
+        if: always()
+        # 读取 gate 跑出的 sidecar JSON, 生成人类可读 markdown 写入 $GITHUB_STEP_SUMMARY
+        # PR 页面 “Summary” tab 会自动显示, 有变化一眼可看
+        run: |
+          python -c "
+          import json, os, sys
+          p = 'tests/fixtures/quant_eval_gate_result.json'
+          if not os.path.exists(p):
+              print('No sidecar, skip')
+              sys.exit(0)
+          d = json.load(open(p))
+          sha = os.environ.get('GITHUB_SHA', '?')[:7]
+          run_id = os.environ.get('GITHUB_RUN_ID', '?')
+          lines = [
+              '## Quant Eval Gate Trend',
+              '',
+              f\"**Commit**: `{sha}` | **Run**: {run_id}\",
+              '',
+              f\"**Overall**: {'✅ PASS' if d['passed'] else '❌ FAIL'} \",
+              f\"({d['n_passed']}/{d['n_total']} passed, {d['n_failed']} failed, {d['n_skipped']} skipped)\",
+              '',
+              '| metric | result | detail |',
+              '|--------|--------|--------|',
+          ]
+          for r in d['details']:
+              icon = '⏭️ SKIP' if r['skipped'] else '✅' if r['passed'] else '❌'
+              lines.append(f\"| {r['metric']} | {icon} | {r.get('reason', '')} |\")
+          out = '\n'.join(lines)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+              f.write(out + '\n')
+          print(out)
+          "
+
+      - name: Upload gate sidecar artifact (commit-prefixed for trend)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: quant-eval-gate-sidecar
+          # name 带 commit sha 前缀, 多次运行不覆盖, 可在 Actions UI 历史 artifact 中看趋势
+          name: quant-eval-gate-${{ github.sha }}
           path: tests/fixtures/quant_eval_gate_result.json
           if-no-files-found: ignore

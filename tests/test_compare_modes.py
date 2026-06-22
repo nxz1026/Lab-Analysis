@@ -11,6 +11,7 @@ from lab_analysis.compare_report_modes import (
     _parse_std_sections,
     compare_reports,
     format_comparison_md,
+    render_comparison_chart,
 )
 
 # ═════════════════════════════════════════════════════════════════════
@@ -173,3 +174,43 @@ class TestFormatComparisonMd:
         assert "Standard" in md
         assert "DSPy" in md
         assert len(md) > 100
+
+# ═════════════════════════════════════════════════════════════════════
+# render_comparison_chart (PNG) tests
+# ═════════════════════════════════════════════════════════════════════
+
+def test_render_comparison_chart_basic_produces_png():
+    """render_comparison_chart 应输出合法 PNG bytes (>1KB)."""
+    std_md = (
+        "# 报告\n"
+        "## 一、基本信息\n"
+        "患者张三，男 60 岁。\n\n"
+        "## 二、检验分析\n"
+        "hs-CRP 偏高。\n"
+    )
+    dspy_sections = {
+        "basic_info": "Patient: Zhang San, 60yo male.",
+        "lab_analysis": "hs-CRP elevated.",
+    }
+    result = compare_reports(std_md, dspy_sections, dspy_confidence=0.85)
+    png = render_comparison_chart(result)
+    assert isinstance(png, bytes)
+    assert len(png) > 1024, f"PNG too small: {len(png)}B"
+    assert png[:8] == b"\x89PNG\r\n\x1a\n", "Not a valid PNG"
+
+
+def test_render_comparison_chart_empty_raises():
+    """section_diffs 为空应抛 ValueError."""
+    import pytest
+    with pytest.raises(ValueError, match="section_diffs is empty"):
+        render_comparison_chart({"section_diffs": []})
+
+
+def test_render_comparison_chart_custom_title_and_figsize():
+    """支持自定义标题 + figsize."""
+    std_md = "## 一、基本信息\n张三"
+    dspy_sections = {"basic_info": "Zhang San"}
+    result = compare_reports(std_md, dspy_sections)
+    png = render_comparison_chart(result, title="My Custom Title", figsize=(8, 4))
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    assert len(png) > 500
