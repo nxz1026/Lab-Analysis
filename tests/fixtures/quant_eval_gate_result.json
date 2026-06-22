@@ -1,0 +1,58 @@
+{
+  "overall_pass": true,
+  "n_total": 6,
+  "n_passed": 5,
+  "n_failed": 0,
+  "n_skipped": 1,
+  "source": "CI_FIXTURE_PASS",
+  "results": [
+    {
+      "metric": "entity_f1",
+      "passed": true,
+      "actual": 0.88,
+      "threshold": 0.7,
+      "reason": "f1=0.8800 ≥ 0.7",
+      "skipped": false
+    },
+    {
+      "metric": "section_coverage",
+      "passed": true,
+      "actual": 1.0,
+      "threshold": 0.8,
+      "reason": "coverage=1.0000 ≥ 0.8",
+      "skipped": false
+    },
+    {
+      "metric": "failure_rate",
+      "passed": true,
+      "actual": false,
+      "threshold": false,
+      "reason": "is_failure=False (PASS)",
+      "skipped": false
+    },
+    {
+      "metric": "entity_recall",
+      "passed": true,
+      "actual": 0.9167,
+      "threshold": 0.7,
+      "reason": "recall=0.9167 ≥ 0.7",
+      "skipped": false
+    },
+    {
+      "metric": "confidence",
+      "passed": true,
+      "actual": 0.88,
+      "threshold": 0.6,
+      "reason": "dspy_conf=0.8800 ≥ 0.6",
+      "skipped": false
+    },
+    {
+      "metric": "feedback_delta",
+      "passed": true,
+      "actual": null,
+      "threshold": null,
+      "reason": "无 corrections 记录",
+      "skipped": true
+    }
+  ]
+}
