@@ -5,9 +5,11 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/nxz1026/Lab-Analysis/actions/workflows/tests.yml/badge.svg)](https://github.com/nxz1026/Lab-Analysis/actions/workflows/tests.yml)
+[![Quant Gate](https://github.com/nxz1026/Lab-Analysis/actions/workflows/quant_eval_gate.yml/badge.svg)](https://github.com/nxz1026/Lab-Analysis/actions/workflows/quant_eval_gate.yml)
 [![DSPy](https://img.shields.io/badge/DSPy-3.2+-orange.svg)](https://dspy.ai/)
-[![Tests](https://img.shields.io/badge/Tests-166_✔️-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-427_✔️-success.svg)](tests/)
 [![Pipeline](https://img.shields.io/badge/Pipeline-11_Steps-success.svg)](#pipeline-完整流程)
+[![MCP](https://img.shields.io/badge/MCP-5_Tools-purple.svg)](mcp_server.py)
 
 ---
 
@@ -123,7 +125,7 @@ Lab-Analysis/
 │       ├── final_report_generator.py     #   DSPy 报告生成
 │       ├── lab_data_extractor.py         #   DSPy 检验数据提取
 │       └── prompt_inspector.py           #   DSPy prompt 提取工具
-├── tests/                                # pytest 测试套件（166 用例）
+├── tests/                                # pytest 测试套件（427 用例）
 │   ├── conftest.py                       #   测试配置（环境变量 / 夹具）
 │   ├── test_utils.py                     #   工具函数测试
 │   ├── test_patient_id.py                #   身份证脱敏/校验测试
@@ -468,8 +470,8 @@ CLI 参数：
 | LLM 优化 | DSPy 3.2+（BootstrapFewShot / MIPROv2） |
 | 文献检索 | PubMed E-utilities API |
 | 错误处理 | tenacity（重试）+ 自研 error_logger |
-| 测试 | pytest, pytest-cov（166 用例） |
-| CI | GitHub Actions（Python 3.10~3.12 矩阵）|
+| 测试 | pytest, pytest-cov（427 用例） |
+| CI | GitHub Actions（Python 3.10~3.13 矩阵 + quant_eval_gate PR 必跑）|
 
 ---
 

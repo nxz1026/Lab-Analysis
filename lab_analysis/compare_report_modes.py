@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import difflib
 import json
+import io
 import re
 from pathlib import Path
 from typing import Any
@@ -213,6 +214,74 @@ def compare_reports_from_files(
     return compare_reports(std_md, dspy_sections, dspy_confidence)
 
 
+def render_comparison_chart(
+    result: dict,
+    *,
+    title: str = "Standard vs DSPy Report Comparison",
+    figsize: tuple[float, float] = (11, 6),
+) -> bytes:
+    """生成双模式拼接对比图 (2 子图): 上=长度对比, 下=overlap rate."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import warnings
+    warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
+    warnings.filterwarnings("ignore", message=".*missing from font.*")
+    from matplotlib.figure import Figure
+
+    diffs = result.get("section_diffs", [])
+    if not diffs:
+        raise ValueError("result.section_diffs is empty")
+
+    std_mode = result.get("std_mode", "Standard")
+    dspy_mode = result.get("dspy_mode", "DSPy")
+
+    headers = [d["header"][:10] for d in diffs]
+    std_lens = [int(d.get(f"{std_mode}_length", 0)) for d in diffs]
+    dspy_lens = [int(d.get(f"{dspy_mode}_length", 0)) for d in diffs]
+    overlaps = [float(d.get("overlap_rate", 0.0)) for d in diffs]
+
+    fig = Figure(figsize=figsize, dpi=100)
+
+    # 上: Std vs DSPy 长度对比 (grouped horizontal bar)
+    ax1 = fig.add_subplot(211)
+    y_pos = list(range(len(headers)))
+    ax1.barh([y - 0.2 for y in y_pos], std_lens, height=0.4, label=std_mode, color="#1f77b4", alpha=0.85)
+    ax1.barh([y + 0.2 for y in y_pos], dspy_lens, height=0.4, label=dspy_mode, color="#ff7f0e", alpha=0.85)
+    ax1.set_yticks(y_pos)
+    ax1.set_yticklabels(headers, fontsize=8)
+    ax1.invert_yaxis()
+    ax1.set_xlabel("Section Length (chars)")
+    ax1.set_title(f"Length per Section", fontsize=10, pad=6)
+    ax1.legend(loc="lower right", fontsize=8)
+    ax1.grid(axis="x", alpha=0.3)
+
+    max_len = max(std_lens + dspy_lens) if (std_lens or dspy_lens) else 1
+    for i, (s, d) in enumerate(zip(std_lens, dspy_lens)):
+        ax1.text(s + max_len * 0.01, i - 0.2, str(s), va="center", fontsize=7, color="#1f77b4")
+        ax1.text(d + max_len * 0.01, i + 0.2, str(d), va="center", fontsize=7, color="#ff7f0e")
+
+    # 下: Overlap rate
+    ax2 = fig.add_subplot(212)
+    colors = ["#2ca02c" if o >= 0.7 else "#ff7f0e" if o >= 0.4 else "#d62728" for o in overlaps]
+    bars = ax2.bar(headers, overlaps, color=colors, alpha=0.85, edgecolor="black", linewidth=0.5)
+    ax2.axhline(0.7, color="green", linestyle="--", linewidth=1, alpha=0.6, label="overlap >= 0.7 (good)")
+    ax2.axhline(0.4, color="orange", linestyle="--", linewidth=1, alpha=0.6, label="overlap >= 0.4 (warn)")
+    ax2.set_ylim(0, 1.05)
+    ax2.set_ylabel("Content Overlap Rate")
+    ax2.set_title(f"Overlap Rate per Section (avg={result.get('avg_overlap_rate', 0):.1%})", fontsize=10, pad=6)
+    ax2.tick_params(axis="x", labelsize=7, rotation=30)
+    ax2.legend(loc="upper right", fontsize=8)
+    ax2.grid(axis="y", alpha=0.3)
+    for bar, o in zip(bars, overlaps):
+        ax2.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02, f"{o:.1%}", ha="center", va="bottom", fontsize=8)
+
+    fig.suptitle(title, fontsize=12, fontweight="bold", y=0.995)
+    fig.tight_layout(rect=(0, 0, 1, 0.97))
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight", dpi=100)
+    return buf.getvalue()
+
+
 def format_comparison_md(result: dict) -> str:
     """将对比结果格式化为可读的 Markdown 报告。"""
     lines = [
@@ -263,6 +332,7 @@ if __name__ == "__main__":
     parser.add_argument("--dspy-json", required=True, help="DSPy 模式报告的 .json 路径")
     parser.add_argument("--out-json", default=None, help="对比结果 JSON 输出路径")
     parser.add_argument("--out-md", default=None, help="对比报告 MD 输出路径")
+    parser.add_argument("--out-png", default=None, help="双模式拼接对比图 PNG 输出路径")
     args = parser.parse_args()
 
     result = compare_reports_from_files(args.std_md, args.dspy_json)
@@ -278,3 +348,7 @@ if __name__ == "__main__":
     if args.out_md:
         Path(args.out_md).write_text(md_report, encoding="utf-8")
         print(f"[OK] MD 已保存: {args.out_md}")
+    if args.out_png:
+        png_bytes = render_comparison_chart(result)
+        Path(args.out_png).write_bytes(png_bytes)
+        print(f"[OK] PNG 已保存: {args.out_png} ({len(png_bytes)}B)")
