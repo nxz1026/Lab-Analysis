@@ -463,12 +463,17 @@ def main():
         "compile_mri_analyzer",
         "compile_lab_extractor",
     ]:
-        module_name = name.replace("compile_", "")
-        p = project_root / "models" / "dspy" / f"{module_name}_compiled.json"
+        # 修正函数名→JSON 文件名映射
+        _fn_to_json = {
+            "compile_final_report": "final_report_generator",
+            "compile_lab_extractor": "lab_data_extractor",
+        }
+        base = _fn_to_json.get(name, name.replace("compile_", ""))
+        p = project_root / "models" / "dspy" / f"{base}_compiled.json"
         if p.exists():
-            print(f"  [OK] {module_name}_compiled.json ({p.stat().st_size} 字节)")
+            print(f"  [OK] {base}_compiled.json ({p.stat().st_size} 字节)")
         else:
-            print(f"  [FAIL] {module_name}_compiled.json 缺失")
+            print(f"  [FAIL] {base}_compiled.json 缺失")
     print("=" * 60)
 
 
