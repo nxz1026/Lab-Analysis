@@ -64,3 +64,53 @@ jobs:
         with:
           name: coverage-${{ matrix.python-version }}
           path: coverage.xml
+
+  # ----------------------------------------------------------
+  # quant_eval_gate: 6 指标阈值检查 (PR 必跑, 阻断低质量 report 合入)
+  # 复用 test job 的 install 缓存策略, Python 3.12 单跑即可
+  # ----------------------------------------------------------
+  quant_eval_gate:
+    name: Quant Eval Gate (PR required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Gate on PASS fixture (expect exit 0)
+        run: |
+          python scripts/quant_eval_gate.py \
+            --report-path tests/fixtures/quant_eval_sample_pass.json
+
+      - name: Gate on FAIL fixture (expect detected FAIL)
+        # 不靠 exit code 反向断言 (GitHub Actions runner shell 兼容差),
+        # 直接检查打印里含 "❌ FAIL"
+        run: |
+          set +e
+          output=$(python scripts/quant_eval_gate.py \
+            --report-path tests/fixtures/quant_eval_sample_fail.json 2>&1)
+          echo "$output"
+          if echo "$output" | grep -q "❌ FAIL"; then
+            echo "[OK] FAIL fixture 正确返回 FAIL"
+            exit 0
+          else
+            echo "[ERROR] FAIL fixture 未返回 FAIL"
+            exit 1
+          fi
+
+      - name: Upload gate sidecar artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quant-eval-gate-sidecar
+          path: tests/fixtures/quant_eval_gate_result.json
+          if-no-files-found: ignore

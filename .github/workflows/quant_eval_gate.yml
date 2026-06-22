@@ -1,14 +1,12 @@
 name: Quant Eval Gate
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+  # PR check 由 tests.yml 的 quant_eval_gate job 统一管理 (避免重复跑)
+  # 这里只保留 manual trigger: 用户跑真实 quant_eval_report.json
   workflow_dispatch:
     inputs:
       report_path:
-        description: "Path to quant_eval_report.json (overrides fixtures)"
+        description: "Path to quant_eval_report.json (real eval output)"
         required: false
         default: ""
 
