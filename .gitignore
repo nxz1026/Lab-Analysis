@@ -62,3 +62,6 @@ coverage.xml
 htmlcov/
 .cache/
 .pytest_cache/
+
+# LiteLLM prompt cache (DSPy BootstrapFewShot 加速)
+.litellm_cache/

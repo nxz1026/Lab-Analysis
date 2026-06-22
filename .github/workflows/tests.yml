@@ -35,6 +35,13 @@ jobs:
         # 仓库已完成全量 format 迁移，严格阳断保证不再回退
         run: python -m ruff format --check .
 
+      - name: Audit DSPy compiled models
+        # 防止改完 dspy_modules/ 源码却忘重 compile
+        # STALE 即 fail,本地建议运行: python examples/compile_all_dspy_modules_v2.py
+        run: python scripts/audit_dspy_models.py --ci
+        env:
+          CI: "true"
+
       - name: Test with pytest + coverage
         run: python -m pytest --cov=lab_analysis --cov-report=term-missing --cov-report=xml:coverage.xml --cov-branch
         env:
