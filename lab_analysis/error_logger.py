@@ -47,13 +47,15 @@ def setup_error_logger(log_file: Optional[Path] = None) -> logging.Logger:
     
     # 创建 logger
     logger = logging.getLogger("lab_analysis_error")
-    logger.setLevel(logging.ERROR)
+    # 用 WARNING 让 log_warning 也能写入文件（原 ERROR 会过滤掉 WARNING）
+    logger.setLevel(logging.WARNING)
     
     # 避免重复添加 handler
     if not logger.handlers:
         # 文件 handler
         file_handler = logging.FileHandler(log_file, encoding="utf-8")
-        file_handler.setLevel(logging.ERROR)
+        # WARNING 兼顾 error + warning
+        file_handler.setLevel(logging.WARNING)
         
         # 格式化器
         formatter = logging.Formatter(

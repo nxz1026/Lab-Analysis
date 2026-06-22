@@ -55,8 +55,8 @@ omit = [
 ]
 
 [tool.coverage.report]
-# CI 阈值设为 20%,每次只递增 1%,避免一次性跳出
-fail_under = 20
+# CI 阈值跟进实际覆盖率提升 (22.80% -> 26%),后续每次 +1%
+fail_under = 25
 show_missing = true
 skip_covered = false
 exclude_lines = [
