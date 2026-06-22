@@ -191,10 +191,10 @@
       "dspy": "3.2.1",
       "cloudpickle": "3.1"
     },
-    "compiled_at": "2026-06-22T09:05:29",
-    "source_commit": "d293aea",
-    "latest_src_mtime": "2026-06-22T08:33:56",
-    "injected_at": "2026-06-22T09:05:29",
+    "compiled_at": "2026-06-22T12:13:28",
+    "source_commit": "34bdeb9",
+    "latest_src_mtime": "2026-06-22T11:15:44",
+    "injected_at": "2026-06-22T12:13:28",
     "injector_version": "1.0.0"
   }
 }

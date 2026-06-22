@@ -128,8 +128,166 @@ def test_mcp_server_module_loads():
     assert hasattr(mcp_server, "mcp")
     assert hasattr(mcp_server, "audit_dspy_models")
     assert hasattr(mcp_server, "run_quant_eval")
+    assert hasattr(mcp_server, "list_patients")
+    assert hasattr(mcp_server, "get_pipeline_status")
+    assert hasattr(mcp_server, "trigger_dspy_recompile")
 
 
 def test_mcp_server_has_fastmcp_instance():
     """FastMCP 实例名 = 'lab-analysis'。"""
     assert mcp_server.mcp.name == "lab-analysis"
+
+
+# ============== Tool 3: list_patients ==============
+
+
+def test_list_patients_basic():
+    """list_patients 返回 stats + pairs 字段。"""
+    result = json.loads(mcp_server.list_patients())
+    assert "n_patients" in result
+    assert "n_total_samples" in result
+    assert "n_dspy_samples" in result
+    assert "n_std_samples" in result
+    assert "per_patient" in result
+    assert "pairs" in result
+    assert isinstance(result["pairs"], dict)
+
+
+def test_list_patients_filters_non_id_dirs():
+    """list_patients 应过滤 mri_dspy_prompts 这种模板目录。"""
+    result = json.loads(mcp_server.list_patients())
+    # 业务 patient 是 18 位身份证号
+    for pid in result["per_patient"]:
+        assert pid.isdigit() and len(pid) == 18, f"非身份证号格式: {pid}"
+    # mri_dspy_prompts 不应出现在 per_patient 里
+    assert "mri_dspy_prompts" not in result["per_patient"]
+    # 过滤掉的应记录在 filtered_out
+    assert "filtered_out" in result
+    assert "mri_dspy_prompts" in result["filtered_out"]
+
+
+# ============== Tool 4: get_pipeline_status ==============
+
+
+def test_get_pipeline_status_latest():
+    """get_pipeline_status 不传 timestamp 时选最新一次。"""
+    result = json.loads(mcp_server.get_pipeline_status("846552421134373347"))
+    assert result["available"] is True
+    assert result["timestamp"] == "20260620_175730"  # 最新
+    assert "stages" in result
+    assert "metrics" in result
+    assert result["stages"]["final_report_md"] is True
+    assert result["metrics"]["dspy_confidence"] == 0.88
+
+
+def test_get_pipeline_status_specific_ts():
+    """get_pipeline_status 传 timestamp 时看指定那一次。"""
+    result = json.loads(
+        mcp_server.get_pipeline_status("846552421134373347", "20260620_175252")
+    )
+    assert result["available"] is True
+    assert result["timestamp"] == "20260620_175252"
+    # 175252 是 std run (不含 dspy_prompts)
+    assert result["is_dspy_run"] is False
+    assert result["stages"]["dspy_prompts"] is False
+
+
+def test_get_pipeline_status_nonexistent_patient():
+    """不存在的 patient 优雅返回 error 字段。"""
+    result = json.loads(mcp_server.get_pipeline_status("999999999999999999"))
+    assert result["available"] is False
+    assert "error" in result
+
+
+def test_get_pipeline_status_nonexistent_ts():
+    """存在的 patient + 不存在的 ts 优雅返回 error。"""
+    result = json.loads(
+        mcp_server.get_pipeline_status("846552421134373347", "19990101_000000")
+    )
+    assert result["available"] is False
+
+
+# ============== Tool 5: trigger_dspy_recompile ==============
+
+
+def test_trigger_dspy_recompile_incremental(monkeypatch):
+    """增量模式 (force=False) 调 subprocess.run, mock 后验证 cmd 不含 --force。"""
+    import subprocess as sp
+
+    captured = {}
+
+    class FakeResult:
+        returncode = 0
+        stdout = "DSPy 增量完成\n[跳过] literature_interpreter: 已最新\n"
+        stderr = ""
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        captured["kwargs"] = kwargs
+        return FakeResult()
+
+    monkeypatch.setattr(mcp_server.subprocess, "run", fake_run)
+    result = json.loads(mcp_server.trigger_dspy_recompile(force=False, timeout_sec=60))
+    # 验证 cmd 包含 compile_all_dspy_modules_v2.py, 不含 --force
+    assert any("compile_all_dspy_modules_v2.py" in str(c) for c in captured["cmd"])
+    assert "--force" not in captured["cmd"]
+    # 验证返回字段
+    assert result["ok"] is True
+    assert result["returncode"] == 0
+    assert result["force"] is False
+    assert "started_at" in result
+    assert "elapsed_sec" in result
+    assert "stdout_tail" in result
+
+
+def test_trigger_dspy_recompile_force_mode(monkeypatch):
+    """force=True 时 cmd 应包含 --force flag。"""
+
+    class FakeResult:
+        returncode = 0
+        stdout = "DSPy 全量完成\n"
+        stderr = ""
+
+    captured = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        return FakeResult()
+
+    monkeypatch.setattr(mcp_server.subprocess, "run", fake_run)
+    result = json.loads(mcp_server.trigger_dspy_recompile(force=True, timeout_sec=60))
+    assert "--force" in captured["cmd"]
+    assert result["force"] is True
+    assert result["ok"] is True
+
+
+def test_trigger_dspy_recompile_timeout(monkeypatch):
+    """subprocess 超时时 tool 应返回 error 字段, 不 raise。"""
+    import subprocess as sp
+
+    def fake_run(cmd, **kwargs):
+        raise sp.TimeoutExpired(cmd="x", timeout=10)
+
+    monkeypatch.setattr(mcp_server.subprocess, "run", fake_run)
+    result = json.loads(mcp_server.trigger_dspy_recompile(force=False, timeout_sec=10))
+    assert result["ok"] is False
+    assert "timeout" in result["error"].lower()
+    assert result["returncode"] == -1
+
+
+def test_trigger_dspy_recompile_nonzero_returncode(monkeypatch):
+    """subprocess 返回非 0 时 ok=False, stdout_tail 仍返回。"""
+
+    class FakeResult:
+        returncode = 1
+        stdout = "Error: DEEPSEEK_API_KEY missing\n"
+        stderr = "Traceback (most recent call last):\n  ..."
+
+    def fake_run(cmd, **kwargs):
+        return FakeResult()
+
+    monkeypatch.setattr(mcp_server.subprocess, "run", fake_run)
+    result = json.loads(mcp_server.trigger_dspy_recompile(force=True, timeout_sec=60))
+    assert result["ok"] is False
+    assert result["returncode"] == 1
+    assert "DEEPSEEK_API_KEY" in result["stdout_tail"]
