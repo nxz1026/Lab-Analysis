@@ -7,12 +7,14 @@ DSPy 版本的最终综合临床诊断报告生成模块
 """
 
 import datetime as dt
+import logging
 import os
 from pathlib import Path
 
 import dspy
 
 from ..report_schema import REPORT_MD_TEMPLATE, REPORT_SECTIONS
+from ._retry import SafeCallError, make_empty_prediction, safe_predict
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
 
 
@@ -61,16 +63,22 @@ class FinalReportGenerator(dspy.Module):
         quality_control: str,
     ):
 
-        prediction = self.generate(
-            patient_info=patient_info,
-            lab_summary=lab_summary,
-            analysis_results=analysis_results,
-            literature_interpretation=literature_interpretation,
-            mri_analysis=mri_analysis or "影像数据暂缺",
-            quality_control=quality_control,
-        )
-
-        return prediction
+        try:
+            return safe_predict(
+                self.generate,
+                module_name="final_report_generator",
+                patient_info=patient_info,
+                lab_summary=lab_summary,
+                analysis_results=analysis_results,
+                literature_interpretation=literature_interpretation,
+                mri_analysis=mri_analysis or "影像数据暂缺",
+                quality_control=quality_control,
+            )
+        except SafeCallError as exc:
+            logging.getLogger(__name__).error(
+                "final_report_generator fallback to empty prediction: %s", exc
+            )
+            return make_empty_prediction(FinalReportSignature)
 
 
 def compile_report_generator(train_data: list, dev_data: list):

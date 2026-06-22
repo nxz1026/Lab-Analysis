@@ -139,10 +139,10 @@
       "dspy": "3.2.1",
       "cloudpickle": "3.1"
     },
-    "compiled_at": "2026-06-22T09:05:10",
-    "source_commit": "d293aea",
-    "latest_src_mtime": "2026-06-22T08:33:56",
-    "injected_at": "2026-06-22T09:05:10",
+    "compiled_at": "2026-06-22T11:27:22",
+    "source_commit": "8df5cf8",
+    "latest_src_mtime": "2026-06-22T11:15:44",
+    "injected_at": "2026-06-22T11:27:22",
     "injector_version": "1.0.0"
   }
 }

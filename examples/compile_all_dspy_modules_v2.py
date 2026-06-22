@@ -43,6 +43,51 @@ def _save_and_inject(compiled_module, save_path: Path) -> None:
         print(f"  [警告] metadata 注入失败: {e}")
 
 
+# ============== 增量 compile (mtime 检测) ==============
+
+_DSPY_SRC_DIR = _PROJECT_ROOT / "lab_analysis" / "dspy_modules"
+
+
+def _module_source_paths(module_name: str) -> list[Path]:
+    """返回某个 module 编译时依赖的全部 .py 源文件路径。
+
+    Args:
+        module_name: 编译产物名 (不带 _compiled.json 后缀),
+                      如 'literature_interpreter' / 'final_report_generator' /
+                      'mri_analyzer' / 'lab_data_extractor'。
+    """
+    sources = [
+        _DSPY_SRC_DIR / f"{module_name}.py",
+        _DSPY_SRC_DIR / "_retry.py",  # forward 内部依赖
+        _DSPY_SRC_DIR / "prompt_inspector.py",  # save_dspy_prompts 依赖
+    ]
+    return [p for p in sources if p.exists()]
+
+
+def _is_up_to_date(compiled_json: Path, source_files: list[Path]) -> bool:
+    """当 compiled_json 存在且比所有 source_files 都新,返回 True。
+
+    Args:
+        compiled_json: compiled JSON 路径。
+        source_files: 依赖的源文件路径列表。
+
+    Returns:
+        True 表示可跳过编译 (source 无变动), False 表示需重新编译。
+    """
+    if not compiled_json.exists():
+        return False
+    try:
+        json_mtime = compiled_json.stat().st_mtime
+    except OSError:
+        return False
+    for src in source_files:
+        if not src.exists():
+            continue
+        if src.stat().st_mtime > json_mtime:
+            return False
+    return True
+
+
 def configure_dspy():
     import dspy
     import litellm
@@ -217,10 +262,18 @@ def collect_samples_from_runs(data_root: Path):
 # ============== 训练函数 ==============
 
 
-def compile_literature_interpreter(samples):
+def compile_literature_interpreter(samples, force: bool = False):
     import dspy.teleprompt
 
     from lab_analysis.dspy_modules import LiteratureInterpreterModule
+
+    out_dir = project_root / "models" / "dspy"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    save_path = out_dir / "literature_interpreter_compiled.json"
+    sources = _module_source_paths("literature_interpreter")
+    if not force and _is_up_to_date(save_path, sources):
+        print(f"\n[跳过] literature_interpreter: compiled 已是最新 ({save_path.name})")
+        return None
 
     def simple_metric(example, pred, trace=None):
         try:
@@ -254,9 +307,6 @@ def compile_literature_interpreter(samples):
     )
     compiled = optimizer.compile(student=LiteratureInterpreterModule(), trainset=trainset)
 
-    out_dir = project_root / "models" / "dspy"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    save_path = out_dir / "literature_interpreter_compiled.json"
     _save_and_inject(compiled, save_path)
     print(f"[保存] {save_path}")
 
@@ -266,10 +316,18 @@ def compile_literature_interpreter(samples):
     return compiled
 
 
-def compile_final_report(samples):
+def compile_final_report(samples, force: bool = False):
     import dspy.teleprompt
 
     from lab_analysis.dspy_modules import FinalReportGenerator
+
+    out_dir = project_root / "models" / "dspy"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    save_path = out_dir / "final_report_generator_compiled.json"
+    sources = _module_source_paths("final_report_generator")
+    if not force and _is_up_to_date(save_path, sources):
+        print(f"\n[跳过] final_report_generator: compiled 已是最新 ({save_path.name})")
+        return None
 
     def simple_metric(example, pred, trace=None):
         # 简化：只检查几个核心 section
@@ -334,9 +392,6 @@ def compile_final_report(samples):
     )
     compiled = optimizer.compile(student=FinalReportGenerator(), trainset=trainset)
 
-    out_dir = project_root / "models" / "dspy"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    save_path = out_dir / "final_report_generator_compiled.json"
     _save_and_inject(compiled, save_path)
     print(f"[保存] {save_path}")
 
@@ -345,10 +400,18 @@ def compile_final_report(samples):
     return compiled
 
 
-def compile_mri_analyzer(samples):
+def compile_mri_analyzer(samples, force: bool = False):
     import dspy.teleprompt
 
     from lab_analysis.dspy_modules import MRIAnalysisModule
+
+    out_dir = project_root / "models" / "dspy"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    save_path = out_dir / "mri_analyzer_compiled.json"
+    sources = _module_source_paths("mri_analyzer")
+    if not force and _is_up_to_date(save_path, sources):
+        print(f"\n[跳过] mri_analyzer: compiled 已是最新 ({save_path.name})")
+        return None
 
     def simple_metric(example, pred, trace=None):
         try:
@@ -378,9 +441,6 @@ def compile_mri_analyzer(samples):
     )
     compiled = optimizer.compile(student=MRIAnalysisModule(), trainset=trainset)
 
-    out_dir = project_root / "models" / "dspy"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    save_path = out_dir / "mri_analyzer_compiled.json"
     _save_and_inject(compiled, save_path)
     print(f"[保存] {save_path}")
 
@@ -389,10 +449,18 @@ def compile_mri_analyzer(samples):
     return compiled
 
 
-def compile_lab_extractor(samples):
+def compile_lab_extractor(samples, force: bool = False):
     import dspy.teleprompt
 
     from lab_analysis.dspy_modules import LabDataExtractor
+
+    out_dir = project_root / "models" / "dspy"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    save_path = out_dir / "lab_data_extractor_compiled.json"
+    sources = _module_source_paths("lab_data_extractor")
+    if not force and _is_up_to_date(save_path, sources):
+        print(f"\n[跳过] lab_data_extractor: compiled 已是最新 ({save_path.name})")
+        return None
 
     def simple_metric(example, pred, trace=None):
         try:
@@ -419,9 +487,6 @@ def compile_lab_extractor(samples):
     )
     compiled = optimizer.compile(student=LabDataExtractor(), trainset=trainset)
 
-    out_dir = project_root / "models" / "dspy"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    save_path = out_dir / "lab_data_extractor_compiled.json"
     _save_and_inject(compiled, save_path)
     print(f"[保存] {save_path}")
 
@@ -430,9 +495,20 @@ def compile_lab_extractor(samples):
     return compiled
 
 
-def main():
+def main(argv: list[str] | None = None):
+    import argparse
+
+    parser = argparse.ArgumentParser(description="DSPy 全模块统一编译 (v2 + 增量)")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="强制重新编译所有模块,跳过 mtime 检测",
+    )
+    args = parser.parse_args(argv)
+    force = args.force
+
     print("=" * 60)
-    print("DSPy 全模块统一编译 (v2 - 修复 Example 格式)")
+    print(f"DSPy 全模块统一编译 (v2 - 修复 Example 格式, 增量={not force})")
     print("=" * 60)
 
     configure_dspy()
@@ -455,7 +531,7 @@ def main():
         compile_lab_extractor,
     ]:
         try:
-            r = fn(samples)
+            r = fn(samples, force=force)
             results[fn.__name__] = r
         except Exception as e:
             print(f"\n[失败] {fn.__name__}: {e}")

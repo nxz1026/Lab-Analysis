@@ -27,6 +27,63 @@ def read_compiled(p: Path) -> dict:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
+def _check_one(json_path: Path, latest_src_mtime: float) -> tuple[dict, bool]:
+    """检查单个 compiled JSON, 返回 (detail_dict, is_stale)。"""
+    mtime = json_path.stat().st_mtime
+    age_h = (datetime.now().timestamp() - mtime) / 3600
+    data = read_compiled(json_path)
+    meta = data.get("metadata", {})
+
+    # 优先读 metadata.compiled_at (由 inject_compile_metadata.py 注入)
+    compiled_at_iso = meta.get("compiled_at")
+    source_commit = meta.get("source_commit", "unknown")
+    latest_src_iso = meta.get("latest_src_mtime")
+    if compiled_at_iso:
+        try:
+            compiled_at_dt = datetime.fromisoformat(compiled_at_iso)
+            compiled_ts = compiled_at_dt.timestamp()
+        except ValueError:
+            compiled_ts = mtime
+            compiled_at_iso = f"{compiled_at_iso} (解析失败)"
+    else:
+        compiled_ts = mtime
+        compiled_at_iso = (
+            meta.get("created_at")
+            or meta.get("compile_time")
+            or meta.get("timestamp")
+            or "unknown"
+        )
+
+    # 检查 prompt 文本
+    text_blob = json.dumps(data, ensure_ascii=False)
+    old_hits = [s for s in OLD_ENDPOINTS if s in text_blob]
+    new_hits = [s for s in NEW_ENDPOINTS if s in text_blob]
+
+    # 是否源文件改动后未重新 compile
+    stale = bool(
+        latest_src_iso
+        and datetime.fromisoformat(latest_src_iso).timestamp() > compiled_ts
+    )
+
+    detail = {
+        "module": json_path.stem,
+        "json_path": str(json_path),
+        "compiled_at": compiled_at_iso,
+        "source_commit": source_commit,
+        "latest_src_mtime": latest_src_iso,
+        "file_age_hours": round(age_h, 2),
+        "old_endpoint_refs": old_hits,
+        "new_endpoint_refs": new_hits,
+        "is_up_to_date": not stale,
+        "reason": (
+            "源文件改动后未重 compile"
+            if stale
+            else "up-to-date"
+        ),
+    }
+    return detail, stale
+
+
 def main():
     print("=" * 72)
     print(f"  dspy compiled models 审计 @ {datetime.now():%Y-%m-%d %H:%M}")
@@ -43,64 +100,25 @@ def main():
     # 2) 每个 compiled JSON 的状态
     print("\n[2] compiled JSON 状态:")
     overall_needs_recompile = False
+    details: list[dict] = []
     for json_path in sorted(MODELS.glob("*.json")):
-        mtime = json_path.stat().st_mtime
-        age_h = (datetime.now().timestamp() - mtime) / 3600
-        data = read_compiled(json_path)
-        meta = data.get("metadata", {})
-
-        # 优先读 metadata.compiled_at (由 inject_compile_metadata.py 注入),
-        # 其次 dspy 自己的 created_at,都没有再降级到文件 mtime
-        compiled_at_iso = meta.get("compiled_at")
-        source_commit = meta.get("source_commit", "unknown")
-        latest_src_iso = meta.get("latest_src_mtime")
-        if compiled_at_iso:
-            try:
-                compiled_at_dt = datetime.fromisoformat(compiled_at_iso)
-                compiled_ts = compiled_at_dt.timestamp()
-            except ValueError:
-                compiled_ts = mtime
-                compiled_at_iso = f"{compiled_at_iso} (解析失败)"
-        else:
-            compiled_ts = mtime
-            compiled_at_iso = (
-                meta.get("created_at")
-                or meta.get("compile_time")
-                or meta.get("timestamp")
-                or "unknown"
-            )
-
-        # 检查 prompt 文本
-        text_blob = json.dumps(data, ensure_ascii=False)
-        old_hits = [s for s in OLD_ENDPOINTS if s in text_blob]
-        new_hits = [s for s in NEW_ENDPOINTS if s in text_blob]
-
-        # 是否源文件改动后未重新 compile
-        stale = latest_src_iso and datetime.fromisoformat(latest_src_iso).timestamp() > compiled_ts
+        detail, stale = _check_one(json_path, latest_src_mtime)
+        details.append(detail)
         if stale:
             overall_needs_recompile = True
-
         flag = "STALE " if stale else "OK     "
         print(f"\n  [{flag}] {json_path.name}")
         print(
-            f"    compiled_at:   {compiled_at_iso} (source: {'metadata' if meta.get('compiled_at') else 'mtime/fallback'})"
+            f"    compiled_at:   {detail['compiled_at']} (source: metadata)"
+            if "解析失败" not in detail["compiled_at"]
+            else f"    compiled_at:   {detail['compiled_at']}"
         )
-        print(f"    source_commit: {source_commit}")
-        if latest_src_iso:
-            print(f"    src_mtime:     {latest_src_iso}")
-        print(f"    file_age:      {age_h:.1f}h (mtime 仅供参考)")
-        print(f"    old refs:   {old_hits if old_hits else '(none)'}")
-        print(f"    new refs:   {new_hits if new_hits else '(none)'}")
-        # 显示 prompt signature (只在 OK 时简化,STALE 时省略)
-        if not stale:
-            for sig in ("signature", "predictor", "instructions"):
-                if sig in data:
-                    v = data[sig]
-                    if isinstance(v, str):
-                        print(f"    {sig:11s}: {v[:100]!r}")
-                    elif isinstance(v, dict):
-                        keys = list(v.keys())[:5]
-                        print(f"    {sig:11s}: dict keys={keys}")
+        print(f"    source_commit: {detail['source_commit']}")
+        if detail["latest_src_mtime"]:
+            print(f"    src_mtime:     {detail['latest_src_mtime']}")
+        print(f"    file_age:      {detail['file_age_hours']}h (mtime 仅供参考)")
+        print(f"    old refs:   {detail['old_endpoint_refs'] or '(none)'}")
+        print(f"    new refs:   {detail['new_endpoint_refs'] or '(none)'}")
 
     # 3) 结论
     print("\n" + "=" * 72)
@@ -112,10 +130,20 @@ def main():
     else:
         print("  结论: 全部 UP-TO-DATE,无需重 compile")
     print("=" * 72)
+
     # CI 模式:检测到 STALE 退出 1,让 pipeline fail
     # 默认 Windows 本地无脑运行仍 exit 0 (避免误报),要 CI 行为需 --ci 或 CI env
     if overall_needs_recompile and ("--ci" in sys.argv or os.environ.get("CI")):
         sys.exit(1)
+
+    # 结构化结果 (供 MCP / 测试调用)
+    return {
+        "overall_up_to_date": not overall_needs_recompile,
+        "stale_modules": [d["module"] for d in details if not d["is_up_to_date"]],
+        "details": details,
+        "latest_src_mtime": latest_src_mtime,
+        "checked_at": datetime.now().isoformat(timespec="seconds"),
+    }
 
 
 if __name__ == "__main__":

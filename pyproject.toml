@@ -28,6 +28,8 @@ dev = ["ruff>=0.4", "pytest>=7.0", "pytest-cov>=4.0"]
 dspy = ["dspy-ai>=2.4", "pydicom>=2.4"]
 pdf = ["weasyprint>=62", "markdown>=3.5"]
 dashboard = ["streamlit>=1.28"]
+# MCP server (mcp_server.py) 依赖, 装这个 group 后才能用 audit_dspy_models / run_quant_eval tool
+mcp = ["mcp>=1.0"]
 
 [project.scripts]
 lab-analysis = "lab_analysis.pipeline:main"

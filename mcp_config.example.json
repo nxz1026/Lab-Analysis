@@ -1,0 +1,13 @@
+{
+  "_comment": "Lab-Analysis MCP server 客户端配置示例。复制到对应客户端的 mcp.json 即可。",
+  "mcpServers": {
+    "lab-analysis": {
+      "command": "python",
+      "args": ["e:/2026Workplace/Code/Lab-Analysis/mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "e:/2026Workplace/Code/Lab-Analysis"
+      },
+      "disabled": false
+    }
+  }
+}

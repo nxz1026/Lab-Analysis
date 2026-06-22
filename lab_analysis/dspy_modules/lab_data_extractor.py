@@ -7,11 +7,13 @@ DSPy 版本的检验报告数据提取模块
 提高字段识别准确率和格式规范性
 """
 
+import logging
 from pathlib import Path
 from typing import Optional
 
 import dspy
 
+from ._retry import SafeCallError, make_empty_prediction, safe_predict
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
 
 
@@ -68,8 +70,16 @@ class LabDataExtractor(dspy.Module):
         self.extract = dspy.ChainOfThought(LabDataExtractionSignature)
 
     def forward(self, image_description: str):
-        prediction = self.extract(image_description=image_description)
-        return prediction
+        try:
+            return safe_predict(
+                self.extract,
+                module_name="lab_data_extractor",
+                image_description=image_description,
+            )
+        except SafeCallError as exc:
+            logger = logging.getLogger(__name__)
+            logger.error("lab_data_extractor fallback to empty prediction: %s", exc)
+            return make_empty_prediction(LabDataExtractionSignature)
 
     def to_structured_dict(self, prediction) -> dict:
         """将提取结果转换为结构化字典"""
