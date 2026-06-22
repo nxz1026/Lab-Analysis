@@ -1,4 +1,4 @@
-"""MCP server for Lab-Analysis — 暴露 5 个 tool 给 LLM agent 调用。
+"""MCP server for Lab-Analysis — 暴露 6 个 tool 给 LLM agent 调用。
 
 启动:
     # stdio 模式 (默认, 用于 Claude Desktop / Cursor / IDE)
@@ -10,6 +10,7 @@ Tool 列表:
     3. list_patients()            — 列出 data/ 下所有 patient + 样本统计
     4. get_pipeline_status(...)   — 看指定 patient (可选 timestamp) 的 pipeline 运行状态
     5. trigger_dspy_recompile(...) — 触发增量/全量 DSPy 4 module recompile (subprocess)
+    6. render_quant_trend(...)    — 用所有 quant_eval_report.json 渲染多 run trend PNG
 
 依赖:
     pip install mcp  (>= 1.0)
@@ -263,11 +264,22 @@ def run_quant_eval(
             except Exception as e:
                 result["gate_error"] = f"{type(e).__name__}: {e}"
 
+        # U5: 写 .latest.txt marker (Windows 不支持 symlink, 用文本占位指向最新 timestamp)
+        try:
+            latest_marker = artifact_dir / ".latest.txt"
+            latest_marker.write_text(
+                f"{dspy_ts}\n",
+                encoding="utf-8",
+            )
+        except OSError:
+            pass
+
         result["artifacts"] = {
             "json_path": str(json_path),
             "png_path": str(png_path) if png_path else None,
             "html_path": str(html_path) if html_path else None,
             "sidecar_path": str(sidecar_path) if sidecar_path else None,
+            "latest_marker": str(artifact_dir / ".latest.txt"),
         }
         return json.dumps(result, ensure_ascii=False, indent=2)
     except Exception as e:
@@ -535,6 +547,79 @@ def trigger_dspy_recompile(force: bool = False, timeout_sec: int = 600) -> str:
             },
             ensure_ascii=False,
             indent=2,
+        )
+
+
+# ============== Tool 6: render_quant_trend ==============
+
+
+@mcp.tool()
+def render_quant_trend(patient_id: str = "", out_dir: str = "", x_key: str = "std_ts") -> str:
+    """把所有 quant_eval_report.json (1+ 个) 串成多 run trend PNG.
+
+    Args:
+        patient_id: 不传则全 patient 混排; 传则只取该 patient.
+        out_dir: PNG 输出目录 (默认 = data/{patient_id or '_all'}/trend/).
+        x_key: X 轴 label 来源 (std_ts / dspy_ts / deid).
+
+    Returns:
+        JSON 字符串:
+        {
+          "n_reports": int,
+          "x_key": str,
+          "png_path": str | None,
+          "report_ids": [str, ...]
+        }
+    """
+    try:
+        from lab_analysis.utils import WORK_ROOT  # noqa: PLC0415
+        from lab_analysis.quant_visualizer import render_trend_chart  # noqa: PLC0415
+
+        base = WORK_ROOT / "data"
+        reports: list[dict] = []
+        report_ids: list[str] = []
+        if base.is_dir():
+            for pdir in sorted(base.iterdir()):
+                if not pdir.is_dir() or not pdir.name.isdigit():
+                    continue
+                if patient_id and pdir.name != patient_id:
+                    continue
+                for ts in sorted(pdir.iterdir()):
+                    if not ts.is_dir():
+                        continue
+                    rj = ts / "04_reports" / "quant_eval_report.json"
+                    if not rj.exists():
+                        continue
+                    try:
+                        rep = json.loads(rj.read_text(encoding="utf-8"))
+                        reports.append(rep)
+                        report_ids.append(f"{pdir.name}/{ts.name}")
+                    except (json.JSONDecodeError, OSError):
+                        continue
+
+        if not reports:
+            return json.dumps(
+                {"n_reports": 0, "x_key": x_key, "png_path": None,
+                 "report_ids": [], "error": "no quant_eval_report.json found"},
+                ensure_ascii=False, indent=2,
+            )
+
+        png_bytes = render_trend_chart(reports, x_key=x_key)
+        out_base = Path(out_dir) if out_dir else (
+            base / (patient_id or "_all") / "trend"
+        )
+        out_base.mkdir(parents=True, exist_ok=True)
+        png_path = out_base / "quant_eval_trend.png"
+        png_path.write_bytes(png_bytes)
+        return json.dumps(
+            {"n_reports": len(reports), "x_key": x_key,
+             "png_path": str(png_path), "report_ids": report_ids},
+            ensure_ascii=False, indent=2,
+        )
+    except Exception as e:
+        return json.dumps(
+            {"error": str(e), "type": type(e).__name__},
+            ensure_ascii=False, indent=2,
         )
 
 

@@ -230,6 +230,24 @@ def render_metrics_html(
 <meta charset="utf-8">
 <title>{page_title}</title>
 <style>
+/* Print/PDF 按钮 (默认显示, 打印时隐藏) */
+.print-btn {{
+  position: fixed; top: 16px; right: 16px;
+  padding: 8px 16px; font-size: 14px; font-weight: 600;
+  background: #2ca02c; color: white; border: 0;
+  border-radius: 4px; cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  z-index: 999;
+}}
+.print-btn:hover {{ background: #228a22; }}
+@media print {{
+  .print-btn {{ display: none; }}
+  body {{ max-width: none; padding: 0; }}
+  details[open] {{ page-break-inside: avoid; }}
+  details:not([open]) summary {{ display: block; }}
+  details .detail-body {{ display: block !important; }}
+}}
+
 body {{ font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
        max-width: 1100px; margin: 24px auto; padding: 0 16px; color: #222; line-height: 1.5; }}
 @media (max-width: 720px) {{
@@ -268,6 +286,7 @@ summary:hover {{ background: #f0f0f0; }}
 </head>
 <body>
 <h1>{page_title}</h1>
+<button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
 <div class="meta">
   <b>deid</b>: <code>{report.get('deid', '?')}</code> ·
   <b>std_ts</b>: <code>{report.get('std_ts', '?')}</code> ·
