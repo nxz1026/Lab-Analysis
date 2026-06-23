@@ -125,7 +125,15 @@ def to_examples(data_list, input_fields):
 
 
 def ensure_min_examples(examples, min_n=3):
-    """保证至少有 min_n 个样本（复制）"""
+    """保证至少有 min_n 个样本（复制）
+
+    防御: examples 为空时直接 raise, 避免 examples[0] 越界
+    (DSPy trainset 为空会让 BootstrapFewShot 内部 chain 报错, 失败信号不明确)。
+    """
+    if not examples:
+        raise ValueError(
+            f"ensure_min_examples: examples 为空, 至少需要 1 个可复制的原始样本 (min_n={min_n})"
+        )
     if len(examples) >= min_n:
         return examples
     while len(examples) < min_n:

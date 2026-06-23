@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pytest
 
-
 _EXAMPLES_DIR = Path(__file__).resolve().parent.parent / "examples"
 if str(_EXAMPLES_DIR) not in sys.path:
     sys.path.insert(0, str(_EXAMPLES_DIR))
@@ -158,6 +157,7 @@ def test_auto_pick_ignores_id_card_named_dir(fake_data_root: Path):
     std_ts, dspy_ts = dmp._auto_pick_runs("999")
     # 选出的必须是时间戳格式目录, 不是 id_card
     import re as _re
+
     assert std_ts and _re.match(r"^\d{8}_\d{6}$", std_ts)
     assert dspy_ts and _re.match(r"^\d{8}_\d{6}$", dspy_ts)
     assert std_ts == "20260101_100000"

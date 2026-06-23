@@ -18,7 +18,6 @@ from typing import Any, Callable
 import dspy
 
 _LOG = logging.getLogger(__name__)
-
 _DEFAULT_MAX_RETRIES = 3
 _DEFAULT_BACKOFF_BASE = 1.5
 
@@ -51,11 +50,11 @@ def safe_predict(
     for attempt in range(1, max_retries + 1):
         try:
             return predictor(**kwargs)
-        except Exception as exc:  # noqa: BLE001 — we want to catch all LLM errors
+        except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as exc:
             last_exc = exc
             if attempt >= max_retries:
                 break
-            sleep_for = backoff_base ** attempt
+            sleep_for = backoff_base**attempt
             _LOG.warning(
                 "[%s] attempt %d/%d failed (%s); retrying in %.1fs",
                 module_name,
@@ -77,11 +76,9 @@ def _default_for(annotation: Any) -> Any:
     """
     origin = typing.get_origin(annotation)
     if origin is typing.Union:
-        args = tuple(a for a in typing.get_args(annotation) if a is not type(None))
+        args = tuple((a for a in typing.get_args(annotation) if a is not type(None)))
         if len(args) == 1 and type(None) in typing.get_args(annotation):
-            # Optional[T] → None
             return None
-        # bare Union, fall through to str
     if annotation is float:
         return 0.0
     if annotation is int:
@@ -107,7 +104,6 @@ def make_empty_prediction(signature_cls: type[dspy.Signature]) -> dspy.Predictio
     fields = getattr(signature_cls, "model_fields", {})
     defaults: dict[str, Any] = {}
     for name, field in fields.items():
-        # dspy 3.x: __dspy_field_type in json_schema_extra
         is_output = (field.json_schema_extra or {}).get("__dspy_field_type") == "output"
         if not is_output:
             continue

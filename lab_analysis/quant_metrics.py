@@ -19,7 +19,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 # 关键实体列表 (与 compare_report_modes 保持一致)
 KEY_ENTITIES: list[str] = [
     "hs-CRP",
@@ -261,6 +260,7 @@ def metric_feedback_delta(feedback_data: dict) -> dict[str, Any]:
         "min_delta": round(min(deltas), 4) if deltas else 0.0,
         "adjustments": feedback_data.get("confidence_adjustments", {}),
     }
+
 
 # ── #7 跨模态印证准确率 (合规要求) ──────────────────────────────
 

@@ -48,10 +48,7 @@ def _check_one(json_path: Path, latest_src_mtime: float) -> tuple[dict, bool]:
     else:
         compiled_ts = mtime
         compiled_at_iso = (
-            meta.get("created_at")
-            or meta.get("compile_time")
-            or meta.get("timestamp")
-            or "unknown"
+            meta.get("created_at") or meta.get("compile_time") or meta.get("timestamp") or "unknown"
         )
 
     # 检查 prompt 文本
@@ -61,8 +58,7 @@ def _check_one(json_path: Path, latest_src_mtime: float) -> tuple[dict, bool]:
 
     # 是否源文件改动后未重新 compile
     stale = bool(
-        latest_src_iso
-        and datetime.fromisoformat(latest_src_iso).timestamp() > compiled_ts
+        latest_src_iso and datetime.fromisoformat(latest_src_iso).timestamp() > compiled_ts
     )
 
     detail = {
@@ -75,11 +71,7 @@ def _check_one(json_path: Path, latest_src_mtime: float) -> tuple[dict, bool]:
         "old_endpoint_refs": old_hits,
         "new_endpoint_refs": new_hits,
         "is_up_to_date": not stale,
-        "reason": (
-            "源文件改动后未重 compile"
-            if stale
-            else "up-to-date"
-        ),
+        "reason": ("源文件改动后未重 compile" if stale else "up-to-date"),
     }
     return detail, stale
 

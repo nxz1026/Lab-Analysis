@@ -17,6 +17,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from . import _log
+
+logger = _log.get_logger(__name__)
+
 # ── 告警数据结构 ──────────────────────────────────────────────────────
 
 AlertDict = dict[str, Any]
@@ -232,14 +236,14 @@ def generate_alerts(results: dict) -> list[AlertDict]:
 def print_alerts(alerts: list[AlertDict]):
     """将告警列表打印到控制台。"""
     if not alerts:
-        print("  [OK] 无异常告警")
+        logger.info("  [OK] 无异常告警")
         return
     levels = {"CRITICAL": "[CRITICAL]", "WARNING": "[WARNING]", "INFO": "[INFO]"}
     icons = {"CRITICAL": "🚨", "WARNING": "⚠️", "INFO": "ℹ️"}
     for a in alerts:
         icon = icons.get(a["level"], "·")
         label = levels.get(a["level"], "[?]")
-        print(f"  {icon} {label} {a['message']}")
+        logger.info(f"  {icon} {label} {a['message']}")
 
 
 def generate_alerts_from_file(json_path: str | Path) -> list[AlertDict]:
@@ -249,7 +253,7 @@ def generate_alerts_from_file(json_path: str | Path) -> list[AlertDict]:
 
     path = Path(json_path)
     if not path.exists():
-        print(f"  [WARNING] 找不到 analysis_results.json: {path}")
+        logger.info(f"  [WARNING] 找不到 analysis_results.json: {path}")
         return []
     results = json.loads(path.read_text(encoding="utf-8"))
     return generate_alerts(results)
@@ -266,11 +270,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     alerts = generate_alerts_from_file(args.inp)
-    print(f"\n=== 异常告警摘要（共 {len(alerts)} 条）===\n")
+    logger.info(f"\n=== 异常告警摘要（共 {len(alerts)} 条）===\n")
     print_alerts(alerts)
 
     if args.out:
         Path(args.out).write_text(
             json.dumps(alerts, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        print(f"\n[OK] 已保存: {args.out}")
+        logger.info(f"\n[OK] 已保存: {args.out}")

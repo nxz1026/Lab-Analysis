@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 DSPy 版本的 MRI 影像分析模块
 
@@ -14,21 +12,22 @@ from typing import Dict, List
 
 import dspy
 
+from .. import _log
+from ._cache_metrics import record_hit, record_load_fail, record_miss
 from ._retry import SafeCallError, make_empty_prediction, safe_predict
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
+
+logger = _log.get_logger(__name__)
 
 
 class MRIAnalysisSignature(dspy.Signature):
     """MRI 影像分析的输入输出签名"""
 
-    # 输入字段
     image_description: str = dspy.InputField(
         desc="影像的文字描述或序列信息 (如: T2WI横断面，代表层面)"
     )
     report_findings: str = dspy.InputField(desc="纸质放射科报告的关键发现段落")
     clinical_context: str = dspy.InputField(desc="临床背景信息 (患者年龄、性别、检查指征等)")
-
-    # 输出字段 - 结构化分析结果
     anatomical_localization: str = dspy.OutputField(
         desc="解剖定位：明确指出这张图片大约在哪个层面（肝脏？胰腺？肾脏？其他？）"
     )
@@ -45,15 +44,11 @@ class MRIAnalysisSignature(dspy.Signature):
 
     def validate_output(self) -> bool:
         """验证输出质量"""
-        # 检查必填字段
         required_fields = ["anatomical_localization", "imaging_findings", "consistency_evaluation"]
-
         for field in required_fields:
             value = getattr(self, field, "")
             if not value or len(value.strip()) < 10:
                 return False
-
-        # 检查置信度范围
         confidence = getattr(self, "confidence_score", 0)
         return 0.0 <= confidence <= 1.0
 
@@ -94,9 +89,7 @@ class MRIAnalysisModule(dspy.Module):
             )
             return result
         except SafeCallError as exc:
-            logging.getLogger(__name__).error(
-                "mri_analyzer fallback to empty prediction: %s", exc
-            )
+            logging.getLogger(__name__).error("mri_analyzer fallback to empty prediction: %s", exc)
             return make_empty_prediction(MRIAnalysisSignature)
 
 
@@ -113,15 +106,11 @@ def compile_mri_analyzer(train_data: List[Dict], dev_data: List[Dict]):
     """
     import dspy.teleprompt
 
-    # 定义评估指标
     def analysis_metric(example, pred, trace=None):
         """评估分析质量的指标"""
         try:
             score = 0.0
-
-            # 检查是否包含关键要素
             required_sections = ["解剖定位", "影像所见", "印证评价"]
-
             full_text = (
                 pred.anatomical_localization
                 + " "
@@ -129,43 +118,26 @@ def compile_mri_analyzer(train_data: List[Dict], dev_data: List[Dict]):
                 + " "
                 + pred.consistency_evaluation
             )
-
-            section_score = sum(1 for section in required_sections if section in full_text) / len(
+            section_score = sum((1 for section in required_sections if section in full_text)) / len(
                 required_sections
             )
             score += section_score * 0.5
-
-            # 检查置信度合理性
             if hasattr(pred, "confidence_score") and 0.6 <= pred.confidence_score <= 1.0:
                 score += 0.3
-
-            # 检查输出长度(专业性指标)
             if len(full_text) > 200:
                 score += 0.2
-
-            return score > 0.7  # 阈值
-
-        except Exception:
+            return score > 0.7
+        except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
             return False
 
-    # 创建优化器
     optimizer = dspy.teleprompt.BootstrapFewShot(
         metric=analysis_metric, max_bootstrapped_demos=3, max_labeled_demos=5
     )
-
-    print("[编译] 开始优化 MRI 分析模块...")
-    print(f"       训练集: {len(train_data)} 样本")
-    print(f"       验证集: {len(dev_data)} 样本")
-
-    # 编译模块
-    compiled_module = optimizer.compile(
-        MRIAnalysisModule(),
-        trainset=train_data,
-        # DSPy 3.x 不再需要 valset 参数
-    )
-
-    print("[成功] 模块编译完成")
-
+    logger.info("[编译] 开始优化 MRI 分析模块...")
+    logger.info(f"       训练集: {len(train_data)} 样本")
+    logger.info(f"       验证集: {len(dev_data)} 样本")
+    compiled_module = optimizer.compile(MRIAnalysisModule(), trainset=train_data)
+    logger.info("[成功] 模块编译完成")
     return compiled_module
 
 
@@ -174,7 +146,7 @@ def save_dspy_prompts(module, output_dir: Path):
     prompts_data = extract_module_prompts(module, "mri_analyzer")
     json_path = save_prompts_to_json("mri_analyzer", prompts_data, output_dir)
     md_path = save_prompts_to_markdown("mri_analyzer", prompts_data, output_dir)
-    return json_path, md_path
+    return (json_path, md_path)
 
 
 def run_dspy_mri_analysis(
@@ -197,39 +169,36 @@ def run_dspy_mri_analysis(
 
     load_dotenv()
     work_root = Path(os.environ.get("WORK_ROOT", Path.cwd()))
-
-    # 配置 DSPy LM
     api_key = os.environ.get("DASHSCOPE_API_KEY")
     if not api_key:
         raise ValueError("未找到 DASHSCOPE_API_KEY 环境变量")
-
-    print("[DSPy] 配置 LLM...")
-    # 使用 OpenAI 兼容模式 (DashScope 支持)
+    logger.info("[DSPy] 配置 LLM...")
     lm = dspy.LM(
         model="openai/qwen-vl-plus",
         api_key=api_key,
         api_base="https://dashscope.aliyuncs.com/compatible-mode/v1",
     )
     dspy.configure(lm=lm)
-    print("[DSPy] LLM 已配置: qwen-vl-plus (OpenAI 兼容模式)")
-
-    # 加载或创建模块
+    logger.info("[DSPy] LLM 已配置: qwen-vl-plus (OpenAI 兼容模式)")
     module = MRIAnalysisModule()
-
     if model_path and Path(model_path).exists():
-        print(f"[加载] 从 {model_path} 加载编译模型...")
-        module.load(model_path)
-        print("[成功] 模型加载完成")
-
-    # 执行分析
-    print("[分析] 执行 MRI 影像分析...")
+        logger.info(f"[加载] 从 {model_path} 加载编译模型...")
+        try:
+            module.load(model_path)
+            record_hit("mri_analyzer")
+            logger.info("[成功] 模型加载完成")
+        except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+            record_load_fail("mri_analyzer")
+            logger.info(f"[警告] 模型加载失败 ({e}), 使用未编译版本")
+    else:
+        if model_path:
+            record_miss("mri_analyzer")
+    logger.info("[分析] 执行 MRI 影像分析...")
     result = module(
         image_description=image_desc,
         report_findings=report_findings,
         clinical_context=clinical_context,
     )
-
-    # 构建输出
     output = {
         "anatomical_localization": result.anatomical_localization,
         "imaging_findings": result.imaging_findings,
@@ -238,10 +207,7 @@ def run_dspy_mri_analysis(
         "confidence_score": result.confidence_score,
         "mode": "dspy_optimized",
     }
-
-    print(f"[成功] 分析完成 (置信度: {result.confidence_score:.2f})")
-
-    # 保存优化后的 prompt 信息 (可选手动指定输出目录)
+    logger.info(f"[成功] 分析完成 (置信度: {result.confidence_score:.2f})")
     try:
         prompts_dir = work_root / "data" / "mri_dspy_prompts"
         prompts_dir.mkdir(parents=True, exist_ok=True)
@@ -250,36 +216,29 @@ def run_dspy_mri_analysis(
 
         save_actual_dspy_prompt("mri_analyzer", prompts_dir)
         output["prompts_dir"] = str(prompts_dir)
-    except Exception as e:
-        print(f"  [警告] 保存 DSPy prompts 失败: {e}")
-
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+        logger.info(f"  [警告] 保存 DSPy prompts 失败: {e}")
     return output
 
 
 if __name__ == "__main__":
-    # 测试示例
-    print("=" * 60)
-    print("DSPy MRI 分析模块测试")
-    print("=" * 60)
-
+    logger.info("=" * 60)
+    logger.info("DSPy MRI 分析模块测试")
+    logger.info("=" * 60)
     test_image_desc = "T2WI横断面，肝脏层面，肝右后叶区域"
-    test_report = """肝右后叶上段：长径约2.2cm异常信号影，T1稍低、T2及STIR稍高，
-增强少许点片状弱强化，考虑感染性病变，较前明显缩小"""
+    test_report = "肝右后叶上段：长径约2.2cm异常信号影，T1稍低、T2及STIR稍高，\n增强少许点片状弱强化，考虑感染性病变，较前明显缩小"
     test_clinical = "男，38岁，胰管支架置入后复查，腹痛待查"
-
     try:
         result = run_dspy_mri_analysis(
             image_desc=test_image_desc, report_findings=test_report, clinical_context=test_clinical
         )
-
-        print("\n" + "=" * 60)
-        print("分析结果:")
-        print("=" * 60)
+        logger.info("\n" + "=" * 60)
+        logger.info("分析结果:")
+        logger.info("=" * 60)
         for key, value in result.items():
-            print(f"{key}: {value}")
-
-    except Exception as e:
-        print(f"[错误] 测试失败: {e}")
+            logger.info(f"{key}: {value}")
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+        logger.info(f"[错误] 测试失败: {e}")
         import traceback
 
         traceback.print_exc()

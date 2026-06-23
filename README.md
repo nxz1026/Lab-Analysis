@@ -7,7 +7,7 @@
 [![CI](https://img.shields.io/badge/CI-passing-success.svg)](.github/workflows/tests.yml)
 [![Quant Gate](https://img.shields.io/badge/Quant_Gate-6/6_PASS-success.svg)](lab_analysis/quant_metrics.py)
 [![DSPy](https://img.shields.io/badge/DSPy-3.2+-orange.svg)](https://dspy.ai/)
-[![Tests](https://img.shields.io/badge/Tests-438_✔️-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-606_✔️-success.svg)](tests/)
 [![MCP](https://img.shields.io/badge/MCP-6_Tools-purple.svg)](mcp_server.py)
 
 ---
@@ -65,16 +65,16 @@ python -m lab_analysis
 
 | 步骤 | 环节 | 模块 | 输入 → 输出 |
 |------|------|------|-------------|
-| ① | **数据摄入** | `ingest_data.py` | `raw/Origin_data/` 中检验图片 / DICOM / MRI 报告 → `raw/patient_<deid>/` |
+| ① | **数据摄入** | `ingest_data/` | `raw/Origin_data/` 中检验图片 / DICOM / MRI 报告 → `raw/patient_<deid>/` |
 | ② | **前置检查** | `pipeline.steps` | `raw/patient_<deid>/` 目录结构校验 → 通过/失败 |
 | ③ | **数据加载** | `data_loader.py` | `.../metrics.md` → `lab_metrics.csv` + `.json` |
 | ④ | **统计分析** | `analysis/run` | `lab_metrics.csv` → 7 张图表 + `analysis_results_report.md` + `alerts.json` |
-| ⑤ | **文献检索** | `literature_searcher.py` | 检验项目 + 关键指标 → PubMed 摘要 `.md`（`--auto-queries` 自动生成搜索词） |
+| ⑤ | **文献检索** | `literature_searcher/` | 检验项目 + 关键指标 → PubMed 摘要 `.md`（`--auto-queries` 自动生成搜索词） |
 | ⑤b | **文献证据打分** | `literature_filter.py` | `literature_results.json` → `.filtered.json`（5 维 + S/A/B/C tier） |
 | ⑥ | **循证解读** | `literature_interpreter(_dspy).py` | 文献摘要 + 检验数据 → 解读报告 + DSPy prompt |
 | ⑦ | **影像分析** | `qwen_vl_report_check(_dspy).py` | MRI 报告 + 检验数据 → 一致性报告 + DSPy prompt |
 | ⑧ | **综合报告** | `gen_final_report(_dspy).py` | ④⑤⑥⑦ 产物 → 9 章节综合报告（`--compare-mode` 双模式对比） |
-| ⑧b | **评分卡 & 决策** | `scoring_card.py` | 多源数据 → 5 维评分 + top-3 诊断假设 |
+| ⑧b | **评分卡 & 决策** | `scoring_card/` | 多源数据 → 5 维评分 + top-3 诊断假设 |
 | ⑧c | **量化评估** ✨ | `quant_metrics.py` + `quant_visualizer.py` | std vs dspy 全章节 → 6 指标 + 跨模态印证 + PNG + HTML + gate |
 | ⑨ | **本地归档** | `organize_local_files.py` | `data/<id>/<ts>/` → `local_upload/<YYYY-MM-DD>/` |
 | ⑨b | **FHIR 输出** | `fhir_exporter.py` | 多源数据 → HL7 FHIR R4 Bundle（Patient/Observation/RiskAssessment） |
@@ -191,15 +191,15 @@ Lab-Analysis/
 │   ├── quant_metrics.py                  # ✨ 6 维量化指标 + 跨模态印证 + gate 决策
 │   ├── quant_visualizer.py               # ✨ PNG / HTML / 趋势 PNG 渲染
 │   ├── alert_generator.py                #   结构化异常告警摘要（CRITICAL/WARNING/INFO）
-│   ├── scoring_card.py                   #   评分卡 & 临床决策支持（5 维 + 诊断假设）
+│   ├── scoring_card/                       #   评分卡 & 临床决策支持（5 维 + 诊断假设）
 │   ├── compare_report_modes.py           #   Standard vs DSPy 双模式报告对比
 │   ├── gen_final_report_pdf.py           #   Markdown → PDF（可选依赖）
 │   ├── dashboard.py                      #   Streamlit 趋势看板（可选）
 │   ├── cleanup_runs.py                   #   Pipeline 产物清理
 │   ├── report_schema.py                  #   综合报告 9 章节模板
-│   ├── ingest_data.py                    # ①
+│   ├── ingest_data/                       # ①
 │   ├── data_loader.py                    # ③
-│   ├── literature_searcher.py            # ⑤ PubMed 检索（--auto-queries）
+│   ├── literature_searcher/               # ⑤ PubMed 检索（--auto-queries）
 │   ├── evidence_grader.py                # ⑤b 5 维证据打分
 │   ├── literature_filter.py              # ⑤b CLI 封装
 │   ├── literature_interpreter.py         # ⑥ 标准
@@ -208,7 +208,7 @@ Lab-Analysis/
 │   ├── qwen_vl_report_check_dspy.py      # ⑦ DSPy
 │   ├── gen_final_report.py               # ⑧ 标准
 │   ├── gen_final_report_dspy.py          # ⑧ DSPy
-│   ├── extract_lab_data.py               #   检验 OCR
+│   ├── extract_lab_data/                 #   检验 OCR
 │   ├── batch_vision_extract.py           #   批量视觉提取
 │   ├── llm_client.py                     #   LLM API 客户端（DeepSeek / DashScope）
 │   ├── patient_id.py                     #   AES-GCM 脱敏与校验
@@ -225,7 +225,7 @@ Lab-Analysis/
 │       ├── lab_data_extractor.py
 │       └── prompt_inspector.py
 ├── mcp_server.py                         # ✨ MCP server (6 tools, stdio)
-├── tests/                                # pytest（438 用例）
+├── tests/                                # pytest（606 用例）
 │   ├── conftest.py
 │   ├── test_pipeline_e2e.py
 │   ├── test_pipeline_cli.py
@@ -506,7 +506,7 @@ CLI：
 | 文献循证解读 | `literature_interpreter.py` | `dspy_modules/literature_interpreter.py` |
 | 影像报告分析 | `qwen_vl_report_check.py` | `dspy_modules/mri_analyzer.py` |
 | 综合报告生成 | `gen_final_report.py` | `dspy_modules/final_report_generator.py` |
-| 检验数据提取 | `extract_lab_data.py` | `dspy_modules/lab_data_extractor.py` |
+| 检验数据提取 | `extract_lab_data/` | `dspy_modules/lab_data_extractor.py` |
 
 详见 [docs/DSPY_INTEGRATION.md](docs/DSPY_INTEGRATION.md) 和 [docs/DSPY_USAGE.md](docs/DSPY_USAGE.md)。
 
@@ -548,7 +548,7 @@ PR 评论样式：
 | 文献 | PubMed E-utilities |
 | MCP | mcp（FastMCP, stdio） |
 | 错误处理 | tenacity + 自研 error_logger |
-| 测试 | pytest（438 用例） |
+| 测试 | pytest（606 用例） |
 | CI | GitHub Actions |
 
 ---
@@ -557,7 +557,7 @@ PR 评论样式：
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                  # 全量 438 用例
+python -m pytest                  # 全量 606 用例
 python -m pytest -v --cov         # 带覆盖率
 ruff check lab_analysis/          # 代码风格
 ```

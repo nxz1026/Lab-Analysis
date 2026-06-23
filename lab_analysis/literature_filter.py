@@ -30,6 +30,10 @@ from lab_analysis.evidence_grader import (
 )
 from lab_analysis.utils import WORK_ROOT
 
+from . import _log
+
+logger = _log.get_logger(__name__)
+
 
 def filter_literature(
     literature_json_path: str | Path,
@@ -114,7 +118,11 @@ def filter_literature(
 
 def _classify_kicked(kicked: list[GradedPaper], pmid_to_paper: dict) -> dict:
     """把踢出的论文按踢出原因分类"""
-    summary = {"parse_failed": [], "offtopic": [], "low_quality": []}
+    summary: dict[str, list[GradedPaper | dict]] = {
+        "parse_failed": [],
+        "offtopic": [],
+        "low_quality": [],
+    }
     for g in kicked:
         original = pmid_to_paper.get(g.pmid, {})
         # 解析失败：缺标题或标题是噪声（IRB/作者列表）
@@ -148,11 +156,11 @@ def _resolve_input_path(args) -> Path:
         lit_dir = WORK_ROOT / "data" / args.id_card / ts / "03_literature"
         candidate = lit_dir / "literature_results.json"
         if not candidate.exists():
-            print(f"[ERROR] pipeline 模式下找不到输入文件: {candidate}")
-            print("  提示：请先运行步骤⑤ literature_searcher，或手动指定 --in")
+            logger.info(f"[ERROR] pipeline 模式下找不到输入文件: {candidate}")
+            logger.info("  提示：请先运行步骤⑤ literature_searcher，或手动指定 --in")
             sys.exit(1)
         return candidate
-    print("[ERROR] 请提供 --in <path> 或 --id-card <deid>")
+    logger.error("[ERROR] 请提供 --in <path> 或 --id-card <deid>")
     sys.exit(1)
 
 
@@ -196,28 +204,30 @@ def _cli():
         output_path=output_path,
     )
 
-    print("\n=== 文献二次筛选 ===")
-    print(f"输入: {result['input_file']}")
-    print(f"场景: {result['scenario']} | 主题: {result['topic']}")
-    print(f"总数: {result['total_papers']} → 保留: {result['kept_papers']}")
-    print(f"输出: {result.get('output_file', 'N/A')}\n")
+    logger.info("\n=== 文献二次筛选 ===")
+    logger.info(f"输入: {result['input_file']}")
+    logger.info(f"场景: {result['scenario']} | 主题: {result['topic']}")
+    logger.info(f"总数: {result['total_papers']} → 保留: {result['kept_papers']}")
+    logger.info(f"输出: {result.get('output_file', 'N/A')}\n")
 
-    print("--- 保留论文 ---")
+    logger.info("--- 保留论文 ---")
     for i, p in enumerate(result["filtered_papers"], 1):
         g = p["grade"]
-        print(f"  [{i}] {g['tier']} | {g['score']:.3f} | PMID:{p['pmid']} | {p['title'][:80]}")
-    print()
+        logger.info(
+            f"  [{i}] {g['tier']} | {g['score']:.3f} | PMID:{p['pmid']} | {p['title'][:80]}"
+        )
+    logger.info()
 
     ks = result["kicked_summary"]
     if any(ks.values()):
-        print("--- 踢出论文 ---")
+        logger.info("--- 踢出论文 ---")
         for category, items in ks.items():
             if items:
-                print(f"  [{category}] {len(items)} 篇")
+                logger.info(f"  [{category}] {len(items)} 篇")
                 for it in items[:3]:  # 最多展示 3 篇
-                    print(f"    - PMID:{it['pmid']} | {it['title'][:60]}")
+                    logger.info(f"    - PMID:{it['pmid']} | {it['title'][:60]}")
                 if len(items) > 3:
-                    print(f"    ... +{len(items) - 3} 篇")
+                    logger.info(f"    ... +{len(items) - 3} 篇")
 
 
 if __name__ == "__main__":

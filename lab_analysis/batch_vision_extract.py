@@ -30,6 +30,10 @@ from pathlib import Path
 from lab_analysis.patient_id import validate_id_card
 from lab_analysis.utils import WORK_ROOT
 
+from . import _log
+
+logger = _log.get_logger(__name__)
+
 
 def get_origin_data_dir() -> Path:
     """获取原始数据目录"""
@@ -70,19 +74,19 @@ def run_vision_extractor(image_path: Path, interactive: bool = False) -> dict:
     ]
     cmd = [c for c in cmd if c]
 
-    print(f"\n{'=' * 60}")
-    print(f"[识别] 正在识别: {image_path.name}")
-    print(f"{'=' * 60}")
+    logger.info(f"\n{'=' * 60}")
+    logger.info(f"[识别] 正在识别: {image_path.name}")
+    logger.info(f"{'=' * 60}")
 
-    result = subprocess.run(cmd, cwd=str(project_root), capture_output=True, text=True)
+    result = subprocess.run(cmd, cwd=str(project_root), capture_output=True, text=True)  # noqa: S603
 
     if result.stdout:
-        print(result.stdout)
+        logger.info(result.stdout)
     if result.stderr:
-        print(result.stderr)
+        logger.info(result.stderr)
 
     if result.returncode != 0:
-        print("[FAIL] 识别失败")
+        logger.error("[FAIL] 识别失败")
         return None
 
     metrics_dir = image_path.parent / f"extracted_{image_path.stem}.json"
@@ -112,21 +116,21 @@ def run_ingest_data(image_path: Path, patient_id: str, report_date: str, report_
         report_type,
     ]
 
-    print(f"\n[存入] 正在存入: {image_path.name}")
-    print(f"   身份证号: {patient_id}")
-    print(f"   日期: {report_date}")
-    print(f"   类型: {report_type}")
+    logger.info(f"\n[存入] 正在存入: {image_path.name}")
+    logger.info(f"   身份证号: {patient_id}")
+    logger.info(f"   日期: {report_date}")
+    logger.info(f"   类型: {report_type}")
 
-    result = subprocess.run(cmd, cwd=str(project_root), capture_output=True, text=True)
+    result = subprocess.run(cmd, cwd=str(project_root), capture_output=True, text=True)  # noqa: S603
 
     if result.returncode == 0:
-        print("[OK] 存入成功")
+        logger.info("[OK] 存入成功")
         if result.stdout:
-            print(result.stdout)
+            logger.info(result.stdout)
     else:
-        print("[FAIL] 存入失败")
+        logger.error("[FAIL] 存入失败")
         if result.stderr:
-            print(result.stderr)
+            logger.info(result.stderr)
 
 
 def main():
@@ -138,24 +142,24 @@ def main():
 
     origin_data_dir = get_origin_data_dir()
 
-    print("=" * 60)
-    print("[批量] Vision 识别 + 数据摄入")
-    print(f"[目录] 数据源: {origin_data_dir}")
+    logger.info("=" * 60)
+    logger.info("[批量] Vision 识别 + 数据摄入")
+    logger.info(f"[目录] 数据源: {origin_data_dir}")
     if args.interactive:
-        print("[模式] 交互式（无效ID时将提示手动输入）")
+        logger.info("[模式] 交互式（无效ID时将提示手动输入）")
     else:
-        print("[模式] 自动（无效ID将自动跳过）")
-    print("=" * 60)
+        logger.warning("[模式] 自动（无效ID将自动跳过）")
+    logger.info("=" * 60)
 
     # 查找所有 lab_*.jpg 文件
     image_files = sorted(origin_data_dir.glob("lab_*.jpg"))
 
     if not image_files:
-        print("\n[警告] 未找到 lab_*.jpg 文件")
-        print(f"   请将检验报告图片放入: {origin_data_dir}")
+        logger.warning("\n[警告] 未找到 lab_*.jpg 文件")
+        logger.info(f"   请将检验报告图片放入: {origin_data_dir}")
         return 0
 
-    print(f"\n[图片] 找到 {len(image_files)} 张检验报告图片")
+    logger.info(f"\n[图片] 找到 {len(image_files)} 张检验报告图片")
 
     success_count = 0
     fail_count = 0
@@ -163,14 +167,14 @@ def main():
     results = []
 
     for idx, image_path in enumerate(image_files, 1):
-        print(f"\n{'=' * 60}")
-        print(f"[{idx}/{len(image_files)}] 处理: {image_path.name}")
-        print(f"{'=' * 60}")
+        logger.info(f"\n{'=' * 60}")
+        logger.info(f"[{idx}/{len(image_files)}] 处理: {image_path.name}")
+        logger.info(f"{'=' * 60}")
 
         # 步骤1: 识别图片
         result = run_vision_extractor(image_path, args.interactive)
         if not result:
-            print("[失败] 识别失败，跳过")
+            logger.error("[失败] 识别失败，跳过")
             fail_count += 1
             results.append({"file": image_path.name, "status": "识别失败"})
             continue
@@ -182,7 +186,7 @@ def main():
         # 步骤2: 强制校验身份证号（OCR 识别值作为 extracted_id 传入统一校验函数）
         validated = validate_id_card(patient_id, patient_id, interactive=True)
         if not validated:
-            print("\n[跳过] 身份证号校验未通过，跳过此图片")
+            logger.warning("\n[跳过] 身份证号校验未通过，跳过此图片")
             skipped_count += 1
             results.append({"file": image_path.name, "status": "身份证号校验失败"})
             continue
@@ -204,12 +208,12 @@ def main():
         )
 
     # 生成汇总报告
-    print(f"\n{'=' * 60}")
-    print("[汇总] 批量处理完成")
-    print(f"{'=' * 60}")
-    print(f"[成功] 成功: {success_count}")
-    print(f"[失败] 失败: {fail_count}")
-    print(f"[跳过] 跳过: {skipped_count}")
+    logger.info(f"\n{'=' * 60}")
+    logger.info("[汇总] 批量处理完成")
+    logger.info(f"{'=' * 60}")
+    logger.info(f"[成功] 成功: {success_count}")
+    logger.info(f"[失败] 失败: {fail_count}")
+    logger.info(f"[跳过] 跳过: {skipped_count}")
 
     # 保存汇总报告
     summary_file = origin_data_dir / "batch_extraction_summary.json"
@@ -222,7 +226,7 @@ def main():
         "results": results,
     }
     summary_file.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\n[报告] 汇总报告已保存: {summary_file}")
+    logger.info(f"\n[报告] 汇总报告已保存: {summary_file}")
 
     return 0
 

@@ -1,0 +1,51 @@
+# Pre-commit hooks for Lab-Analysis
+# 安装: pip install pre-commit && pre-commit install
+# 手动跑全部: pre-commit run --all-files
+# 只跑某 hook: pre-commit run ruff-check --all-files
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff lint
+        entry: python -m ruff check --fix
+        language: system
+        types: [python]
+        # 对历史已存在 ruff error 不阻塞（baseline 模式）；新代码必须通过
+        # 如果希望严格模式，去掉 exclude
+        exclude: |
+          (?x)^(
+            lab_analysis/__init__.py
+          )$
+
+      - id: ruff-format
+        name: ruff format
+        entry: python -m ruff format
+        language: system
+        types: [python]
+
+      - id: pytest-fast
+        name: pytest (fast subset, no e2e)
+        entry: python -m pytest -q -m "not e2e" --no-header --no-cov
+        language: system
+        pass_filenames: false
+        types: [python]
+        # 仅在涉及 lab_analysis/ 或 tests/ 时跑
+        files: '^(lab_analysis|tests)/.*\.py$'
+
+      - id: no-broad-except
+        name: forbid new `except Exception`
+        entry: python scripts/narrow_broad_except.py --dry-run
+        language: system
+        pass_filenames: false
+        # 仅检查 git staged 之后是否引入新的 broad except
+        # baseline 阶段先 dry-run（不阻塞），baseline 清零后可改为非 dry-run
+        stages: [manual]  # 默认不跑，手动 pre-commit run no-broad-except
+
+      - id: no-hardcoded-keys
+        name: forbid hard-coded API keys
+        entry: python scripts/scan_hardcoded_keys.py --quiet
+        language: system
+        pass_filenames: false
+        types: [python]
+        # 失败时阻止提交 (exit 1 = 发现硬编码 key)

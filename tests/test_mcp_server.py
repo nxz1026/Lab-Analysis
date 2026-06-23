@@ -20,15 +20,15 @@ if str(PROJECT_ROOT) not in sys.path:
 
 try:
     import mcp  # noqa: F401
+
     import mcp_server  # noqa: E402
+
     MCP_AVAILABLE = True
 except ImportError:
     MCP_AVAILABLE = False
     mcp_server = None  # type: ignore[assignment]
 
-pytestmark = pytest.mark.skipif(
-    not MCP_AVAILABLE, reason="mcp 库未装,跳过 MCP server 集成测试"
-)
+pytestmark = pytest.mark.skipif(not MCP_AVAILABLE, reason="mcp 库未装,跳过 MCP server 集成测试")
 
 
 # -------------------- audit_dspy_models tool --------------------
@@ -59,13 +59,20 @@ def test_audit_dspy_models_all_up_to_date():
 # -------------------- run_quant_eval tool --------------------
 
 
-def test_run_quant_eval_basic():
-    """quant_eval tool 对真实 std + dspy 报告返回 6 指标。"""
+def test_run_quant_eval_basic(live_patient_runs):
+    """quant_eval tool 对真实 std + dspy 报告返回 6 指标。
+
+    依赖 std run + dspy run 同时存在, 任一缺失时 skip (历史教训: 硬编码 ts 会被 cleanup 干掉)。
+    """
+    dspy_ts = live_patient_runs["dspy_ts"]
+    std_ts = live_patient_runs["std_ts"]
+    if not dspy_ts or not std_ts:
+        pytest.skip(f"需 std + dspy run 同时存在, 当前 std_ts={std_ts} dspy_ts={dspy_ts}")
     qe_fn = mcp_server.run_quant_eval
     result_str = qe_fn(
         id_card="846552421134373347",
-        std_ts="20260620_175252",
-        dspy_ts="20260620_175730",
+        std_ts=std_ts,
+        dspy_ts=dspy_ts,
     )
     result = json.loads(result_str)
     assert "metrics" in result
@@ -78,14 +85,18 @@ def test_run_quant_eval_basic():
     assert "feedback_delta" in metrics
 
 
-def test_run_quant_eval_text_lengths():
-    """quant_eval 返回 std/dspy 文本长度。"""
+def test_run_quant_eval_text_lengths(live_patient_runs):
+    """quant_eval 返回 std/dspy 文本长度。依赖 std run, 缺失时 skip。"""
+    dspy_ts = live_patient_runs["dspy_ts"]
+    std_ts = live_patient_runs["std_ts"]
+    if not dspy_ts or not std_ts:
+        pytest.skip(f"需 std + dspy run, 当前 std_ts={std_ts} dspy_ts={dspy_ts}")
     qe_fn = mcp_server.run_quant_eval
     result = json.loads(
         qe_fn(
             id_card="846552421134373347",
-            std_ts="20260620_175252",
-            dspy_ts="20260620_175730",
+            std_ts=std_ts,
+            dspy_ts=dspy_ts,
         )
     )
     assert "text_lengths" in result
@@ -106,14 +117,18 @@ def test_run_quant_eval_invalid_patient():
     assert "metrics" in result or "error" in result
 
 
-def test_run_quant_eval_metrics_have_available_field():
-    """每个 metric 都有 available 字段 (便于上层判断)。"""
+def test_run_quant_eval_metrics_have_available_field(live_patient_runs):
+    """每个 metric 都有 available 字段 (便于上层判断)。依赖 std + dspy run。"""
+    dspy_ts = live_patient_runs["dspy_ts"]
+    std_ts = live_patient_runs["std_ts"]
+    if not dspy_ts or not std_ts:
+        pytest.skip(f"需 std + dspy run, 当前 std_ts={std_ts} dspy_ts={dspy_ts}")
     qe_fn = mcp_server.run_quant_eval
     result = json.loads(
         qe_fn(
             id_card="846552421134373347",
-            std_ts="20260620_175252",
-            dspy_ts="20260620_175730",
+            std_ts=std_ts,
+            dspy_ts=dspy_ts,
         )
     )
     for name, m in result["metrics"].items():
@@ -169,25 +184,38 @@ def test_list_patients_filters_non_id_dirs():
 # ============== Tool 4: get_pipeline_status ==============
 
 
-def test_get_pipeline_status_latest():
-    """get_pipeline_status 不传 timestamp 时选最新一次。"""
+def test_get_pipeline_status_latest(live_patient_runs):
+    """get_pipeline_status 不传 timestamp 时选最新一次。
+
+    跟随 data/<pid>/ 下真实 latest, 避免 cleanup 后 hardcode 漂移。
+    """
+    latest = live_patient_runs["latest"]
+    if not latest:
+        pytest.skip("data/<pid>/ 下无任何 run 目录")
     result = json.loads(mcp_server.get_pipeline_status("846552421134373347"))
     assert result["available"] is True
-    assert result["timestamp"] == "20260620_175730"  # 最新
+    assert result["timestamp"] == latest
     assert "stages" in result
     assert "metrics" in result
+    # 断言结构稳定, 数值仅在置信度存在时校验
     assert result["stages"]["final_report_md"] is True
-    assert result["metrics"]["dspy_confidence"] == 0.88
+    conf = result["metrics"].get("dspy_confidence")
+    if conf is not None:
+        assert 0 <= conf <= 1, f"dspy_confidence 越界: {conf}"
 
 
-def test_get_pipeline_status_specific_ts():
-    """get_pipeline_status 传 timestamp 时看指定那一次。"""
-    result = json.loads(
-        mcp_server.get_pipeline_status("846552421134373347", "20260620_175252")
-    )
+def test_get_pipeline_status_specific_ts(live_patient_runs):
+    """get_pipeline_status 传 timestamp 时看指定那一次。
+
+    需要 1 个 std run (04_reports/dspy_prompts 不存在) 才能验证 is_dspy_run=False 路径。
+    """
+    std_ts = live_patient_runs["std_ts"]
+    if not std_ts:
+        pytest.skip("data/<pid>/ 下无 std run (所有 run 都被 cleanup 或 dspy-only)")
+    result = json.loads(mcp_server.get_pipeline_status("846552421134373347", std_ts))
     assert result["available"] is True
-    assert result["timestamp"] == "20260620_175252"
-    # 175252 是 std run (不含 dspy_prompts)
+    assert result["timestamp"] == std_ts
+    # std run 不含 dspy_prompts
     assert result["is_dspy_run"] is False
     assert result["stages"]["dspy_prompts"] is False
 
@@ -201,9 +229,7 @@ def test_get_pipeline_status_nonexistent_patient():
 
 def test_get_pipeline_status_nonexistent_ts():
     """存在的 patient + 不存在的 ts 优雅返回 error。"""
-    result = json.loads(
-        mcp_server.get_pipeline_status("846552421134373347", "19990101_000000")
-    )
+    result = json.loads(mcp_server.get_pipeline_status("846552421134373347", "19990101_000000"))
     assert result["available"] is False
 
 
@@ -212,7 +238,6 @@ def test_get_pipeline_status_nonexistent_ts():
 
 def test_trigger_dspy_recompile_incremental(monkeypatch):
     """增量模式 (force=False) 调 subprocess.run, mock 后验证 cmd 不含 --force。"""
-    import subprocess as sp
 
     captured = {}
 
@@ -226,7 +251,7 @@ def test_trigger_dspy_recompile_incremental(monkeypatch):
         captured["kwargs"] = kwargs
         return FakeResult()
 
-    monkeypatch.setattr(mcp_server.subprocess, "run", fake_run)
+    monkeypatch.setattr(mcp_server.recompile.subprocess, "run", fake_run)
     result = json.loads(mcp_server.trigger_dspy_recompile(force=False, timeout_sec=60))
     # 验证 cmd 包含 compile_all_dspy_modules_v2.py, 不含 --force
     assert any("compile_all_dspy_modules_v2.py" in str(c) for c in captured["cmd"])
@@ -254,7 +279,7 @@ def test_trigger_dspy_recompile_force_mode(monkeypatch):
         captured["cmd"] = cmd
         return FakeResult()
 
-    monkeypatch.setattr(mcp_server.subprocess, "run", fake_run)
+    monkeypatch.setattr(mcp_server.recompile.subprocess, "run", fake_run)
     result = json.loads(mcp_server.trigger_dspy_recompile(force=True, timeout_sec=60))
     assert "--force" in captured["cmd"]
     assert result["force"] is True
@@ -268,7 +293,7 @@ def test_trigger_dspy_recompile_timeout(monkeypatch):
     def fake_run(cmd, **kwargs):
         raise sp.TimeoutExpired(cmd="x", timeout=10)
 
-    monkeypatch.setattr(mcp_server.subprocess, "run", fake_run)
+    monkeypatch.setattr(mcp_server.recompile.subprocess, "run", fake_run)
     result = json.loads(mcp_server.trigger_dspy_recompile(force=False, timeout_sec=10))
     assert result["ok"] is False
     assert "timeout" in result["error"].lower()
@@ -286,7 +311,7 @@ def test_trigger_dspy_recompile_nonzero_returncode(monkeypatch):
     def fake_run(cmd, **kwargs):
         return FakeResult()
 
-    monkeypatch.setattr(mcp_server.subprocess, "run", fake_run)
+    monkeypatch.setattr(mcp_server.recompile.subprocess, "run", fake_run)
     result = json.loads(mcp_server.trigger_dspy_recompile(force=True, timeout_sec=60))
     assert result["ok"] is False
     assert result["returncode"] == 1

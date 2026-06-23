@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/nxz1026/Lab-Analysis/actions/workflows/tests.yml/badge.svg)](https://github.com/nxz1026/Lab-Analysis/actions/workflows/tests.yml)
 [![DSPy](https://img.shields.io/badge/DSPy-3.2+-orange.svg)](https://dspy.ai/)
-[![Tests](https://img.shields.io/badge/Tests-166_✔️-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-606_✔️-success.svg)](tests/)
 [![Pipeline](https://img.shields.io/badge/Pipeline-11_Steps-success.svg)](#complete-pipeline-flow)
 
 ---
@@ -46,16 +46,16 @@ At runtime, the program interactively prompts for a valid Chinese ID card number
 
 | Step | Name | Module | Input → Output |
 |------|------|--------|----------------|
-| ① | **Data Ingestion** | `ingest_data.py` | `raw/Origin_data/` lab images / DICOM / MRI reports → `raw/patient_<deid>/` |
+| ① | **Data Ingestion** | `ingest_data/` | `raw/Origin_data/` lab images / DICOM / MRI reports → `raw/patient_<deid>/` |
 | ② | **Pre-check** | `pipeline.steps` | Validate directory structure → pass/fail |
 | ③ | **Data Loading** | `data_loader.py` | `.../metrics.md` → `lab_metrics.csv` + `.json` |
 | ④ | **Statistical Analysis** | `analysis/run` | `lab_metrics.csv` → 7 charts + report + `alerts.json` |
-| ⑤ | **Literature Search** | `literature_searcher.py` | Lab items + key indicators → PubMed abstracts (supports `--auto-queries`) |
+| ⑤ | **Literature Search** | `literature_searcher/` | Lab items + key indicators → PubMed abstracts (supports `--auto-queries`) |
 | ⑤b | **Evidence Grading** (optional) | `literature_filter.py` | `literature_results.json` → `.filtered.json` (top-k by evidence tier) |
 | ⑥ | **Evidence Interpretation** | `literature_interpreter(_dspy).py` | Abstracts + lab data → interpretation report + DSPy prompt |
 | ⑦ | **Imaging Analysis** | `qwen_vl_report_check(_dspy).py` | MRI report + lab data → consistency report + DSPy prompt |
 | ⑧ | **Integrated Report** | `gen_final_report(_dspy).py` | ④⑤⑥⑦ artifacts → 9-chapter report (supports `--compare-mode`) |
-| ⑧b | **Scoring Card** (optional, new) | `scoring_card.py` | Multi-source → 5-dimension scores + top-3 hypotheses |
+| ⑧b | **Scoring Card** (optional, new) | `scoring_card/` | Multi-source → 5-dimension scores + top-3 hypotheses |
 | ⑨ | **Local Archive** | `organize_local_files.py` | `data/<id>/<ts>/` → `local_upload/<YYYY-MM-DD>/` |
 | ⑨b | **FHIR Export** (optional, new) | `fhir_exporter.py` | Multi-source → HL7 FHIR R4 Bundle (Patient/Observation/RiskAssessment) |
 | ⑩ | **Run Cleanup** (optional, new) | `cleanup_runs.py` | Auto-delete old runs, keep last N (`--keep-last 3`) |
@@ -355,7 +355,7 @@ Summary:
 | Literature Interpretation | `literature_interpreter.py` | `dspy_modules/literature_interpreter.py` |
 | MRI Analysis | `qwen_vl_report_check.py` | `dspy_modules/mri_analyzer.py` |
 | Report Generation | `gen_final_report.py` | `dspy_modules/final_report_generator.py` |
-| Lab Data Extraction | `extract_lab_data.py` | `dspy_modules/lab_data_extractor.py` |
+| Lab Data Extraction | `extract_lab_data/` | `dspy_modules/lab_data_extractor.py` |
 
 ---
 
@@ -373,7 +373,7 @@ Summary:
 | LLM Optimization | DSPy 3.2+ |
 | Literature Search | PubMed E-utilities |
 | Error Handling | tenacity + error_logger |
-| Testing | pytest (166 test cases) |
+| Testing | pytest (606 test cases) |
 | CI | GitHub Actions (py3.10~3.12 matrix) |
 
 ---
@@ -384,7 +384,7 @@ Summary:
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest                # 166 tests
+python -m pytest                # 606 tests
 python -m pytest -v --cov       # With coverage
 ruff check lab_analysis/        # Code style
 ```

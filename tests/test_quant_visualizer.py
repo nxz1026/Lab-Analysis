@@ -27,7 +27,6 @@ from lab_analysis.quant_visualizer import (  # noqa: E402
     render_trend_chart,
 )
 
-
 # ---- _extract_metric_value ----
 
 
@@ -352,7 +351,8 @@ def test_render_metrics_chart_with_real_fixture():
 def test_render_metrics_chart_with_cross_modality(sample_metrics):
     """#7 cross_modality_consistency 可被画进 PNG."""
     sample_metrics["cross_modality_consistency"] = {
-        "available": True, "accuracy": 0.85,
+        "available": True,
+        "accuracy": 0.85,
     }
     png = render_metrics_chart(sample_metrics)
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
@@ -361,7 +361,8 @@ def test_render_metrics_chart_with_cross_modality(sample_metrics):
 def test_render_metrics_html_with_cross_modality(sample_metrics):
     """#7 cross_modality_consistency 出现在 HTML details 中."""
     sample_metrics["cross_modality_consistency"] = {
-        "available": True, "accuracy": 0.85,
+        "available": True,
+        "accuracy": 0.85,
     }
     report = {"deid": "X", "metrics": sample_metrics}
     html = render_metrics_html(report)

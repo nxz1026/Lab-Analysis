@@ -16,8 +16,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-
-# 9 章节后缀 (与 lab_analysis.report_schema.REPORT_SECTIONS 保持一致)
 _SECTION_SUFFIXES: list[str] = [
     "basic_info",
     "lab_analysis",
@@ -29,8 +27,7 @@ _SECTION_SUFFIXES: list[str] = [
     "followup",
     "prognosis",
 ]
-
-MIN_SECTION_LENGTH = 10  # 单章节最小字符数 (防止空 / 截断)
+MIN_SECTION_LENGTH = 10
 
 
 class SectionBlock(BaseModel):
@@ -43,9 +40,7 @@ class SectionBlock(BaseModel):
     @classmethod
     def _name_must_be_known(cls, v: str) -> str:
         if v not in _SECTION_SUFFIXES:
-            raise ValueError(
-                f"未知 section name={v!r}, 必须是 {_SECTION_SUFFIXES} 之一"
-            )
+            raise ValueError(f"未知 section name={v!r}, 必须是 {_SECTION_SUFFIXES} 之一")
         return v
 
     @field_validator("content")
@@ -55,8 +50,7 @@ class SectionBlock(BaseModel):
             raise ValueError("section content 不能为 None")
         if len(v.strip()) < MIN_SECTION_LENGTH:
             raise ValueError(
-                f"section content 过短 ({len(v.strip())} 字符), "
-                f"最少 {MIN_SECTION_LENGTH} 字符 (防止 LLM 幻觉 / 截断)"
+                f"section content 过短 ({len(v.strip())} 字符), 最少 {MIN_SECTION_LENGTH} 字符 (防止 LLM 幻觉 / 截断)"
             )
         return v
 
@@ -127,9 +121,6 @@ class FinalReportDocument(BaseModel):
         return self
 
 
-# ── 入口函数 (供调用方) ──────────────────────────────────────────
-
-
 def build_sections_from_dict(raw_sections: dict[str, str]) -> FinalReportSections:
     """从 gen_final_report_dspy 的 sections dict 构造并验证。
 
@@ -145,7 +136,6 @@ def build_sections_from_dict(raw_sections: dict[str, str]) -> FinalReportSection
         v = raw_sections.get(k)
         if v is None:
             v = ""
-        # 用 dict 包裹, Pydantic v2 严格模式才能把 str → SectionBlock 自动 coerce
         data[k] = {"name": k, "content": str(v)}
     data["title"] = raw_sections.get("title", "") or "(无标题)"
     return FinalReportSections(**data)
@@ -179,15 +169,14 @@ def try_validate_sections(sections: dict[str, str]) -> tuple[bool, list[str]]:
     """
     try:
         build_sections_from_dict(sections)
-        return True, []
-    except Exception as e:  # pydantic.ValidationError
-        # pydantic v2 的 ValidationError 有 .errors() 方法
+        return (True, [])
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         errs: list[str] = []
         if hasattr(e, "errors"):
-            for err in e.errors():  # type: ignore[attr-defined]
-                loc = ".".join(str(x) for x in err.get("loc", ()))
+            for err in e.errors():
+                loc = ".".join((str(x) for x in err.get("loc", ())))
                 msg = err.get("msg", "")
                 errs.append(f"{loc}: {msg}")
         else:
             errs.append(str(e))
-        return False, errs
+        return (False, errs)

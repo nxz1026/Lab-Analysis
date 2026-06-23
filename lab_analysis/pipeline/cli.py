@@ -27,7 +27,7 @@ def _load_patient_mapping() -> dict[str, str]:
         data = json.loads(mapping_path.read_text(encoding="utf-8"))
         if isinstance(data, dict):
             return {str(k): str(v) for k, v in data.items()}
-    except Exception:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
         pass
     return {}
 

@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from lab_analysis.quant_metrics import (
     KEY_ENTITIES,
     count_entity,
@@ -18,7 +16,6 @@ from lab_analysis.quant_metrics import (
     metric_feedback_delta,
     metric_section_coverage,
 )
-
 
 # -------------------- 工具函数 --------------------
 
@@ -88,11 +85,21 @@ def test_entity_f1_empty_text():
 
 
 def test_section_coverage_all_filled():
-    sections = {k: "x" for k in [
-        "title", "basic_info", "lab_analysis", "mri_analysis",
-        "multidisciplinary", "diagnosis", "consistency",
-        "action_plan", "followup", "prognosis",
-    ]}
+    sections = {
+        k: "x"
+        for k in [
+            "title",
+            "basic_info",
+            "lab_analysis",
+            "mri_analysis",
+            "multidisciplinary",
+            "diagnosis",
+            "consistency",
+            "action_plan",
+            "followup",
+            "prognosis",
+        ]
+    }
     result = metric_section_coverage(sections)
     assert result["available"] is True
     assert result["n_nonempty"] == 10
@@ -275,6 +282,7 @@ def test_feedback_delta_negative_delta():
     assert result["avg_delta_confidence"] == -0.2
     assert result["max_delta"] == -0.2
     assert result["min_delta"] == -0.2
+
 
 # -------------------- metric 7: cross_modality_consistency --------------------
 

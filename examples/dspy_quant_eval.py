@@ -39,6 +39,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 # 6 个 metric 纯函数从 lab_analysis.quant_metrics 复用 (便于 CI 单元测试)
+# 工具函数
 from lab_analysis.quant_metrics import (  # noqa: E402
     metric_confidence,
     metric_entity_f1,
@@ -52,9 +53,6 @@ from lab_analysis.quant_visualizer import (  # noqa: E402
     render_metrics_html,
 )
 from lab_analysis.utils import WORK_ROOT  # noqa: E402
-
-# 工具函数
-from lab_analysis.quant_metrics import count_entity as _count_entity  # noqa: E402
 
 
 # 工具函数 (本文件独有, quant_metrics.py 不提供)

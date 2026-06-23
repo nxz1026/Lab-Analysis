@@ -175,19 +175,15 @@ class TestFormatComparisonMd:
         assert "DSPy" in md
         assert len(md) > 100
 
+
 # ═════════════════════════════════════════════════════════════════════
 # render_comparison_chart (PNG) tests
 # ═════════════════════════════════════════════════════════════════════
 
+
 def test_render_comparison_chart_basic_produces_png():
     """render_comparison_chart 应输出合法 PNG bytes (>1KB)."""
-    std_md = (
-        "# 报告\n"
-        "## 一、基本信息\n"
-        "患者张三，男 60 岁。\n\n"
-        "## 二、检验分析\n"
-        "hs-CRP 偏高。\n"
-    )
+    std_md = "# 报告\n## 一、基本信息\n患者张三，男 60 岁。\n\n## 二、检验分析\nhs-CRP 偏高。\n"
     dspy_sections = {
         "basic_info": "Patient: Zhang San, 60yo male.",
         "lab_analysis": "hs-CRP elevated.",
@@ -202,6 +198,7 @@ def test_render_comparison_chart_basic_produces_png():
 def test_render_comparison_chart_empty_raises():
     """section_diffs 为空应抛 ValueError."""
     import pytest
+
     with pytest.raises(ValueError, match="section_diffs is empty"):
         render_comparison_chart({"section_diffs": []})
 

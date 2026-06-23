@@ -23,6 +23,10 @@ from pathlib import Path
 
 from lab_analysis.utils import WORK_ROOT
 
+from . import _log
+
+logger = _log.get_logger(__name__)
+
 _DATA_DIR = WORK_ROOT / "data"
 
 
@@ -94,13 +98,13 @@ def cleanup_patient(
         result["deleted"].append({"ts": d.name, "size": size})
         result["freed_bytes"] += size
         if dry_run:
-            print(f"  [DRY-RUN] 将删除: {d.name} ({_format_size(size)})")
+            logger.info(f"  [DRY-RUN] 将删除: {d.name} ({_format_size(size)})")
         else:
             try:
                 shutil.rmtree(d)
-                print(f"  [DELETE] {d.name} ({_format_size(size)})")
+                logger.info(f"  [DELETE] {d.name} ({_format_size(size)})")
             except OSError as e:
-                print(f"  [ERROR] 删除失败 {d.name}: {e}")
+                logger.info(f"  [ERROR] 删除失败 {d.name}: {e}")
 
     return result
 
@@ -119,7 +123,7 @@ def cleanup_all(
         每个患者的清理结果列表。
     """
     if not _DATA_DIR.is_dir():
-        print(f"[WARNING] 数据目录不存在: {_DATA_DIR}")
+        logger.info(f"[WARNING] 数据目录不存在: {_DATA_DIR}")
         return []
 
     patient_dirs = [_DATA_DIR / id_card] if id_card else sorted(_DATA_DIR.iterdir())
@@ -139,24 +143,24 @@ def cleanup_all(
 def print_summary(results: list[dict]):
     """打印清理摘要到控制台。"""
     if not results:
-        print("\n  [OK] 无需要清理的旧产物")
+        logger.info("\n  [OK] 无需要清理的旧产物")
         return
 
     total_freed = 0
     total_deleted = 0
-    print("\n" + "=" * 60)
-    print("  产物清理报告")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info("  产物清理报告")
+    logger.info("=" * 60)
     for r in results:
-        print(f"\n  患者 {r['deid']}:")
-        print(f"    保留: {', '.join(r['kept'][:3])}{' ...' if len(r['kept']) > 3 else ''}")
+        logger.info(f"\n  患者 {r['deid']}:")
+        logger.info(f"    保留: {', '.join(r['kept'][:3])}{(' ...' if len(r['kept']) > 3 else '')}")
         for d in r["deleted"]:
-            print(f"    删除: {d['ts']} ({_format_size(d['size'])})")
+            logger.info(f"    删除: {d['ts']} ({_format_size(d['size'])})")
         total_freed += r["freed_bytes"]
         total_deleted += len(r["deleted"])
         if r["freed_bytes"] > 0:
-            print(f"    → 释放 {_format_size(r['freed_bytes'])}")
-    print(f"\n  总计: 清理 {total_deleted} 个旧批次，释放 {_format_size(total_freed)}\n")
+            logger.info(f"    → 释放 {_format_size(r['freed_bytes'])}")
+    logger.info(f"\n  总计: 清理 {total_deleted} 个旧批次，释放 {_format_size(total_freed)}\n")
 
 
 def _cli():
@@ -179,7 +183,7 @@ def _cli():
             json.dumps(results, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
-        print(f"[OK] 清理报告已保存: {args.json}")
+        logger.info(f"[OK] 清理报告已保存: {args.json}")
 
 
 if __name__ == "__main__":

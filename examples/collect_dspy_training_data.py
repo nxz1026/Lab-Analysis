@@ -258,7 +258,7 @@ def main():
     print("\n下一步:")
     print(f"1. 检查数据质量: {output_file}")
     print("2. 运行编译脚本: python examples/compile_dspy_module.py")
-    print("3. 验证优化效果: python examples/test_dspy_performance.py")
+    print("3. 验证优化效果: python examples/dspy_quant_eval.py")
     print("=" * 60)
 
 

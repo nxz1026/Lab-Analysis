@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.4", "pytest>=7.0", "pytest-cov>=4.0"]
+dev = ["ruff>=0.4", "pytest>=7.0", "pytest-cov>=4.0", "mypy>=1.0", "hypothesis>=6.0"]
 dspy = ["dspy-ai>=2.4", "pydicom>=2.4"]
 pdf = ["weasyprint>=62", "markdown>=3.5"]
 dashboard = ["streamlit>=1.28"]
@@ -57,8 +57,10 @@ omit = [
 ]
 
 [tool.coverage.report]
-# CI 阈值跟进实际覆盖率提升 (22.80% -> 26%),后续每次 +1%
-fail_under = 25
+# CI 阈值渐进 (P2-7 → P2-3): 25% -> 40% -> 42%
+# 历史: 22.80% (2026-05) -> 25% (2026-06 初) -> 40% (2026-06-23 P2-7) -> 42% (2026-06-23 P2-3)
+# 后续每 PR +2%, 但要求总覆盖大于阈值 +1 缓冲
+fail_under = 42
 show_missing = true
 skip_covered = false
 exclude_lines = [
@@ -77,3 +79,39 @@ target-version = "py310"
 # Migrated from top-level [tool.ruff] (ruff 0.15+ requirement)
 select = ["F", "I", "B", "SIM"]
 fixable = ["ALL"]
+# Complexity rules are tracked as baseline — see docs/COMPLEXITY_BASELINE.md
+extend-select = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "C408"]
+
+[tool.ruff.lint.per-file-ignores]
+# 大 main() / 大报告生成器需要专门重构 session 才拆, 暂不阻塞
+"lab_analysis/pipeline/run.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+"lab_analysis/pipeline/ingest.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+"lab_analysis/pipeline/steps.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+"lab_analysis/gen_final_report.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+"lab_analysis/gen_final_report_dspy.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+"lab_analysis/literature_interpreter_dspy.py" = ["PLR0915"]
+"lab_analysis/literature_searcher/__init__.py" = ["C901", "PLR0911", "PLR0912", "PLR0915"]
+"lab_analysis/literature_searcher/parser.py" = ["C901", "PLR0912"]
+"lab_analysis/organize_local_files.py" = ["C901", "PLR0911", "PLR0912", "PLR0915"]
+"lab_analysis/qwen_vl_report_check.py" = ["C901", "PLR0912", "PLR0915"]
+"lab_analysis/qwen_vl_report_check_dspy.py" = ["PLR0915"]
+"lab_analysis/analysis/run.py" = ["C901", "PLR0912", "PLR0915"]
+"lab_analysis/dspy_modules/_retry.py" = ["PLR0911"]
+"lab_analysis/dspy_modules/final_report_generator.py" = ["PLR0913"]
+"lab_analysis/dspy_modules/prompt_inspector.py" = ["C901", "PLR0912"]
+"lab_analysis/evidence_grader.py" = ["PLR0911"]
+"lab_analysis/extract_lab_data/parser.py" = ["C901"]
+"lab_analysis/feedback.py" = ["PLR0913"]
+"lab_analysis/fhir_exporter.py" = ["PLR0913"]
+"lab_analysis/llm_client.py" = ["PLR0913"]
+"lab_analysis/scoring_card/hypotheses.py" = ["PLR0913"]
+"lab_analysis/quant_visualizer.py" = ["C901", "PLR0911"]
+"lab_analysis/data_loader.py" = ["C901"]
+"lab_analysis/batch_vision_extract.py" = ["PLR0915"]
+"lab_analysis/analysis/charts.py" = ["C408"]
+# examples / scripts / tests 复杂度同样基线
+"examples/*.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+"scripts/*.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+"mcp_server/*.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+"migrate_deid.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+"tests/*.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "C408"]

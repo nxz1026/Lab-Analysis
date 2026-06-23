@@ -18,6 +18,10 @@ from typing import Any
 
 from lab_analysis.utils import WORK_ROOT
 
+from . import _log
+
+logger = _log.get_logger(__name__)
+
 # ── 反馈数据结构 ──────────────────────────────────────────────────
 
 FeedbackData = dict[str, Any]
@@ -65,7 +69,7 @@ def save_feedback(feedback: FeedbackData):
     path = _feedback_path(feedback["patient_id"])
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(feedback, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"  [OK] 反馈已保存: {path}")
+    logger.info(f"  [OK] 反馈已保存: {path}")
 
 
 def record_correction(
@@ -163,35 +167,35 @@ def clear_feedback(deid: str):
     path = _feedback_path(deid)
     if path.exists():
         path.unlink()
-        print(f"  [OK] 已清除反馈: {path}")
+        logger.info(f"  [OK] 已清除反馈: {path}")
     else:
-        print(f"  [INFO] 无反馈记录: {path}")
+        logger.info(f"  [INFO] 无反馈记录: {path}")
 
 
 def print_feedback(feedback: FeedbackData):
     """打印反馈记录。"""
-    print(f"\n=== 反馈记录: {feedback['patient_id']} ===\n")
+    logger.info(f"\n=== 反馈记录: {feedback['patient_id']} ===\n")
     corrections = feedback.get("corrections", [])
     if not corrections:
-        print("  (无纠正记录)")
+        logger.info("  (无纠正记录)")
     else:
         for i, c in enumerate(corrections, 1):
-            print(f"  [{i}] {c['run_timestamp']}")
-            print(
+            logger.info(f"  [{i}] {c['run_timestamp']}")
+            logger.info(
                 f"      原假设: {c['original_hypothesis']} (置信度 {c['original_confidence']:.0%})"
             )
-            print(
+            logger.info(
                 f"      纠正为: {c['corrected_hypothesis']} (置信度 {c['corrected_confidence']:.0%})"
             )
             if c.get("user_comment"):
-                print(f"      备注: {c['user_comment']}")
+                logger.info(f"      备注: {c['user_comment']}")
 
     adjustments = feedback.get("confidence_adjustments", {})
     if adjustments:
-        print("\n  置信度调整:")
+        logger.info("\n  置信度调整:")
         for rule, adj in adjustments.items():
             arrow = "↑" if adj > 0 else "↓" if adj < 0 else "→"
-            print(f"    {rule}: {arrow} {adj:+.2f}")
+            logger.info(f"    {rule}: {arrow} {adj:+.2f}")
 
 
 def _cli():

@@ -68,7 +68,10 @@ class TestPredictMetrics:
 
 
 class TestPrintPredictions:
-    def test_prints_without_error(self, capsys):
+    def test_prints_without_error(self, caplog):
+        import logging
+
+        caplog.set_level(logging.INFO)
         preds = {
             "hs-CRP": {
                 "next_value": 5.0,
@@ -81,11 +84,14 @@ class TestPrintPredictions:
             }
         }
         print_predictions(preds)
-        captured = capsys.readouterr()
-        assert "hs-CRP" in captured.out
-        assert "上升" in captured.out
+        text = " ".join(rec.getMessage() for rec in caplog.records)
+        assert "hs-CRP" in text
+        assert "上升" in text
 
-    def test_empty_prints_info(self, capsys):
+    def test_empty_prints_info(self, caplog):
+        import logging
+
+        caplog.set_level(logging.INFO)
         print_predictions({})
-        captured = capsys.readouterr()
-        assert "无有效预测数据" in captured.out
+        text = " ".join(rec.getMessage() for rec in caplog.records)
+        assert "无有效预测数据" in text

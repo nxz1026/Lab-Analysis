@@ -7,13 +7,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 
 import pytest
-
 
 # inject_compile_metadata 是 scripts/ 子包,需把 scripts/ 加到 path
 _SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
@@ -44,7 +42,9 @@ def fake_compiled_json(tmp_path: Path) -> Path:
 def test_inject_metadata_writes_new_fields(fake_compiled_json: Path, monkeypatch):
     monkeypatch.setattr(icm, "get_git_head", lambda: "abc1234")
     # 注入 src mtime 比 json mtime 早 -> 不是 STALE
-    monkeypatch.setattr(icm, "get_latest_src_mtime", lambda: fake_compiled_json.stat().st_mtime - 10)
+    monkeypatch.setattr(
+        icm, "get_latest_src_mtime", lambda: fake_compiled_json.stat().st_mtime - 10
+    )
 
     r = icm.inject_metadata(fake_compiled_json)
     assert "error" not in r
@@ -69,7 +69,13 @@ def test_inject_metadata_preserves_existing_metadata(fake_compiled_json: Path, m
     data = json.loads(fake_compiled_json.read_text(encoding="utf-8"))
     meta = data["metadata"]
     # 注入字段都在
-    for k in ("compiled_at", "source_commit", "latest_src_mtime", "injected_at", "injector_version"):
+    for k in (
+        "compiled_at",
+        "source_commit",
+        "latest_src_mtime",
+        "injected_at",
+        "injector_version",
+    ):
         assert k in meta
     # 原有字段保留
     assert "dependency_versions" in meta
@@ -78,7 +84,9 @@ def test_inject_metadata_preserves_existing_metadata(fake_compiled_json: Path, m
 def test_inject_metadata_detects_stale(fake_compiled_json: Path, monkeypatch):
     monkeypatch.setattr(icm, "get_git_head", lambda: "x")
     # src mtime 比 json mtime 晚 -> STALE
-    monkeypatch.setattr(icm, "get_latest_src_mtime", lambda: fake_compiled_json.stat().st_mtime + 100)
+    monkeypatch.setattr(
+        icm, "get_latest_src_mtime", lambda: fake_compiled_json.stat().st_mtime + 100
+    )
 
     r = icm.inject_metadata(fake_compiled_json)
     assert r["is_stale"] is True
