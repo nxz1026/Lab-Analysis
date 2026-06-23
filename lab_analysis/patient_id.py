@@ -27,26 +27,24 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-# cryptography 提供 AES-GCM (AEAD)；标准库无 AEAD，必须声明依赖
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-# 仅在文件直接运行时才 import 正则校验，避免模块加载阶段的循环依赖
-# （utils.py 会反过来用到 patient_id 的 encode）
+from . import _log
+
+logger = _log.get_logger(__name__)
 try:
     from lab_analysis.utils import validate_chinese_id as _is_valid_id_card
-except Exception:  # pragma: no cover - utils 不可用时降级为本地正则
+except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
     import re
 
-    def _is_valid_id_card(s: str) -> bool:  # type: ignore[no-redef]
-        if not s:
+    def _is_valid_id_card(id_number: str) -> bool:
+        if not id_number:
             return False
-        return bool(re.match(r"^\d{17}[\dXx]$", s) or re.match(r"^\d{15}$", s))
+        return bool(re.match("^\\d{17}[\\dXx]$", id_number) or re.match("^\\d{15}$", id_number))
 
-
-# ── master_key 解析 ──────────────────────────────────────────────────
 
 _KEY_FILE = Path(os.environ.get("WORK_ROOT", Path.cwd())) / ".hermes" / "master.key"
-_NONCE_LEN = 12  # AES-GCM 推荐 nonce 长度
+_NONCE_LEN = 12
 
 
 def _load_or_create_master_key() -> bytes:
@@ -57,23 +55,18 @@ def _load_or_create_master_key() -> bytes:
         if len(key) != 32:
             raise ValueError("LAB_DEID_KEY 解码后必须为 32 字节（base64 编码）。")
         return key
-
     if _KEY_FILE.is_file():
         key = _decode_key(_KEY_FILE.read_text(encoding="utf-8").strip())
         if len(key) != 32:
             raise ValueError(f"{_KEY_FILE} 内容解码后必须为 32 字节。")
         return key
-
-    # 首次运行：自动生成
     _KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
     new_key = secrets.token_bytes(32)
     _KEY_FILE.write_text(base64.urlsafe_b64encode(new_key).decode("ascii"), encoding="utf-8")
     with contextlib.suppress(OSError):
-        os.chmod(_KEY_FILE, stat.S_IRUSR | stat.S_IWUSR)  # 0600，Windows 上为 no-op
+        os.chmod(_KEY_FILE, stat.S_IRUSR | stat.S_IWUSR)
     print(
-        f"[WARN] 已生成新的脱敏主密钥: {_KEY_FILE}\n"
-        "       该文件包含还原身份证号的唯一凭证，切勿提交或外传。\n"
-        "       生产环境建议改用环境变量 LAB_DEID_KEY 注入。",
+        f"[WARN] 已生成新的脱敏主密钥: {_KEY_FILE}\n       该文件包含还原身份证号的唯一凭证，切勿提交或外传。\n       生产环境建议改用环境变量 LAB_DEID_KEY 注入。",
         file=sys.stderr,
     )
     return new_key
@@ -85,11 +78,8 @@ def _decode_key(s: str) -> bytes:
     pad = "=" * (-len(s) % 4)
     try:
         return base64.urlsafe_b64decode(s + pad)
-    except Exception:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
         return base64.b64decode(s + pad)
-
-
-# ── 脱敏 / 还原 ──────────────────────────────────────────────────────
 
 
 def encode(id_card: str) -> str:
@@ -116,17 +106,12 @@ def decode(deid: str) -> str:
         raise ValueError("decode() 拒绝空字符串")
     key = _load_or_create_master_key()
     raw = base64.urlsafe_b64decode(deid + "=" * (-len(deid) % 4))
-    nonce, ct = raw[:_NONCE_LEN], raw[_NONCE_LEN:]
+    nonce, ct = (raw[:_NONCE_LEN], raw[_NONCE_LEN:])
     return AESGCM(key).decrypt(nonce, ct, None).decode("utf-8")
 
 
-# ── 身份证号统一校验 ──────────────────────────────────────────────────
-
-
 def validate_id_card(
-    id_card: Optional[str],
-    extracted_id: Optional[str] = None,
-    interactive: bool = True,
+    id_card: Optional[str], extracted_id: Optional[str] = None, interactive: bool = True
 ) -> Optional[str]:
     """强制校验身份证号格式；无效则交互确认或放弃。
 
@@ -146,58 +131,49 @@ def validate_id_card(
     """
     id_ok = bool(id_card and _is_valid_id_card(id_card))
     ext_ok = bool(extracted_id and _is_valid_id_card(extracted_id))
-
-    # 情况 1：合法且一致（或无 OCR 参照）
     if id_ok and (not ext_ok or id_card == extracted_id):
         return id_card
-
-    # 情况 2：id_card 与 OCR 不一致
-    if id_ok and ext_ok and id_card != extracted_id:
-        print("[WARNING] 命令行身份证号与图片识别结果不一致：")
-        print(f"  命令行传入: {id_card}")
-        print(f"  图片识别:   {extracted_id}")
+    if id_ok and ext_ok and (id_card != extracted_id):
+        logger.warning("[WARNING] 命令行身份证号与图片识别结果不一致：")
+        logger.info(f"  命令行传入: {id_card}")
+        logger.info(f"  图片识别:   {extracted_id}")
         if not interactive:
-            print("[ERROR] 非交互模式且身份证号不一致，放弃此数据")
+            logger.error("[ERROR] 非交互模式且身份证号不一致，放弃此数据")
             return None
         return _choose_id_card(
             options=[("使用命令行身份证号", id_card), ("使用图片识别身份证号", extracted_id)]
         )
-
-    # 情况 3：仅 OCR 合法
     if not id_ok and ext_ok:
-        print(f"[INFO] 提供的身份证号无效，将采用 OCR 识别值: {extracted_id}")
+        logger.info(f"[INFO] 提供的身份证号无效，将采用 OCR 识别值: {extracted_id}")
         return extracted_id
-
-    # 情况 4：均非法/为空
-    if id_card and not id_ok:
-        print(f"[WARNING] 身份证号 '{id_card}' 不是有效的 15/18 位格式")
-    if extracted_id and not ext_ok:
-        print(f"[WARNING] OCR 识别值 '{extracted_id}' 也非有效身份证号")
+    if id_card and (not id_ok):
+        logger.info(f"[WARNING] 身份证号 '{id_card}' 不是有效的 15/18 位格式")
+    if extracted_id and (not ext_ok):
+        logger.info(f"[WARNING] OCR 识别值 '{extracted_id}' 也非有效身份证号")
     if not interactive:
-        print("[ERROR] 非交互模式下必须提供有效身份证号，放弃此数据")
+        logger.error("[ERROR] 非交互模式下必须提供有效身份证号，放弃此数据")
         return None
     return _prompt_manual_input()
 
 
 def _choose_id_card(options: list) -> Optional[str]:
     """打印多选项菜单；options = [(label, value), ...]，末尾自动追加「手动输入/放弃」。"""
-    print("\n请选择使用哪个身份证号：")
+    logger.info("\n请选择使用哪个身份证号：")
     for i, (label, _) in enumerate(options, 1):
-        print(f"  {i}. {label}")
-    print(f"  {len(options) + 1}. 手动输入其他身份证号")
-    print(f"  {len(options) + 2}. 放弃此数据")
+        logger.info(f"  {i}. {label}")
+    logger.info(f"  {len(options) + 1}. 手动输入其他身份证号")
+    logger.info(f"  {len(options) + 2}. 放弃此数据")
     try:
         choice = input(f"请输入选择 (1-{len(options) + 2}): ").strip()
     except (EOFError, KeyboardInterrupt):
-        print("\n[ERROR] 无法读取输入，放弃此数据")
+        logger.error("\n[ERROR] 无法读取输入，放弃此数据")
         return None
-
     idx = int(choice) - 1 if choice.isdigit() else -1
     if 0 <= idx < len(options):
         return options[idx][1]
     if idx == len(options):
         return _prompt_manual_input()
-    print("[INFO] 用户选择放弃此数据")
+    logger.info("[INFO] 用户选择放弃此数据")
     return None
 
 
@@ -207,23 +183,23 @@ def _prompt_manual_input() -> Optional[str]:
         try:
             val = input(f"请输入正确的身份证号（18 位或 15 位，第 {attempt + 1}/3 次）: ").strip()
         except (EOFError, KeyboardInterrupt):
-            print("\n[ERROR] 无法读取输入，放弃此数据")
+            logger.error("\n[ERROR] 无法读取输入，放弃此数据")
             return None
         if val and _is_valid_id_card(val):
             return val
-        print(f"[ERROR] '{val}' 不是有效身份证号")
-    print("[ERROR] 连续 3 次输入无效，放弃此数据")
+        logger.info(f"[ERROR] '{val}' 不是有效身份证号")
+    logger.error("[ERROR] 连续 3 次输入无效，放弃此数据")
     return None
 
 
-# ── 自测 ──────────────────────────────────────────────────────────────
-
 if __name__ == "__main__":
-    sample = "110101199003078888"  # 18 位示例（非真实号段）
+    sample = "110101199003078888"
     obf = encode(sample)
     restored = decode(obf)
-    print(f"原始:   {sample}")
-    print(f"脱敏:   {obf}")
-    print(f"还原:   {restored}")
-    print(f"确定性: {'[OK] 两次 encode 一致' if encode(sample) == obf else '[FAIL] 不一致'}")
-    print(f"验证:   {'[OK] 往返一致' if sample == restored else '[FAIL] 往返失败'}")
+    logger.info(f"原始:   {sample}")
+    logger.info(f"脱敏:   {obf}")
+    logger.info(f"还原:   {restored}")
+    logger.info(
+        f"确定性: {('[OK] 两次 encode 一致' if encode(sample) == obf else '[FAIL] 不一致')}"
+    )
+    logger.info(f"验证:   {('[OK] 往返一致' if sample == restored else '[FAIL] 往返失败')}")

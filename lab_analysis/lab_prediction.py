@@ -14,6 +14,10 @@ import numpy as np
 import pandas as pd
 from scipy import stats as scipy_stats
 
+from . import _log
+
+logger = _log.get_logger(__name__)
+
 # 需要预测的关键指标列表
 KEY_METRICS = ["hs-CRP", "CRP", "WBC", "NEUT#", "RDW-SD", "RDW-CV", "PCT"]
 
@@ -133,10 +137,12 @@ def predict_metrics(results: dict, df: pd.DataFrame) -> dict:
 def print_predictions(predictions: dict):
     """将预测结果打印到控制台。"""
     if not predictions:
-        print("  [INFO] 无有效预测数据（至少需要 2 个数据点）")
+        logger.info("  [INFO] 无有效预测数据（至少需要 2 个数据点）")
         return
-    print("\n--- 指标预测 ---")
+    logger.info("\n--- 指标预测 ---")
     for metric, p in predictions.items():
         ci = f"[{p['ci_95_lower']:.2f}, {p['ci_95_upper']:.2f}]" if p.get("ci_95_lower") else "N/A"
         alert_str = f" ⚠️ {p['alert']}" if p.get("alert") else ""
-        print(f"  {metric}: 下次预测={p['next_value']:.3f}  95%CI={ci}  {p['trend']}{alert_str}")
+        logger.info(
+            f"  {metric}: 下次预测={p['next_value']:.3f}  95%CI={ci}  {p['trend']}{alert_str}"
+        )

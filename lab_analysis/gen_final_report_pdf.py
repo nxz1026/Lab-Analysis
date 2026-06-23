@@ -14,6 +14,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from . import _log
+
+logger = _log.get_logger(__name__)
+
 # ── 依赖可用性检测 ──────────────────────────────────────────────────
 try:
     import markdown
@@ -85,7 +89,7 @@ def md_to_pdf(
             missing.append("markdown")
         if not HAS_WEASYPRINT:
             missing.append("weasyprint")
-        print(f"  [SKIP] PDF 生成需要可选依赖: pip install {' '.join(missing)}")
+        logger.info(f"  [SKIP] PDF 生成需要可选依赖: pip install {' '.join(missing)}")
         return False
 
     md_path = Path(md_path)
@@ -94,10 +98,10 @@ def md_to_pdf(
         img_dir = Path(img_dir)
 
     if not md_path.exists():
-        print(f"  [WARNING] Markdown 文件不存在: {md_path}")
+        logger.info(f"  [WARNING] Markdown 文件不存在: {md_path}")
         return False
 
-    print(f"  [PDF] 转换: {md_path.name} → {output_path.name}")
+    logger.info(f"  [PDF] 转换: {md_path.name} → {output_path.name}")
 
     # 1. 读取 MD
     md_text = md_path.read_text(encoding="utf-8")
@@ -146,7 +150,7 @@ def md_to_pdf(
     # 5. HTML → PDF
     output_path.parent.mkdir(parents=True, exist_ok=True)
     weasyprint.HTML(string=html).write_pdf(str(output_path))
-    print(f"  [OK] PDF 已保存: {output_path}")
+    logger.info(f"  [OK] PDF 已保存: {output_path}")
     return True
 
 

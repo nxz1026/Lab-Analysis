@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pytest
 
-
 _EXAMPLES_DIR = Path(__file__).resolve().parent.parent / "examples"
 if str(_EXAMPLES_DIR) not in sys.path:
     sys.path.insert(0, str(_EXAMPLES_DIR))
@@ -111,7 +110,6 @@ def test_is_up_to_date_missing_source_skipped(fake_compile_layout):
     _, _, _, compiled_json = fake_compile_layout
     missing = fake_compile_layout[0] / "does_not_exist.py"
     # 只有 missing source + 旧 json → 仍然 up-to-date
-    old_time = time.time() - 3600
     import os
 
     os.utime(compiled_json, (time.time(), time.time()))
@@ -130,11 +128,12 @@ def test_compile_skip_returns_none(monkeypatch):
 
     monkeypatch.setattr(dspy.teleprompt, "BootstrapFewShot", _boom)
 
-    # 临时把所有 source 改成比 json 旧很多 (24h 前)
-    # compiled JSON 是 2026-06-22 09:05, 系统时间现在 11:xx
+    # 临时把 source 改成比 compiled JSON 旧 (json_mtime - 1s)
+    # 之前用 time.time() - 86400 不可靠: json mtime 可能与 "now - 24h" 几乎同时间
+    # (甚至更晚), 导致 _is_up_to_date 误判为 False 走进 ensure_min_examples 越界。
+    # 修法: 以 json mtime 为锚点, src 设到 json_mtime - 1, 必然 up-to-date。
     import os
 
-    src_dir = Path(cam.__file__).resolve().parent.parent / "lab_analysis" / "dspy_modules"
     json_path = (
         Path(cam.__file__).resolve().parent.parent
         / "models"
@@ -144,10 +143,18 @@ def test_compile_skip_returns_none(monkeypatch):
     if not json_path.exists():
         pytest.skip("compiled JSON 不存在, 无法测增量跳过路径")
 
-    very_old = time.time() - 86400  # 24h 前
-    for src in [src_dir / "literature_interpreter.py", src_dir / "_retry.py"]:
-        if src.exists():
-            os.utime(src, (very_old, very_old))
+    json_mtime = json_path.stat().st_mtime
+    older_than_json = json_mtime - 1  # 仅早 1s, 但足够让 _is_up_to_date 返回 True
+    # 修改全部依赖的 source (包括 prompt_inspector.py), 否则 _is_up_to_date 会因
+    # 未触动的 source mtime > json mtime 而误判 False
+    sources = cam._module_source_paths("literature_interpreter")
+    for src in sources:
+        os.utime(src, (older_than_json, older_than_json))
+
+    # 显式断言 _is_up_to_date 走到 True, 早退到 return None (避免空 samples 越界)
+    assert cam._is_up_to_date(json_path, sources) is True, (
+        "测试前置条件失败: source 应早于 json mtime, 否则会跳过不到 return None"
+    )
 
     result = cam.compile_literature_interpreter(samples=[], force=False)
     assert result is None

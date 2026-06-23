@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import streamlit as st
@@ -19,6 +20,9 @@ import streamlit as st
 from lab_analysis.utils import WORK_ROOT
 
 _DATA_DIR = WORK_ROOT / "data"
+
+# P1-3: 与 tests/conftest.py 的 _TS_RE 对齐, 过滤口径 YYYYMMDD_HHMMSS
+_TS_RE = re.compile(r"^\d{8}_\d{6}$")
 
 st.set_page_config(
     page_title="Lab-Analysis 看板",
@@ -41,7 +45,7 @@ def _list_runs(patient_id: str) -> list[str]:
     p = _DATA_DIR / patient_id
     if not p.exists():
         return []
-    return sorted(d.name for d in p.iterdir() if d.is_dir() and d.name[:8].isdigit())
+    return sorted(d.name for d in p.iterdir() if d.is_dir() and _TS_RE.match(d.name))
 
 
 patients = _list_patients()
@@ -73,9 +77,13 @@ st.sidebar.button("🔄 刷新", on_click=st.rerun)
 
 @st.cache_data
 def _load_json(path: Path) -> dict:
-    if path.exists():
+    # P2-1: 捕获损坏 JSON (被 kill/crash 写出), 与 _load_md 风格一致返回空 dict
+    if not path.exists():
+        return {}
+    try:
         return json.loads(path.read_text(encoding="utf-8"))
-    return {}
+    except (json.JSONDecodeError, OSError):
+        return {}
 
 
 @st.cache_data

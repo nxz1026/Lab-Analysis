@@ -252,15 +252,21 @@ class TestGenerateAlerts:
 
 
 class TestPrintAlerts:
-    def test_print_alerts_no_crash(self, acute_results, capsys):
+    def test_print_alerts_no_crash(self, acute_results, caplog):
+        import logging
+
+        caplog.set_level(logging.INFO)
         alerts = generate_alerts(acute_results)
         print_alerts(alerts)
-        captured = capsys.readouterr()
-        assert len(captured.out) > 0
-        assert "CRITICAL" in captured.out or "WARNING" in captured.out
+        text = " ".join(rec.getMessage() for rec in caplog.records)
+        assert len(text) > 0
+        assert "CRITICAL" in text or "WARNING" in text
 
-    def test_print_alerts_empty(self, clean_results, capsys):
+    def test_print_alerts_empty(self, clean_results, caplog):
+        import logging
+
+        caplog.set_level(logging.INFO)
         alerts = generate_alerts(clean_results)
         print_alerts(alerts)
-        captured = capsys.readouterr()
-        assert "无异常告警" in captured.out
+        text = " ".join(rec.getMessage() for rec in caplog.records)
+        assert "无异常告警" in text

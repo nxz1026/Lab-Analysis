@@ -43,16 +43,15 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from lab_analysis.utils import WORK_ROOT  # noqa: E402
 
-
 # ── 阈值默认值 ──────────────────────────────────────────────
 
 DEFAULT_THRESHOLDS: dict[str, float] = {
-    "f1_min": 0.70,                # entity_f1.f1 下限
-    "coverage_min": 0.80,          # section_coverage.coverage_rate 下限
-    "recall_min": 0.70,            # entity_recall.recall_rate 下限
-    "confidence_min": 0.60,        # confidence.dspy_confidence 下限
+    "f1_min": 0.70,  # entity_f1.f1 下限
+    "coverage_min": 0.80,  # section_coverage.coverage_rate 下限
+    "recall_min": 0.70,  # entity_recall.recall_rate 下限
+    "confidence_min": 0.60,  # confidence.dspy_confidence 下限
     "feedback_delta_abs_max": 0.30,  # |feedback_delta.avg_delta_confidence| 上限
-    "cross_modality_min": 0.70,    # cross_modality_consistency.accuracy 下限 (#7)
+    "cross_modality_min": 0.70,  # cross_modality_consistency.accuracy 下限 (#7)
 }
 
 
@@ -289,7 +288,9 @@ def main() -> int:
     parser.add_argument("--f1-min", type=float, default=DEFAULT_THRESHOLDS["f1_min"])
     parser.add_argument("--coverage-min", type=float, default=DEFAULT_THRESHOLDS["coverage_min"])
     parser.add_argument("--recall-min", type=float, default=DEFAULT_THRESHOLDS["recall_min"])
-    parser.add_argument("--confidence-min", type=float, default=DEFAULT_THRESHOLDS["confidence_min"])
+    parser.add_argument(
+        "--confidence-min", type=float, default=DEFAULT_THRESHOLDS["confidence_min"]
+    )
     parser.add_argument(
         "--feedback-delta-abs-max",
         type=float,

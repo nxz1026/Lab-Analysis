@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 DSPy Prompt 提取工具
 
@@ -23,6 +21,10 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .. import _log
+
+logger = _log.get_logger(__name__)
+
 
 def safe_str(obj: Any, max_length: int = 1000) -> str:
     """安全地将对象转为字符串,截断过长内容"""
@@ -31,7 +33,7 @@ def safe_str(obj: Any, max_length: int = 1000) -> str:
         if len(s) > max_length:
             return s[:max_length] + f"... [截断, 共 {len(s)} 字符]"
         return s
-    except Exception:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
         return f"<无法序列化: {type(obj).__name__}>"
 
 
@@ -47,154 +49,128 @@ def extract_field_desc(field) -> str:
         if hasattr(field, "description"):
             return str(field.description) if field.description else ""
         return ""
-    except Exception:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
         return ""
 
 
-def extract_signature_info(signature) -> Dict:
+def extract_signature_info(signature) -> Dict[str, Any]:
     """提取 Signature 信息"""
-    info = {
+    info: Dict[str, Any] = {
         "signature_name": getattr(signature, "__name__", "Unknown"),
         "docstring": safe_str(getattr(signature, "__doc__", ""), 500),
         "instructions": "",
         "input_fields": {},
         "output_fields": {},
     }
-
-    # 提取 instructions
     try:
         instructions = getattr(signature, "instructions", None)
         if instructions is None and hasattr(signature, "__doc__"):
             instructions = signature.__doc__
         info["instructions"] = safe_str(instructions, 2000)
-    except Exception:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
         pass
-
-    # 提取输入字段
     try:
         input_fields = getattr(signature, "input_fields", {}) or {}
         for name, field in input_fields.items():
             info["input_fields"][name] = extract_field_desc(field)
-    except Exception:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
         pass
-
-    # 提取输出字段
     try:
         output_fields = getattr(signature, "output_fields", {}) or {}
         for name, field in output_fields.items():
             info["output_fields"][name] = extract_field_desc(field)
-    except Exception:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
         pass
-
     return info
 
 
-def extract_demos_info(predictor) -> List[Dict]:
+def extract_demos_info(predictor) -> List[Dict[str, Any]]:
     """提取 predictor 中的 few-shot demos"""
-    demos = []
+    demos: list[Dict[str, Any]] = []
     try:
         demos_list = getattr(predictor, "demos", []) or []
         for i, demo in enumerate(demos_list):
-            demo_dict = {}
-            # demo 可能是 Example 对象或 dict
+            demo_dict: Dict[str, Any] = {}
             if hasattr(demo, "__dict__"):
                 items = demo.__dict__.items()
             elif isinstance(demo, dict):
                 items = demo.items()
             else:
                 continue
-
             for key, value in items:
                 if key.startswith("_"):
                     continue
                 demo_dict[key] = safe_str(value, 300)
-
             if demo_dict:
                 demo_dict["_demo_index"] = i + 1
                 demos.append(demo_dict)
-    except Exception as e:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         demos.append({"_error": f"提取 demos 失败: {safe_str(e, 200)}"})
-
     return demos
 
 
-def extract_predictor_info(predictor, predictor_name: str = "predictor") -> Dict:
+def extract_predictor_info(predictor, predictor_name: str = "predictor") -> Dict[str, Any]:
     """提取 predictor 完整信息"""
-    info = {
+    info: Dict[str, Any] = {
         "predictor_name": predictor_name,
         "predictor_type": type(predictor).__name__,
         "num_demos": 0,
         "demos": [],
         "signature": {},
     }
-
-    # 提取 Signature
     try:
         signature = getattr(predictor, "signature", None)
         if signature is not None:
             info["signature"] = extract_signature_info(signature)
-    except Exception as e:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         info["signature"] = {"_error": safe_str(e, 200)}
-
-    # 提取 demos
     try:
         demos = extract_demos_info(predictor)
         info["demos"] = demos
         info["num_demos"] = len(demos)
-    except Exception as e:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         info["demos"] = [{"_error": safe_str(e, 200)}]
-
     return info
 
 
-def extract_module_prompts(module, module_name: str) -> Dict:
+def extract_module_prompts(module, module_name: str) -> Dict[str, Any]:
     """从 DSPy Module 提取所有 predictor 的 prompt 信息"""
-    result = {
+    result: Dict[str, Any] = {
         "module_name": module_name,
         "module_type": type(module).__name__,
         "predictors": [],
         "total_demos": 0,
     }
-
     try:
-        # named_predictors() 返回模块内所有 predictor
         predictors = module.named_predictors() if hasattr(module, "named_predictors") else []
         for name, predictor in predictors:
             pred_info = extract_predictor_info(predictor, name)
             result["predictors"].append(pred_info)
             result["total_demos"] += pred_info.get("num_demos", 0)
-    except Exception as e:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         result["_error"] = f"提取 predictors 失败: {safe_str(e, 300)}"
-
     return result
 
 
 def reconstruct_full_prompt(predictor_info: Dict) -> str:
     """根据 predictor 信息重建完整的 prompt(模拟 DSPy 内部格式)"""
     parts = []
-
     sig = predictor_info.get("signature", {})
     instructions = sig.get("instructions", "")
     if instructions:
         parts.append(f"--- Instructions ---\n{instructions}\n")
-
-    # 输入字段
     input_fields = sig.get("input_fields", {})
     if input_fields:
         parts.append("--- Input Fields ---")
         for name, desc in input_fields.items():
             parts.append(f"- {name}: {desc}")
         parts.append("")
-
-    # 输出字段
     output_fields = sig.get("output_fields", {})
     if output_fields:
         parts.append("--- Output Fields ---")
         for name, desc in output_fields.items():
             parts.append(f"- {name}: {desc}")
         parts.append("")
-
-    # Few-shot demos
     demos = predictor_info.get("demos", [])
     if demos:
         parts.append(f"--- Few-shot Examples ({len(demos)}) ---")
@@ -205,7 +181,6 @@ def reconstruct_full_prompt(predictor_info: Dict) -> str:
                     continue
                 parts.append(f"{k}: {v}")
         parts.append("")
-
     return "\n".join(parts)
 
 
@@ -222,7 +197,6 @@ def save_prompts_to_markdown(module_name: str, prompts_data: Dict, output_dir: P
     """保存 prompt 信息到 Markdown 文件"""
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{module_name}_dspy_prompts.md"
-
     lines = [
         f"# {module_name} - DSPy 优化后 Prompt 详情",
         "",
@@ -231,14 +205,12 @@ def save_prompts_to_markdown(module_name: str, prompts_data: Dict, output_dir: P
         f"**Few-shot 示例总数**: {prompts_data.get('total_demos', 0)}",
         "",
     ]
-
     for pred in prompts_data.get("predictors", []):
         lines.append(f"## Predictor: `{pred.get('predictor_name', 'unknown')}`")
         lines.append("")
         lines.append(f"- **类型**: `{pred.get('predictor_type', 'Unknown')}`")
         lines.append(f"- **Few-shot 示例数**: {pred.get('num_demos', 0)}")
         lines.append("")
-
         sig = pred.get("signature", {})
         lines.append(f"### Signature: `{sig.get('signature_name', 'Unknown')}`")
         lines.append("")
@@ -248,27 +220,22 @@ def save_prompts_to_markdown(module_name: str, prompts_data: Dict, output_dir: P
             lines.append(sig.get("docstring", ""))
             lines.append("```")
             lines.append("")
-
         if sig.get("instructions"):
             lines.append("**Instructions**:")
             lines.append("```")
             lines.append(sig.get("instructions", ""))
             lines.append("```")
             lines.append("")
-
         if sig.get("input_fields"):
             lines.append("**输入字段**:")
             for name, desc in sig.get("input_fields", {}).items():
                 lines.append(f"- `{name}`: {desc}")
             lines.append("")
-
         if sig.get("output_fields"):
             lines.append("**输出字段**:")
             for name, desc in sig.get("output_fields", {}).items():
                 lines.append(f"- `{name}`: {desc}")
             lines.append("")
-
-        # Demos
         demos = pred.get("demos", [])
         if demos:
             lines.append(f"### Few-shot 示例 ({len(demos)})")
@@ -284,13 +251,10 @@ def save_prompts_to_markdown(module_name: str, prompts_data: Dict, output_dir: P
                     lines.append(str(v))
                     lines.append("```")
                     lines.append("")
-
         lines.append("---")
         lines.append("")
-
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-
     return output_path
 
 
@@ -309,45 +273,29 @@ def get_actual_dspy_prompt() -> str:
         import dspy
     except ImportError:
         return "[错误] DSPy 未安装"
-
     try:
         lm = getattr(dspy.settings, "lm", None)
         if lm is None:
             return "[错误] DSPy LM 未配置，请先调用 dspy.configure(lm=...)"
-
         history = getattr(lm, "history", [])
         if not history:
             return "[错误] DSPy LM 历史为空，尚未执行任何推理调用"
-
-        last_call = history[-1]  # 最近一次 LLM 调用
-
-        # DSPy 3.x 中 history 条目的可能结构：
-        #   {'prompt': str}                    — 普通模式
-        #   {'messages': [{role, content}, ..]} — chat 模式
-        #   {'kwargs': {..., 'messages': [...]}} — 旧版本
+        last_call = history[-1]
         prompt_sources = []
-
-        # 字段1: prompt
         if "prompt" in last_call:
             val = last_call["prompt"]
             if isinstance(val, str):
                 prompt_sources.append(val)
             elif isinstance(val, (list, dict)):
                 prompt_sources.append(json.dumps(val, ensure_ascii=False, indent=2))
-
-        # 字段2: messages（chat 模式下的完整消息列表）
         if "messages" in last_call:
             msgs = last_call["messages"]
             prompt_sources.append(json.dumps(msgs, ensure_ascii=False, indent=2))
-
-        # 字段3: kwargs 中可能嵌套 messages
         if "kwargs" in last_call and isinstance(last_call["kwargs"], dict):
             msgs = last_call["kwargs"].get("messages", [])
             if msgs:
                 prompt_sources.append(json.dumps(msgs, ensure_ascii=False, indent=2))
-
         if prompt_sources:
-            # 拼接所有来源，去重
             seen = set()
             parts = []
             for s in prompt_sources:
@@ -356,11 +304,8 @@ def get_actual_dspy_prompt() -> str:
                     seen.add(key)
                     parts.append(s)
             return "\n\n======= 分隔线 =======\n\n".join(parts)
-
-        # 兜底：序列化整个 call 记录
         return json.dumps(last_call, ensure_ascii=False, indent=2, default=str)
-
-    except Exception as e:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         return f"[错误] 获取 DSPy prompt 时发生异常: {type(e).__name__}: {e}"
 
 
@@ -380,14 +325,13 @@ def save_actual_dspy_prompt(module_name: str, output_dir: Path) -> Optional[Path
     try:
         prompt_text = get_actual_dspy_prompt()
         if prompt_text.startswith("[错误]"):
-            print(f"  [警告] {prompt_text}")
+            logger.info(f"  [警告] {prompt_text}")
             return None
-
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / f"{module_name}_dspy_actual_prompt.txt"
         output_path.write_text(prompt_text, encoding="utf-8")
-        print(f"  [保存] 完整 DSPy prompt 已保存 ({len(prompt_text)} 字符): {output_path}")
+        logger.info(f"  [保存] 完整 DSPy prompt 已保存 ({len(prompt_text)} 字符): {output_path}")
         return output_path
-    except Exception as e:
-        print(f"  [警告] 保存实际 DSPy prompt 失败: {e}")
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+        logger.info(f"  [警告] 保存实际 DSPy prompt 失败: {e}")
         return None

@@ -16,6 +16,10 @@ from pathlib import Path
 
 from lab_analysis.utils import WORK_ROOT
 
+from . import _log
+
+logger = _log.get_logger(__name__)
+
 # LOINC 编码映射（常用检验指标 → LOINC code + display）
 _LOINC_MAP: dict[str, tuple[str, str]] = {
     "WBC": ("6690-2", "Leukocytes [Volume] in Blood"),
@@ -373,7 +377,7 @@ def _cli():
 
     out_path = args.out or str(reports_dir / "fhir_bundle.json")
     Path(out_path).write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[OK] FHIR Bundle 已保存: {out_path}")
+    logger.info(f"[OK] FHIR Bundle 已保存: {out_path}")
 
 
 if __name__ == "__main__":

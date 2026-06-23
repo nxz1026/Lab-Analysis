@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 
 from lab_analysis.utils import build_paths as build_paths_utils
 
+from .. import _log
+
+logger = _log.get_logger(__name__)
+
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
@@ -120,4 +124,4 @@ def save_fig(fig, path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=150, bbox_inches="tight", facecolor="white")
     plt.close(fig)
-    print(f"  [OK] 已保存: {path.name}")
+    logger.info(f"  [OK] 已保存: {path.name}")

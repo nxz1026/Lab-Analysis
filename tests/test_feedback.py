@@ -87,10 +87,13 @@ class TestClearFeedback:
         clear_feedback("test_deid")
         assert not (mock_feedback_path / "data" / "test_deid" / "feedback.json").exists()
 
-    def test_clear_nonexistent_is_noop(self, mock_feedback_path, capsys):
+    def test_clear_nonexistent_is_noop(self, mock_feedback_path, caplog):
+        import logging
+
+        caplog.set_level(logging.INFO)
         clear_feedback("never_recorded")
-        captured = capsys.readouterr()
-        assert "无反馈记录" in captured.out
+        text = " ".join(rec.getMessage() for rec in caplog.records)
+        assert "无反馈记录" in text
 
 
 class TestRecordCorrectionBranches:
@@ -159,16 +162,22 @@ class TestRecordCorrectionBranches:
 
 
 class TestPrintFeedback:
-    def test_empty_corrections(self, mock_feedback_path, capsys):
+    def test_empty_corrections(self, mock_feedback_path, caplog):
+        import logging
+
         from lab_analysis.feedback import load_feedback, print_feedback
 
+        caplog.set_level(logging.INFO)
         print_feedback(load_feedback("empty_deid"))
-        out = capsys.readouterr().out
-        assert "无纠正记录" in out
+        text = " ".join(rec.getMessage() for rec in caplog.records)
+        assert "无纠正记录" in text
 
-    def test_with_corrections_and_adjustments(self, mock_feedback_path, capsys):
+    def test_with_corrections_and_adjustments(self, mock_feedback_path, caplog):
+        import logging
+
         from lab_analysis.feedback import print_feedback
 
+        caplog.set_level(logging.INFO)
         record_correction(
             "test_deid",
             original_hypothesis="慢性胰腺炎（活动期）",
@@ -194,8 +203,8 @@ class TestPrintFeedback:
                 "confidence_adjustments": {"chronic_pancreatitis_active": -0.15},
             }
         )
-        out = capsys.readouterr().out
-        assert "原假设: A" in out
-        assert "纠正为: B" in out
-        assert "备注" in out
-        assert "chronic_pancreatitis_active" in out
+        text = " ".join(rec.getMessage() for rec in caplog.records)
+        assert "原假设: A" in text
+        assert "纠正为: B" in text
+        assert "备注" in text
+        assert "chronic_pancreatitis_active" in text

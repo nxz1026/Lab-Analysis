@@ -21,8 +21,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 def _read_source(rel_path: str) -> str:
-    """读取源码文件（指定 utf-8 编码）。"""
-    return (Path(__file__).resolve().parent.parent / rel_path).read_text(encoding="utf-8")
+    """读取源代码（支持 .py 文件或同名目录中的所有 .py）。"""
+    base = Path(__file__).resolve().parent.parent / rel_path
+    if base.is_file():
+        return base.read_text(encoding="utf-8")
+    if base.is_dir():
+        parts = []
+        for p in sorted(base.rglob("*.py")):
+            parts.append(p.read_text(encoding="utf-8"))
+        return "\n".join(parts)
+    raise FileNotFoundError(base)
 
 
 class TestPipelineContext:
@@ -101,7 +109,7 @@ class TestDeidConsistency:
 
     def test_no_encode_in_ingest(self):
         """ingest_data.py 不应直接调用 encode(patient_id)。"""
-        source = _read_source("lab_analysis/ingest_data.py")
+        source = _read_source("lab_analysis/ingest_data")
         for i, line in enumerate(source.splitlines(), 1):
             s = line.strip()
             if s.startswith("#") or ("import" in s and "encode" in s):
@@ -110,7 +118,7 @@ class TestDeidConsistency:
 
     def test_no_encode_in_extract(self):
         """extract_lab_data.py 不应直接调用 encode(patient_id)。"""
-        source = _read_source("lab_analysis/extract_lab_data.py")
+        source = _read_source("lab_analysis/extract_lab_data")
         for i, line in enumerate(source.splitlines(), 1):
             s = line.strip()
             if s.startswith("#") or ("import" in s and "encode" in s):
@@ -249,7 +257,10 @@ class TestSCNetOCRE2E:
         """extract_lab_metrics 全流程跑通，metrics 字典非空且关键指标正确。"""
         from lab_analysis import extract_lab_data as mod
 
-        monkeypatch.setattr(mod, "call_scnet_ocr", lambda *a, **kw: _FAKE_OCR_TEXT)
+        # parser.py 直接 import .ocr.call_scnet_ocr，需 patch 到 ocr 子模块
+        from lab_analysis.extract_lab_data import ocr as ocr_mod
+
+        monkeypatch.setattr(ocr_mod, "call_scnet_ocr", lambda *a, **kw: _FAKE_OCR_TEXT)
 
         fake_img = tmp_path / "lab_fake.jpg"
         fake_img.write_bytes(b"\x00")  # 不读，只走函数路径
@@ -274,8 +285,9 @@ class TestSCNetOCRE2E:
     def test_extract_lab_metrics_resize_does_not_break_monkeypatch(self, tmp_path, monkeypatch):
         """当 fake OCR 被注入，call_scnet_ocr 不应走真实图片预处理路径。"""
         from lab_analysis import extract_lab_data as mod
+        from lab_analysis.extract_lab_data import ocr as ocr_mod
 
-        monkeypatch.setattr(mod, "call_scnet_ocr", lambda *a, **kw: _FAKE_OCR_TEXT)
+        monkeypatch.setattr(ocr_mod, "call_scnet_ocr", lambda *a, **kw: _FAKE_OCR_TEXT)
 
         # PIL.Image 不会真的被打开，因为 fake 完全绕过真实读取
         fake_img = tmp_path / "anything.bin"

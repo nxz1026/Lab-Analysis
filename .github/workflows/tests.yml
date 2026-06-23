@@ -35,6 +35,11 @@ jobs:
         # 仓库已完成全量 format 迁移，严格阳断保证不再回退
         run: python -m ruff format --check .
 
+      - name: Static type check (mypy)
+        # P1-5 目标: 0 错误即通过 (从 22 个 错误 全部清理)
+        # baseline 文档: docs/MYPY_BASELINE.md
+        run: python -m mypy lab_analysis/ --ignore-missing-imports --no-strict-optional
+
       - name: Audit DSPy compiled models
         # 防止改完 dspy_modules/ 源码却忘重 compile
         # STALE 即 fail,本地建议运行: python examples/compile_all_dspy_modules_v2.py
@@ -42,10 +47,45 @@ jobs:
         env:
           CI: "true"
 
+      - name: DSPy cache health (load_fail == 0)
+        # P2-6: 跟踪 logs/dspy_cache_metrics.json 中 load_fail 计数
+        # load_fail > 0 表示 models/dspy/*.json 与当前模块签名不兼容, 需要重 compile
+        # 详情: docs/DSPY_CACHE_HITRATE.md
+        # P0-1: 对损坏/截断的 metrics 文件 (被 kill/crash 写出) 走 try/except,
+        #       与 lab_analysis.dspy_modules._cache_metrics._load() 行为对齐, 自动回退为 skip
+        run: |
+          python -c "
+          import json, sys, os
+          p = 'logs/dspy_cache_metrics.json'
+          if not os.path.exists(p):
+              print('[OK] 无 metrics 文件 (本轮未触发 cache load), 跳过')
+              sys.exit(0)
+          try:
+              with open(p, encoding='utf-8') as f:
+                  m = json.load(f)
+          except (json.JSONDecodeError, OSError) as e:
+              print(f'[WARN] metrics 文件损坏 ({type(e).__name__}: {e}), 跳过校验')
+              sys.exit(0)
+          fails = m.get('totals', {}).get('load_fail', 0)
+          if fails > 0:
+              print(f'[FAIL] load_fail={fails} > 0, 需要重新编译 DSPy 模型')
+              for name, mod in m.get('modules', {}).items():
+                  if mod.get('load_fail', 0) > 0:
+                      print(f'  - {name}: load_fail={mod[\"load_fail\"]}')
+              sys.exit(1)
+          totals = m.get('totals', {})
+          print(f'[OK] load_fail=0, total hit={totals.get(\"hit\", 0)}, miss={totals.get(\"miss\", 0)}')
+          "
+
       - name: Test with pytest + coverage
         run: python -m pytest --cov=lab_analysis --cov-report=term-missing --cov-report=xml:coverage.xml --cov-branch
         env:
           LAB_DEID_KEY: "VW5pdFRlc3RLZXktLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLXM="
+
+      - name: Check README test count matches pytest
+        # 防README badge / 表格里的 438 / 439 / 440 手写计数过期, 不一致即 fail
+        # 本地试跑: python scripts/check_test_count.py
+        run: python scripts/check_test_count.py
 
       - name: Verify module imports (smoke test)
         run: python -c "

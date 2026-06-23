@@ -13,16 +13,25 @@ from lab_analysis.report_schema_models import (
     validate_final_report_dict,
 )
 
-
 # -------------------- helper --------------------
 
 
 def _make_sections(**overrides) -> dict[str, str]:
     """生成 9 章节 + title 的 raw dict, 每节默认填 30 字符。"""
-    base = {k: f"{k}_content_" + "x" * 20 for k in [
-        "basic_info", "lab_analysis", "mri_analysis", "multidisciplinary",
-        "diagnosis", "consistency", "action_plan", "followup", "prognosis",
-    ]}
+    base = {
+        k: f"{k}_content_" + "x" * 20
+        for k in [
+            "basic_info",
+            "lab_analysis",
+            "mri_analysis",
+            "multidisciplinary",
+            "diagnosis",
+            "consistency",
+            "action_plan",
+            "followup",
+            "prognosis",
+        ]
+    }
     base["title"] = "测试报告"
     base.update(overrides)
     return base
@@ -101,9 +110,7 @@ def test_try_validate_sections_returns_errors():
 
 
 def test_try_validate_sections_multiple_errors():
-    ok, errs = try_validate_sections(
-        _make_sections(diagnosis="", action_plan="x")
-    )
+    ok, errs = try_validate_sections(_make_sections(diagnosis="", action_plan="x"))
     assert ok is False
     assert len(errs) >= 2  # diagnosis + action_plan
 

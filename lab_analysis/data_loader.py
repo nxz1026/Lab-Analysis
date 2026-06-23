@@ -18,6 +18,10 @@ from pathlib import Path
 from lab_analysis.utils import build_paths as build_paths_utils
 from lab_analysis.utils import parse_metadata_table
 
+from . import _log
+
+logger = _log.get_logger(__name__)
+
 
 def build_paths(patient_id: str):
     """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。"""
@@ -93,9 +97,9 @@ def extract_value(result_str: str):
     return float(m.group(1)) if m else None
 
 
-def parse_metrics_simple(text: str) -> dict:
+def parse_metrics_simple(text: str) -> dict[str, float | str]:
     """解析 metrics.md 中的简单键值对格式（指标名: 数值）。"""
-    metrics = {}
+    metrics: dict[str, float | str] = {}
     for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
@@ -118,9 +122,9 @@ def parse_metrics_simple(text: str) -> dict:
     return metrics
 
 
-def parse_metrics_yaml(text: str) -> dict:
+def parse_metrics_yaml(text: str) -> dict[str, float | str]:
     """解析 metrics.md 中的 YAML 格式数据。"""
-    metrics = {}
+    metrics: dict[str, float | str] = {}
     in_metrics = False
     for line in text.splitlines():
         if re.match(r"^\s*metrics\s*:", line):
@@ -144,7 +148,7 @@ def parse_metrics_yaml(text: str) -> dict:
 
 def load_reports(raw_papers: Path):
     """扫描所有报告目录，读取 metadata.md 和 metrics.md。"""
-    reports = []
+    reports: list[dict[str, object]] = []
     if not raw_papers.exists():
         return reports
 
@@ -285,7 +289,7 @@ def to_csv(reports, output_path):
                 r.setdefault(col, "")
             writer.writerow(r)
 
-    print(f"CSV 已写入: {output_path}")
+    logger.info(f"CSV 已写入: {output_path}")
 
 
 def to_json(reports, output_path):
@@ -307,7 +311,7 @@ def to_json(reports, output_path):
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    print(f"JSON 已写入: {output_path}")
+    logger.info(f"JSON 已写入: {output_path}")
 
 
 def main():
@@ -319,32 +323,32 @@ def main():
 
     # 前置检查：原始数据目录存在
     if not paths["raw_papers"].exists():
-        print(f"[FAIL] 原始数据目录不存在: {paths['raw_papers']}")
-        print("   预期路径: raw/patient_{patient_id}/papers/lab_report_*/")
-        print(f"   当前 patient_id: {args.id_card}")
+        logger.info(f"[FAIL] 原始数据目录不存在: {paths['raw_papers']}")
+        logger.info("   预期路径: raw/patient_{patient_id}/papers/lab_report_*/")
+        logger.info(f"   当前 patient_id: {args.id_card}")
         sys.exit(1)
 
     reports = load_reports(paths["raw_papers"])
     if not reports:
-        print("[FAIL] 未找到任何报告（lab_report_*/ 目录），退出")
+        logger.error("[FAIL] 未找到任何报告（lab_report_*/ 目录），退出")
         sys.exit(1)
 
-    print(f"[{datetime.now().isoformat()}] 数据加载开始...")
-    print(f"  病人: {args.id_card}")
-    print(f"  原始数据: {paths['raw_papers']}")
-    print(f"  输出目录: {paths['output_dir']}")
+    logger.info(f"[{datetime.now().isoformat()}] 数据加载开始...")
+    logger.info(f"  病人: {args.id_card}")
+    logger.info(f"  原始数据: {paths['raw_papers']}")
+    logger.info(f"  输出目录: {paths['output_dir']}")
 
     paths["analyzed_dir"].mkdir(parents=True, exist_ok=True)
 
-    print(f"找到 {len(reports)} 份报告")
+    logger.info(f"找到 {len(reports)} 份报告")
 
     for r in reports:
-        print(f"  {r['report_date']} | {r['diagnosis']}")
+        logger.info(f"  {r['report_date']} | {r['diagnosis']}")
 
     to_csv(reports, paths["csv"])
     to_json(reports, paths["json"])
 
-    print(f"[{datetime.now().isoformat()}] 数据加载完成")
+    logger.info(f"[{datetime.now().isoformat()}] 数据加载完成")
 
 
 if __name__ == "__main__":

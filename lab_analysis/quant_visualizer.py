@@ -14,7 +14,6 @@ from __future__ import annotations
 import base64
 import io
 import warnings
-from typing import Any
 
 import matplotlib
 from matplotlib.figure import Figure
@@ -115,16 +114,29 @@ def render_metrics_chart(
         fail_text = "FAIL" if fr_val == 1 else "OK"
         fail_color = "#d62728" if fr_val == 1 else "#2ca02c"
         ax.text(
-            0.98, 0.96, f"failure_rate: {fail_text}",
-            transform=ax.transAxes, ha="right", va="top",
-            fontsize=11, fontweight="bold", color=fail_color,
-            bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor=fail_color, alpha=0.9),
+            0.98,
+            0.96,
+            f"failure_rate: {fail_text}",
+            transform=ax.transAxes,
+            ha="right",
+            va="top",
+            fontsize=11,
+            fontweight="bold",
+            color=fail_color,
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor=fail_color, alpha=0.9),  # noqa: C408
         )
 
     # 主条形图
     bars = ax.bar(names, values, color=colors, alpha=0.85, edgecolor="black", linewidth=0.5)
-    for bar, thr_v, label in zip(bars, threshold_lines, names):
-        ax.hlines(thr_v, bar.get_x(), bar.get_x() + bar.get_width(), colors="blue", linestyles="--", linewidth=1.2)
+    for bar, thr_v, _label in zip(bars, threshold_lines, names, strict=False):
+        ax.hlines(
+            thr_v,
+            bar.get_x(),
+            bar.get_x() + bar.get_width(),
+            colors="blue",
+            linestyles="--",
+            linewidth=1.2,
+        )
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Metric Value (0~1)")
     ax.set_title(title, fontsize=12, pad=10)
@@ -132,10 +144,10 @@ def render_metrics_chart(
     ax.tick_params(axis="x", labelsize=10)
     for tick in ax.get_xticklabels():
         tick.set_rotation(15)
-        tick.set_ha("right")
+        tick.set_ha("right")  # type: ignore[attr-defined]
 
     # 数值标签
-    for bar, v in zip(bars, values):
+    for bar, v in zip(bars, values, strict=False):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
             bar.get_height() + 0.02,
@@ -178,14 +190,16 @@ def render_metrics_html(
         HTML 字符串
     """
     if chart_bytes is None:
-        chart_bytes = render_metrics_chart(report.get("metrics", {}), title=f"量化评估: {report.get('deid', '?')}")
+        chart_bytes = render_metrics_chart(
+            report.get("metrics", {}), title=f"量化评估: {report.get('deid', '?')}"
+        )
 
     b64 = base64.b64encode(chart_bytes).decode("ascii")
     metrics = report.get("metrics", {})
     blocks: list[str] = []
     for name, m in metrics.items():
         if not m.get("available"):
-            reason = m.get('reason', '?')
+            reason = m.get("reason", "?")
             blocks.append(
                 f'<details><summary><span class="passed-skip">{name}</span> — '
                 f'<span style="color:#888">N/A</span></summary>'
@@ -194,8 +208,10 @@ def render_metrics_html(
             continue
         if name == "entity_f1":
             tag = "OK" if m.get("f1", 0) >= 0.7 else "FAIL"
-            detail = (f"tp={m.get('tp', '?')} fp={m.get('fp', '?')} fn={m.get('fn', '?')}  |  "
-                      f"prec={m.get('precision', 0):.2%}  rec={m.get('recall', 0):.2%}  f1={m.get('f1', 0):.4f}")
+            detail = (
+                f"tp={m.get('tp', '?')} fp={m.get('fp', '?')} fn={m.get('fn', '?')}  |  "
+                f"prec={m.get('precision', 0):.2%}  rec={m.get('recall', 0):.2%}  f1={m.get('f1', 0):.4f}"
+            )
         elif name == "section_coverage":
             cov = m.get("coverage_rate", 0)
             tag = "OK" if cov >= 0.8 else "FAIL"
@@ -210,27 +226,35 @@ def render_metrics_html(
         elif name == "confidence":
             conf = m.get("dspy_confidence", 0)
             tag = "OK" if conf >= 0.6 else "FAIL"
-            detail = (f"std_top={m.get('std_top_confidence', '?')}  "
-                      f"abs_diff={m.get('abs_diff', '?')}  calibration={m.get('calibration', '?')}")
+            detail = (
+                f"std_top={m.get('std_top_confidence', '?')}  "
+                f"abs_diff={m.get('abs_diff', '?')}  calibration={m.get('calibration', '?')}"
+            )
         elif name == "feedback_delta":
             tag = "SKIP"
-            detail = (f"n_corrections={m.get('n_corrections', 0)}  "
-                      f"avg_Δ={m.get('avg_delta_confidence', 0):+.4f}  "
-                      f"max_Δ={m.get('max_delta', 0):+.4f}")
+            detail = (
+                f"n_corrections={m.get('n_corrections', 0)}  "
+                f"avg_Δ={m.get('avg_delta_confidence', 0):+.4f}  "
+                f"max_Δ={m.get('max_delta', 0):+.4f}"
+            )
         elif name == "cross_modality_consistency":
             acc = m.get("accuracy", 0.0)
             tag = "OK" if acc >= 0.7 else "FAIL"
-            detail = (f"accuracy={acc:.4f}  "
-                      f"mentions_top_hypo={m.get('mentions_top_hypothesis', False)}  "
-                      f"mentions_key_entity={m.get('mentions_key_entity', False)}  "
-                      f"matched={m.get('matched_entities', [])}")
+            detail = (
+                f"accuracy={acc:.4f}  "
+                f"mentions_top_hypo={m.get('mentions_top_hypothesis', False)}  "
+                f"mentions_key_entity={m.get('mentions_key_entity', False)}  "
+                f"matched={m.get('matched_entities', [])}"
+            )
         else:
             tag = "?"
             detail = ""
-        css_class = "passed-ok" if tag == "OK" else "passed-fail" if tag == "FAIL" else "passed-skip"
+        css_class = (
+            "passed-ok" if tag == "OK" else "passed-fail" if tag == "FAIL" else "passed-skip"
+        )
         blocks.append(
             f'<details><summary><span class="{css_class}">{tag}</span> '
-            f'<strong>{name}</strong></summary>'
+            f"<strong>{name}</strong></summary>"
             f'<div class="detail-body">{detail}</div></details>'
         )
 
@@ -299,15 +323,15 @@ summary:hover {{ background: #f0f0f0; }}
 <h1>{page_title}</h1>
 <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
 <div class="meta">
-  <b>deid</b>: <code>{report.get('deid', '?')}</code> ·
-  <b>std_ts</b>: <code>{report.get('std_ts', '?')}</code> ·
-  <b>dspy_ts</b>: <code>{report.get('dspy_ts', '?')}</code> ·
-  <b>generated</b>: {report.get('generated_at', '?')}
+  <b>deid</b>: <code>{report.get("deid", "?")}</code> ·
+  <b>std_ts</b>: <code>{report.get("std_ts", "?")}</code> ·
+  <b>dspy_ts</b>: <code>{report.get("dspy_ts", "?")}</code> ·
+  <b>generated</b>: {report.get("generated_at", "?")}
 </div>
 <h2>6 指标可视化</h2>
 <img src="data:image/png;base64,{b64}" alt="metrics chart">
 <h2>指标详情 (点击展开)</h2>
-{''.join(blocks)}
+{"".join(blocks)}
 </body>
 </html>
 """
@@ -349,10 +373,17 @@ def render_trend_chart(
     colors = {"f1": "#1f77b4", "coverage": "#2ca02c", "recall": "#ff7f0e", "conf": "#9467bd"}
     for name, y in ys.items():
         ax.plot(xs, y, marker="o", label=name, color=colors[name], linewidth=2, markersize=7)
-        for xi, yi in zip(xs, y):
+        for i, yi in enumerate(y):
             if yi > 0:
-                ax.annotate(f"{yi:.2f}", (xi, yi), textcoords="offset points",
-                            xytext=(0, 6), ha="center", fontsize=7, color=colors[name])
+                ax.annotate(
+                    f"{yi:.2f}",
+                    (i, yi),
+                    textcoords="offset points",
+                    xytext=(0, 6),
+                    ha="center",
+                    fontsize=7,
+                    color=colors[name],
+                )
 
     # 阈值参考线 (与 DEFAULT_THRESHOLDS 对齐)
     ax.axhline(0.70, color=colors["f1"], linestyle=":", alpha=0.4)
@@ -366,7 +397,7 @@ def render_trend_chart(
     ax.grid(alpha=0.3)
     for tick in ax.get_xticklabels():
         tick.set_rotation(20)
-        tick.set_ha("right")
+        tick.set_ha("right")  # type: ignore[attr-defined]
 
     fig.tight_layout()
     buf = io.BytesIO()

@@ -14,8 +14,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -30,7 +28,6 @@ from scripts.quant_eval_gate import (  # noqa: E402
     check_section_coverage,
     evaluate,
 )
-
 
 # ---- 6 个 check_* 函数 ----
 
@@ -101,9 +98,7 @@ def test_check_confidence_pass():
 
 
 def test_check_confidence_below_threshold():
-    r = check_confidence(
-        {"available": True, "dspy_confidence": 0.4}, confidence_min=0.6
-    )
+    r = check_confidence({"available": True, "dspy_confidence": 0.4}, confidence_min=0.6)
     assert r.passed is False
 
 
@@ -121,9 +116,7 @@ def test_check_feedback_delta_pass():
 
 
 def test_check_feedback_delta_exceeds():
-    r = check_feedback_delta(
-        {"available": True, "avg_delta_confidence": -0.5}, abs_max=0.3
-    )
+    r = check_feedback_delta({"available": True, "avg_delta_confidence": -0.5}, abs_max=0.3)
     assert r.passed is False
 
 

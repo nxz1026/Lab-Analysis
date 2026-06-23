@@ -24,6 +24,10 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Literal
 
+from . import _log
+
+logger = _log.get_logger(__name__)
+
 # ---------------------------------------------------------------------------
 # 场景权重配置
 # ---------------------------------------------------------------------------
@@ -365,20 +369,20 @@ def _cli():
 
     ranked = rank_papers(papers, scenario=args.scenario, topic=args.topic, top_k=args.top_k)
 
-    print(f"\n=== Top-{args.top_k} ({args.scenario}) ===\n")
+    logger.info(f"\n=== Top-{args.top_k} ({args.scenario}) ===\n")
     for i, p in enumerate(ranked, 1):
-        print(f"[{i}] {p.tier} | score={p.score:.3f} | PMID:{p.pmid}")
-        print(f"    Title: {p.title[:120]}")
+        logger.info(f"[{i}] {p.tier} | score={p.score:.3f} | PMID:{p.pmid}")
+        logger.info(f"    Title: {p.title[:120]}")
         for r in p.reasons:
-            print(f"      - {r}")
-        print()
+            logger.info(f"      - {r}")
+        logger.info()
 
     if args.out:
         Path(args.out).write_text(
             json.dumps([p.to_dict() for p in ranked], ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
-        print(f"[OK] Saved to {args.out}")
+        logger.info(f"[OK] Saved to {args.out}")
 
 
 if __name__ == "__main__":

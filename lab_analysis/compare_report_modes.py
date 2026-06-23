@@ -13,13 +13,17 @@
 from __future__ import annotations
 
 import difflib
-import json
 import io
+import json
 import re
 from pathlib import Path
 from typing import Any
 
 from lab_analysis.report_schema import REPORT_SECTIONS
+
+from . import _log
+
+logger = _log.get_logger(__name__)
 
 # 关键医疗实体列表（用于实体级对比）
 _KEY_ENTITIES = [
@@ -137,7 +141,7 @@ def compare_reports(
         dspy_sections_aligned[field] = dspy_value
 
     # 逐段对比
-    section_diffs = []
+    section_diffs: list[dict[str, Any]] = []
     for idx, (_, header_cn, _) in enumerate(REPORT_SECTIONS):
         field = f"section_{idx + 1}_{_REPORT_SECTIONS_SUFFIXES[idx]}"
         std_content = std_sections.get(field, "")
@@ -168,15 +172,15 @@ def compare_reports(
             }
         )
 
-    # 总体统计
-    std_total_len = (
-        sum(s["Standard_length"] for s in section_diffs) if std_mode_name == "Standard" else 0
-    )
-    dspy_total_len = sum(s[std_mode_name == "DSPy" or "DSPy_length"] for s in section_diffs)
-    std_total_len = sum(s.get("Standard_length", 0) for s in section_diffs)
-    dspy_total_len = sum(s.get("DSPy_length", 0) for s in section_diffs)
+    # 总体统计 (key 是动态 {std_mode_name}_length / {dspy_mode_name}_length)
+    std_len_key = f"{std_mode_name}_length"
+    dspy_len_key = f"{dspy_mode_name}_length"
+    std_total_len = sum(int(s.get(std_len_key, 0)) for s in section_diffs)
+    dspy_total_len = sum(int(s.get(dspy_len_key, 0)) for s in section_diffs)
     avg_overlap = (
-        sum(s["overlap_rate"] for s in section_diffs) / len(section_diffs) if section_diffs else 0
+        sum(float(s["overlap_rate"]) for s in section_diffs) / len(section_diffs)
+        if section_diffs
+        else 0
     )
 
     result: dict[str, Any] = {
@@ -222,8 +226,10 @@ def render_comparison_chart(
 ) -> bytes:
     """生成双模式拼接对比图 (2 子图): 上=长度对比, 下=overlap rate."""
     import matplotlib
+
     matplotlib.use("Agg")
     import warnings
+
     warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
     warnings.filterwarnings("ignore", message=".*missing from font.*")
     from matplotlib.figure import Figure
@@ -245,18 +251,27 @@ def render_comparison_chart(
     # 上: Std vs DSPy 长度对比 (grouped horizontal bar)
     ax1 = fig.add_subplot(211)
     y_pos = list(range(len(headers)))
-    ax1.barh([y - 0.2 for y in y_pos], std_lens, height=0.4, label=std_mode, color="#1f77b4", alpha=0.85)
-    ax1.barh([y + 0.2 for y in y_pos], dspy_lens, height=0.4, label=dspy_mode, color="#ff7f0e", alpha=0.85)
+    ax1.barh(
+        [y - 0.2 for y in y_pos], std_lens, height=0.4, label=std_mode, color="#1f77b4", alpha=0.85
+    )
+    ax1.barh(
+        [y + 0.2 for y in y_pos],
+        dspy_lens,
+        height=0.4,
+        label=dspy_mode,
+        color="#ff7f0e",
+        alpha=0.85,
+    )
     ax1.set_yticks(y_pos)
     ax1.set_yticklabels(headers, fontsize=8)
     ax1.invert_yaxis()
     ax1.set_xlabel("Section Length (chars)")
-    ax1.set_title(f"Length per Section", fontsize=10, pad=6)
+    ax1.set_title("Length per Section", fontsize=10, pad=6)
     ax1.legend(loc="lower right", fontsize=8)
     ax1.grid(axis="x", alpha=0.3)
 
     max_len = max(std_lens + dspy_lens) if (std_lens or dspy_lens) else 1
-    for i, (s, d) in enumerate(zip(std_lens, dspy_lens)):
+    for i, (s, d) in enumerate(zip(std_lens, dspy_lens, strict=False)):
         ax1.text(s + max_len * 0.01, i - 0.2, str(s), va="center", fontsize=7, color="#1f77b4")
         ax1.text(d + max_len * 0.01, i + 0.2, str(d), va="center", fontsize=7, color="#ff7f0e")
 
@@ -264,16 +279,31 @@ def render_comparison_chart(
     ax2 = fig.add_subplot(212)
     colors = ["#2ca02c" if o >= 0.7 else "#ff7f0e" if o >= 0.4 else "#d62728" for o in overlaps]
     bars = ax2.bar(headers, overlaps, color=colors, alpha=0.85, edgecolor="black", linewidth=0.5)
-    ax2.axhline(0.7, color="green", linestyle="--", linewidth=1, alpha=0.6, label="overlap >= 0.7 (good)")
-    ax2.axhline(0.4, color="orange", linestyle="--", linewidth=1, alpha=0.6, label="overlap >= 0.4 (warn)")
+    ax2.axhline(
+        0.7, color="green", linestyle="--", linewidth=1, alpha=0.6, label="overlap >= 0.7 (good)"
+    )
+    ax2.axhline(
+        0.4, color="orange", linestyle="--", linewidth=1, alpha=0.6, label="overlap >= 0.4 (warn)"
+    )
     ax2.set_ylim(0, 1.05)
     ax2.set_ylabel("Content Overlap Rate")
-    ax2.set_title(f"Overlap Rate per Section (avg={result.get('avg_overlap_rate', 0):.1%})", fontsize=10, pad=6)
+    ax2.set_title(
+        f"Overlap Rate per Section (avg={result.get('avg_overlap_rate', 0):.1%})",
+        fontsize=10,
+        pad=6,
+    )
     ax2.tick_params(axis="x", labelsize=7, rotation=30)
     ax2.legend(loc="upper right", fontsize=8)
     ax2.grid(axis="y", alpha=0.3)
-    for bar, o in zip(bars, overlaps):
-        ax2.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02, f"{o:.1%}", ha="center", va="bottom", fontsize=8)
+    for bar, o in zip(bars, overlaps, strict=False):
+        ax2.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.02,
+            f"{o:.1%}",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+        )
 
     fig.suptitle(title, fontsize=12, fontweight="bold", y=0.995)
     fig.tight_layout(rect=(0, 0, 1, 0.97))
@@ -338,17 +368,17 @@ if __name__ == "__main__":
     result = compare_reports_from_files(args.std_md, args.dspy_json)
 
     md_report = format_comparison_md(result)
-    print(md_report)
+    logger.info(md_report)
 
     if args.out_json:
         Path(args.out_json).write_text(
             json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        print(f"\n[OK] JSON 已保存: {args.out_json}")
+        logger.info(f"\n[OK] JSON 已保存: {args.out_json}")
     if args.out_md:
         Path(args.out_md).write_text(md_report, encoding="utf-8")
-        print(f"[OK] MD 已保存: {args.out_md}")
+        logger.info(f"[OK] MD 已保存: {args.out_md}")
     if args.out_png:
         png_bytes = render_comparison_chart(result)
         Path(args.out_png).write_bytes(png_bytes)
-        print(f"[OK] PNG 已保存: {args.out_png} ({len(png_bytes)}B)")
+        logger.info(f"[OK] PNG 已保存: {args.out_png} ({len(png_bytes)}B)")

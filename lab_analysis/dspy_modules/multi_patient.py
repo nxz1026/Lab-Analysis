@@ -27,7 +27,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
 
+from .. import _log
 from ..utils import get_project_root
+
+logger = _log.get_logger(__name__)
 
 
 @dataclass
@@ -188,11 +191,11 @@ if __name__ == "__main__":
     import sys
 
     s = stats()
-    print(json.dumps(s, ensure_ascii=False, indent=2))
+    logger.info(json.dumps(s, ensure_ascii=False, indent=2))
     if "--pairs" in sys.argv:
         for pid in list_patients():
             pairs = find_pairs(pid)
             if pairs:
-                print(f"\n[{pid}] {len(pairs)} pair(s):")
+                logger.info(f"\n[{pid}] {len(pairs)} pair(s):")
                 for std_ts, dspy_ts in pairs:
-                    print(f"  std={std_ts}  <->  dspy={dspy_ts}")
+                    logger.info(f"  std={std_ts}  <->  dspy={dspy_ts}")

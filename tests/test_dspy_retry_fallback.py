@@ -5,11 +5,6 @@
 
 from __future__ import annotations
 
-import time
-from pathlib import Path
-from unittest.mock import MagicMock
-
-import dspy
 import pytest
 
 from lab_analysis.dspy_modules._retry import (
@@ -30,7 +25,6 @@ from lab_analysis.dspy_modules.literature_interpreter import (
     LiteratureInterpreterModule,
 )
 from lab_analysis.dspy_modules.mri_analyzer import MRIAnalysisModule, MRIAnalysisSignature
-
 
 # -------------------- helpers --------------------
 
@@ -93,9 +87,7 @@ def test_safe_predict_raises_safe_call_error_after_exhausting(monkeypatch):
 
 def test_safe_predict_backoff_grows(monkeypatch):
     sleeps = []
-    monkeypatch.setattr(
-        "lab_analysis.dspy_modules._retry.time.sleep", lambda s: sleeps.append(s)
-    )
+    monkeypatch.setattr("lab_analysis.dspy_modules._retry.time.sleep", lambda s: sleeps.append(s))
     with pytest.raises(SafeCallError):
         safe_predict(
             _stub_predictor([RuntimeError("x")] * 3),
@@ -166,9 +158,7 @@ def test_literature_interpreter_forward_fallback(monkeypatch):
         lambda *a, **kw: (_ for _ in ()).throw(SafeCallError("simulated")),
     )
     mod = LiteratureInterpreterModule()
-    result = mod.forward(
-        patient_id="x", analysis_results={}, literature_results={}
-    )
+    result = mod.forward(patient_id="x", analysis_results={}, literature_results={})
     assert result.interpretation == ""
     assert result.confidence == 0.0
 
@@ -228,9 +218,7 @@ def test_safe_predict_passes_kwargs(monkeypatch):
         captured.update(kwargs)
         return _FakePrediction(z="ok")
 
-    monkeypatch.setattr(
-        "lab_analysis.dspy_modules._retry.time.sleep", lambda s: None
-    )
+    monkeypatch.setattr("lab_analysis.dspy_modules._retry.time.sleep", lambda s: None)
     safe_predict(
         _stub_predictor([{"z": "ok"}]),
         module_name="t",

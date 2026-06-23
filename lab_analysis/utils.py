@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 utils.py - 通用工具函数
 
@@ -18,19 +16,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
+from . import _log
+
+logger = _log.get_logger(__name__)
 try:
-    from tenacity import (
-        retry,
-        retry_if_exception_type,
-        stop_after_attempt,
-        wait_exponential,
-    )
+    from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
     HAS_TENACITY = True
 except ImportError:
     HAS_TENACITY = False
-
-# 工作区根目录
 WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
@@ -54,7 +48,7 @@ def fix_console_encoding():
             sys.stdout.reconfigure(encoding="utf-8")
         if hasattr(sys.stderr, "reconfigure"):
             sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
         pass
 
 
@@ -75,9 +69,7 @@ def build_paths(patient_id: str, timestamp: str | None = None) -> dict:
         ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
     else:
         ts = timestamp
-
     data_dir = WORK_ROOT / "data" / patient_id / ts
-
     return {
         "data_dir": data_dir,
         "patient_id": patient_id,
@@ -125,12 +117,8 @@ def validate_chinese_id(id_number: str) -> bool:
     """
     if not id_number:
         return False
-
-    # 18位身份证：17位数字 + 1位数字或X
-    pattern_18 = r"^\d{17}[\dXx]$"
-    # 15位身份证：15位数字
-    pattern_15 = r"^\d{15}$"
-
+    pattern_18 = "^\\d{17}[\\dXx]$"
+    pattern_15 = "^\\d{15}$"
     return bool(re.match(pattern_18, id_number) or re.match(pattern_15, id_number))
 
 
@@ -167,7 +155,6 @@ def append_to_json_log(log_file: Path, record: dict):
         record: 要追加的记录
     """
     log = json.loads(log_file.read_text(encoding="utf-8")) if log_file.exists() else {"records": []}
-
     log["records"].append(record)
     log["last_updated"] = datetime.now().isoformat()
     log_file.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -192,6 +179,7 @@ def print_progress(
     filled = int(bar_length * fraction)
     bar = "=" * filled + "-" * (bar_length - filled)
     percent = f"{fraction * 100:.1f}%"
+    # print() 不用 logger 以保留 \r 与 stdout 直接交互
     print(f"\r{prefix} |{bar}| {percent} {suffix}", end="", flush=True)
     if current >= total:
         print()
@@ -234,7 +222,7 @@ def api_retry_decorator(
             ...
     """
     if not HAS_TENACITY:
-        # 如果 tenacity 未安装，返回原函数
+
         def dummy_decorator(func):
             return func
 
