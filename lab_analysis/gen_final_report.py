@@ -9,9 +9,9 @@ from lab_analysis.llm_client import call_chat, load_api_key
 from lab_analysis.report_schema import PROMPT_SECTION_TEMPLATES
 
 from . import _log
+from .utils import WORK_ROOT
 
 logger = _log.get_logger(__name__)
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 _FINAL_REPORT_SYSTEM_PROMPT = (
     "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"
 )

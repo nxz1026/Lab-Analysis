@@ -2,7 +2,11 @@
 DSPy 模块包
 
 包含基于 DSPy 框架优化的 LLM 模块
+
+注意: 模块注册使用手动 dict（见各子模块），新增模块后必须在此 __init__.py 中手动导入并加入 __all__。
 """
+
+from ._retry import make_empty_prediction, safe_predict, SafeCallError
 
 from .final_report_generator import (
     FinalReportGenerator,
@@ -42,4 +46,8 @@ __all__ = [
     "save_prompts_to_markdown",
     "get_actual_dspy_prompt",
     "save_actual_dspy_prompt",
+    # retry helpers
+    "safe_predict",
+    "SafeCallError",
+    "make_empty_prediction",
 ]

@@ -25,6 +25,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["ruff>=0.4", "pytest>=7.0", "pytest-cov>=4.0", "mypy>=1.0", "hypothesis>=6.0"]
+# TODO: 锁定传递依赖 — 建议生成 constraints.txt (pip freeze > constraints.txt) 后 pip install -c constraints.txt
 dspy = ["dspy-ai>=2.4", "pydicom>=2.4"]
 pdf = ["weasyprint>=62", "markdown>=3.5"]
 dashboard = ["streamlit>=1.28"]
@@ -36,7 +37,7 @@ lab-analysis = "lab_analysis.pipeline:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["lab_analysis*"]
+include = ["lab_analysis*", "mcp_server*", "scripts*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -60,7 +61,7 @@ omit = [
 # CI 阈值渐进 (P2-7 → P2-3): 25% -> 40% -> 42%
 # 历史: 22.80% (2026-05) -> 25% (2026-06 初) -> 40% (2026-06-23 P2-7) -> 42% (2026-06-23 P2-3)
 # 后续每 PR +2%, 但要求总覆盖大于阈值 +1 缓冲
-fail_under = 42
+fail_under = 60
 show_missing = true
 skip_covered = false
 exclude_lines = [
@@ -71,13 +72,18 @@ exclude_lines = [
     "\\.\\.\\.",
 ]
 
+[tool.mypy]
+strict = true
+python_version = "3.10"
+ignore_missing_imports = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
 # Migrated from top-level [tool.ruff] (ruff 0.15+ requirement)
-select = ["F", "I", "B", "SIM"]
+select = ["F", "I", "B", "SIM", "S", "T10", "PTH"]
 fixable = ["ALL"]
 # Complexity rules are tracked as baseline — see docs/COMPLEXITY_BASELINE.md
 extend-select = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "C408"]

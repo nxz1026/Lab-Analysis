@@ -190,43 +190,34 @@ def test_default_thresholds_all_defined():
 # ---- CLI main() 入口 ----
 
 
+def _run_gate(src: Path) -> subprocess.CompletedProcess:
+    """Helper: run quant_eval_gate.py with UTF-8 encoding (fix GBK on Windows)."""
+    return subprocess.run(  # noqa: S603
+        [sys.executable, str(PROJECT_ROOT / "scripts" / "quant_eval_gate.py"), "--report-path", str(src)],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=30,
+    )
+
+
 def test_cli_pass_fixture(tmp_path: Path):
     """PASS fixture → exit 0."""
     src = PROJECT_ROOT / "tests" / "fixtures" / "quant_eval_sample_pass.json"
-    result = subprocess.run(  # noqa: S603
-        [
-            sys.executable,
-            str(PROJECT_ROOT / "scripts" / "quant_eval_gate.py"),
-            "--report-path",
-            str(src),
-        ],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
+    result = _run_gate(src)
     assert result.returncode == 0
-    assert "PASS" in result.stdout
+    assert "PASS" in (result.stdout or "")
     # PASS fixture: 5 真 pass + 1 skip (feedback_delta 无 corrections)
-    assert "5/7 passed" in result.stdout
-    assert "2 skipped" in result.stdout
+    assert "5/7 passed" in (result.stdout or "")
+    assert "2 skipped" in (result.stdout or "")
 
 
 def test_cli_fail_fixture(tmp_path: Path):
     """FAIL fixture → exit 1 + 含 '❌ FAIL'."""
     src = PROJECT_ROOT / "tests" / "fixtures" / "quant_eval_sample_fail.json"
-    result = subprocess.run(  # noqa: S603
-        [
-            sys.executable,
-            str(PROJECT_ROOT / "scripts" / "quant_eval_gate.py"),
-            "--report-path",
-            str(src),
-        ],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
+    result = _run_gate(src)
     assert result.returncode == 1
-    assert "FAIL" in result.stdout
+    assert "FAIL" in (result.stdout or "")
 
 
 def test_cli_missing_report():
@@ -240,10 +231,11 @@ def test_cli_missing_report():
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=30,
     )
     assert result.returncode == 2
-    assert "不存在" in result.stdout or "不存在" in result.stderr
+    assert "不存在" in (result.stdout or "") or "不存在" in (result.stderr or "")
 
 
 def test_cli_dry_run_always_exit_0():
@@ -259,10 +251,11 @@ def test_cli_dry_run_always_exit_0():
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=30,
     )
     assert result.returncode == 0
-    assert "FAIL" in result.stdout  # 仍打印 FAIL
+    assert "FAIL" in (result.stdout or "")  # 仍打印 FAIL
 
 
 def test_cli_writes_gate_result_sidecar():

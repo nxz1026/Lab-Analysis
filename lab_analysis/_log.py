@@ -31,9 +31,13 @@ import json
 import logging
 import os
 import sys
+import threading
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 _CONFIGURED = False
+_LOCK = threading.Lock()
+_WORK_ROOT = os.environ.get("WORK_ROOT", "")
 
 # 默认格式: "<时间> [<LEVEL>] <logger名>: <消息>"
 DEFAULT_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -58,7 +62,14 @@ class JsonFormatter(logging.Formatter):
     """结构化 JSON 输出, 用于审计 / 上传到日志聚合系统。
 
     每行一个 JSON 对象, 字段: ts / level / logger / message / module / lineno.
+    traceback 中的 WORK_ROOT 路径会被自动替换为 {WORK_ROOT} 以防止 PHI 泄露。
     """
+
+    @staticmethod
+    def _sanitize_traceback(text: str) -> str:
+        if _WORK_ROOT:
+            text = text.replace(_WORK_ROOT, "{WORK_ROOT}")
+        return text
 
     def format(self, record: logging.LogRecord) -> str:
         payload = {
@@ -70,35 +81,39 @@ class JsonFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
         if record.exc_info:
-            payload["exc_info"] = self.formatException(record.exc_info)
+            payload["exc_info"] = self._sanitize_traceback(self.formatException(record.exc_info))
         return json.dumps(payload, ensure_ascii=False, default=str)
 
 
 def configure(level: str | int | None = None) -> None:
     """配置 root logger,通常只在入口处调用一次。
 
-    重复调用幂等。
+    重复调用幂等。线程安全。
     """
     global _CONFIGURED
-    if _CONFIGURED:
-        return
-    lvl = _resolve_level(level)
-    fmt, datefmt = _resolve_format()
-    # 不使用 force=True,避免覆盖 pytest caplog / 其他 handler
-    root = logging.getLogger()
-    if not root.handlers:
-        logging.basicConfig(
-            level=lvl,
-            format=fmt,
-            datefmt=datefmt,
-            stream=sys.stderr,
-        )
-    else:
-        root.setLevel(lvl)
-    # 抑制 DSPy / LiteLLM 的过度啰嗦,只保留 WARNING+
-    for noisy in ("LiteLLM", "DSPy", "dspy", "litellm", "httpx", "httpcore"):
-        logging.getLogger(noisy).setLevel(logging.WARNING)
-    _CONFIGURED = True
+    with _LOCK:
+        if _CONFIGURED:
+            return
+        lvl = _resolve_level(level)
+        fmt, datefmt = _resolve_format()
+        # 不使用 force=True,避免覆盖 pytest caplog / 其他 handler
+        root = logging.getLogger()
+        if not root.handlers:
+            logging.basicConfig(
+                level=lvl,
+                format=fmt,
+                datefmt=datefmt,
+                stream=sys.stderr,
+            )
+        else:
+            root.setLevel(lvl)
+        # 默认抑制 DSPy / LiteLLM 的过度啰嗦，除非 LOG_LEVEL 显式指定
+        default_noisy_level = logging.WARNING
+        if "LOG_LEVEL" in os.environ:
+            default_noisy_level = _resolve_level(os.environ["LOG_LEVEL"])
+        for noisy in ("LiteLLM", "DSPy", "dspy", "litellm", "httpx", "httpcore"):
+            logging.getLogger(noisy).setLevel(default_noisy_level)
+        _CONFIGURED = True
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -119,21 +134,30 @@ def add_file_handler(
     *,
     level: str | int | None = None,
     formatter: logging.Formatter | None = None,
+    max_bytes: int = 10 * 1024 * 1024,
+    backup_count: int = 5,
 ) -> logging.Handler:
     """统一 FileHandler 添加接口, 保证格式与控制台一致。
 
     Args:
-        logger:   目标 logger (通常是 get_logger(...) 的返回值)
-        log_file: 输出文件路径, 父目录会自动创建
-        level:    handler 级别, 默认继承 logger 级别
-        formatter: 自定义 formatter, 缺省用与控制台同步的纯文本
+        logger:         目标 logger (通常是 get_logger(...) 的返回值)
+        log_file:       输出文件路径, 父目录会自动创建
+        level:          handler 级别, 默认继承 logger 级别
+        formatter:      自定义 formatter, 缺省用与控制台同步的纯文本
+        max_bytes:      日志轮转前文件最大字节数（默认 10MB）
+        backup_count:   保留的备份文件数（默认 5）
 
     Returns:
-        新建的 FileHandler (调用方需自行 remove, 见 remove_handler)
+        新建的 RotatingFileHandler (调用方需自行 remove, 见 remove_handler)
     """
     log_path = Path(log_file)
+    resolved = str(log_path.resolve())
+    # 检查是否已有相同文件的 handler
+    for h in logger.handlers:
+        if isinstance(h, RotatingFileHandler) and getattr(h, "baseFilename", None) == resolved:
+            return h
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    handler = logging.FileHandler(log_path, encoding="utf-8")
+    handler = RotatingFileHandler(log_path, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
     if formatter is None:
         fmt, datefmt = _resolve_format()
         formatter = logging.Formatter(fmt, datefmt=datefmt)

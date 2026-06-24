@@ -28,7 +28,7 @@ from datetime import datetime
 from pathlib import Path
 
 from lab_analysis.patient_id import validate_id_card
-from lab_analysis.utils import WORK_ROOT
+from lab_analysis.utils import WORK_ROOT, get_project_root
 
 from . import _log
 
@@ -38,11 +38,6 @@ logger = _log.get_logger(__name__)
 def get_origin_data_dir() -> Path:
     """获取原始数据目录"""
     return Path(os.environ.get("ORIGIN_DATA_DIR", WORK_ROOT / "raw" / "Origin_data"))
-
-
-def get_project_root() -> Path:
-    """获取项目根目录"""
-    return Path(__file__).resolve().parent.parent
 
 
 def get_venv_python() -> Path:

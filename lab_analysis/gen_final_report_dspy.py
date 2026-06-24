@@ -8,7 +8,6 @@
 import contextlib
 import json
 import os
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -16,9 +15,9 @@ from lab_analysis.llm_client import call_chat, load_api_key
 from lab_analysis.report_schema_models import try_validate_sections
 
 from . import _log
+from .utils import WORK_ROOT
 
 logger = _log.get_logger(__name__)
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 _FINAL_REPORT_SYSTEM_PROMPT = (
     "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"
 )
@@ -138,13 +137,13 @@ def run_dspy_mode(patient_id: str, data_dir: Path):
     except ImportError as e:
         logger.info(f"[错误] DSPy 模块导入失败: {e}")
         logger.info("请安装 DSPy: pip install dspy-ai")
-        sys.exit(1)
+        raise SystemExit(1)
     except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         logger.info(f"[错误] DSPy 执行失败: {e}")
         import traceback
 
         traceback.print_exc()
-        sys.exit(1)
+        raise SystemExit(1)
 
 
 def main():

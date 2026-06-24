@@ -10,14 +10,15 @@ Provides:
 
 from __future__ import annotations
 
-import logging
 import time
 import typing
 from typing import Any, Callable
 
 import dspy
 
-_LOG = logging.getLogger(__name__)
+from .. import _log
+
+_LOG = _log.get_logger(__name__)
 _DEFAULT_MAX_RETRIES = 3
 _DEFAULT_BACKOFF_BASE = 1.5
 
@@ -50,7 +51,7 @@ def safe_predict(
     for attempt in range(1, max_retries + 1):
         try:
             return predictor(**kwargs)
-        except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as exc:
+        except Exception as exc:
             last_exc = exc
             if attempt >= max_retries:
                 break
@@ -79,6 +80,8 @@ def _default_for(annotation: Any) -> Any:
         args = tuple((a for a in typing.get_args(annotation) if a is not type(None)))
         if len(args) == 1 and type(None) in typing.get_args(annotation):
             return None
+        if len(args) == 1:
+            return _default_for(args[0])
     if annotation is float:
         return 0.0
     if annotation is int:
@@ -89,7 +92,9 @@ def _default_for(annotation: Any) -> Any:
         return {}
     if annotation is list:
         return []
-    return ""
+    if annotation is str:
+        return ""
+    return None
 
 
 def make_empty_prediction(signature_cls: type[dspy.Signature]) -> dspy.Prediction:

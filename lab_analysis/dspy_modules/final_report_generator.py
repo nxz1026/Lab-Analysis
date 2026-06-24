@@ -5,7 +5,6 @@ DSPy 版本的最终综合临床诊断报告生成模块
 """
 
 import datetime as dt
-import logging
 import os
 from pathlib import Path
 
@@ -73,7 +72,7 @@ class FinalReportGenerator(dspy.Module):
                 quality_control=quality_control,
             )
         except SafeCallError as exc:
-            logging.getLogger(__name__).error(
+            logger.error(
                 "final_report_generator fallback to empty prediction: %s", exc
             )
             return make_empty_prediction(FinalReportSignature)
@@ -152,6 +151,11 @@ def run_dspy_final_report(
     """
     运行 DSPy 优化的最终报告生成
 
+    .. note::
+        编译模型路径解析使用 ``importlib.resources``（包相对路径）作为首选方案，
+        回退到基于 ``__file__`` 的路径。基于 ``__file__`` 的方案在打包为 wheel
+        后可能失效，回退逻辑确保两种场景下都能正确加载模型文件。
+
     Args:
         patient_id: 患者ID
         data_dir: 数据目录
@@ -178,14 +182,27 @@ def run_dspy_final_report(
     lm = dspy.LM(
         model="deepseek/deepseek-chat", api_key=api_key, api_base="https://api.deepseek.com/v1"
     )
+    # P0: 配置完成后立即清除内存中的 API key
+    del api_key
+    old_lm = getattr(dspy.settings, "lm", None)
     dspy.configure(lm=lm)
     logger.info("[DSPy] LLM 已配置: deepseek-chat")
-    compiled_model_path = (
-        Path(__file__).parent.parent.parent
-        / "models"
-        / "dspy"
-        / "final_report_generator_compiled.json"
-    )
+    compiled_model_path: Path | None = None
+    try:
+        from importlib.resources import files as _pkg_files
+
+        _model_ref = _pkg_files("lab_analysis").joinpath("models/dspy/final_report_generator_compiled.json")
+        if _model_ref.is_file():
+            compiled_model_path = Path(str(_model_ref))
+    except Exception:
+        pass
+    if compiled_model_path is None:
+        compiled_model_path = (
+            Path(__file__).parent.parent.parent
+            / "models"
+            / "dspy"
+            / "final_report_generator_compiled.json"
+        )
     if compiled_model_path.exists():
         logger.info(f"[DSPy] 加载编译后的模型: {compiled_model_path}")
         try:
@@ -201,65 +218,72 @@ def run_dspy_final_report(
         record_miss("final_report_generator")
         logger.info("[DSPy] 未找到编译模型, 使用未编译版本")
         module = FinalReportGenerator()
-    logger.info("[DSPy] 生成最终报告...")
-    result = module(
-        patient_info=patient_info,
-        lab_summary=lab_summary,
-        analysis_results=analysis_results,
-        literature_interpretation=literature_interpretation,
-        mri_analysis=mri_analysis,
-        quality_control=quality_control,
-    )
-    logger.info(f"[DSPy] 置信度: {result.confidence:.2f}")
-    today = dt.date.today().strftime("%Y年%m月%d日")
-    report_md = REPORT_MD_TEMPLATE.format(
-        report_title=result.report_title,
-        patient_name=patient_info["name"],
-        patient_age_sex=patient_info["age_sex"],
-        exam_id=patient_info["exam_id"],
-        report_date=today,
-        data_sources="MRI影像报告 + 检验数据 + 文献证据",
-        mode="DSPy 优化",
-        confidence=result.confidence,
-        section_1_basic_info=result.section_1_basic_info,
-        section_2_lab_analysis=result.section_2_lab_analysis,
-        section_3_mri_analysis=result.section_3_mri_analysis,
-        section_4_multidisciplinary=result.section_4_multidisciplinary,
-        section_5_diagnosis=result.section_5_diagnosis,
-        section_6_consistency=result.section_6_consistency,
-        section_7_action_plan=result.section_7_action_plan,
-        section_8_followup=result.section_8_followup,
-        section_9_prognosis=result.section_9_prognosis,
-    )
     try:
-        prompts_dir = data_dir / "04_reports" / "dspy_prompts"
-        save_dspy_prompts(module, prompts_dir)
-        from .prompt_inspector import save_actual_dspy_prompt
+        logger.info("[DSPy] 生成最终报告...")
+        result = module(
+            patient_info=patient_info,
+            lab_summary=lab_summary,
+            analysis_results=analysis_results,
+            literature_interpretation=literature_interpretation,
+            mri_analysis=mri_analysis,
+            quality_control=quality_control,
+        )
+        logger.info(f"[DSPy] 置信度: {result.confidence:.2f}")
+        today = dt.date.today().strftime("%Y年%m月%d日")
+        report_md = REPORT_MD_TEMPLATE.format(
+            report_title=result.report_title,
+            patient_name=patient_info["name"],
+            patient_age_sex=patient_info["age_sex"],
+            exam_id=patient_info["exam_id"],
+            report_date=today,
+            data_sources="MRI影像报告 + 检验数据 + 文献证据",
+            mode="DSPy 优化",
+            confidence=result.confidence,
+            section_1_basic_info=result.section_1_basic_info,
+            section_2_lab_analysis=result.section_2_lab_analysis,
+            section_3_mri_analysis=result.section_3_mri_analysis,
+            section_4_multidisciplinary=result.section_4_multidisciplinary,
+            section_5_diagnosis=result.section_5_diagnosis,
+            section_6_consistency=result.section_6_consistency,
+            section_7_action_plan=result.section_7_action_plan,
+            section_8_followup=result.section_8_followup,
+            section_9_prognosis=result.section_9_prognosis,
+        )
+    except Exception:
+        raise
+    else:
+        try:
+            prompts_dir = data_dir / "04_reports" / "dspy_prompts"
+            save_dspy_prompts(module, prompts_dir)
+            from .prompt_inspector import save_actual_dspy_prompt
 
-        save_actual_dspy_prompt("final_report_generator", prompts_dir)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
-        logger.info(f"  [警告] 保存 DSPy prompts 失败: {e}")
-    return {
-        "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "model": "deepseek-chat (DSPy optimized)",
-        "mode": "dspy",
-        "patient_id": patient_id,
-        "confidence": result.confidence,
-        "report_markdown": report_md,
-        "prompts_dir": str(prompts_dir) if "prompts_dir" in dir() else None,
-        "sections": {
-            "title": result.report_title,
-            "basic_info": result.section_1_basic_info,
-            "lab_analysis": result.section_2_lab_analysis,
-            "mri_analysis": result.section_3_mri_analysis,
-            "multidisciplinary": result.section_4_multidisciplinary,
-            "diagnosis": result.section_5_diagnosis,
-            "consistency": result.section_6_consistency,
-            "action_plan": result.section_7_action_plan,
-            "followup": result.section_8_followup,
-            "prognosis": result.section_9_prognosis,
-        },
-    }
+            save_actual_dspy_prompt("final_report_generator", prompts_dir)
+        except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+            logger.info(f"  [警告] 保存 DSPy prompts 失败: {e}")
+        return {
+            "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "model": "deepseek-chat (DSPy optimized)",
+            "mode": "dspy",
+            "patient_id": patient_id,
+            "confidence": result.confidence,
+            "report_markdown": report_md,
+            "prompts_dir": str(prompts_dir) if "prompts_dir" in dir() else None,
+            "sections": {
+                "title": result.report_title,
+                "basic_info": result.section_1_basic_info,
+                "lab_analysis": result.section_2_lab_analysis,
+                "mri_analysis": result.section_3_mri_analysis,
+                "multidisciplinary": result.section_4_multidisciplinary,
+                "diagnosis": result.section_5_diagnosis,
+                "consistency": result.section_6_consistency,
+                "action_plan": result.section_7_action_plan,
+                "followup": result.section_8_followup,
+                "prognosis": result.section_9_prognosis,
+            },
+        }
+    finally:
+        if old_lm is not None:
+            dspy.configure(lm=old_lm)
 
 
 if __name__ == "__main__":

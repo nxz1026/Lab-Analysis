@@ -8,6 +8,7 @@ from pathlib import Path
 
 from lab_analysis.patient_id import encode
 from lab_analysis.utils import WORK_ROOT
+from lab_analysis._log import get_logger
 
 
 def repo_root() -> Path:
@@ -27,8 +28,8 @@ def _load_patient_mapping() -> dict[str, str]:
         data = json.loads(mapping_path.read_text(encoding="utf-8"))
         if isinstance(data, dict):
             return {str(k): str(v) for k, v in data.items()}
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
-        pass
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as exc:
+        get_logger(__name__).warning("Failed to load patient mapping from %s: %s", mapping_path, exc)
     return {}
 
 
@@ -48,7 +49,7 @@ def get_deid(id_card: str) -> str:
     return encode(id_card)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="医学分析 Pipeline 统一入口")
     parser.add_argument("--skip-llm", action="store_true", help="跳过 LLM 循证解读步骤")
     parser.add_argument("--skip-imaging", action="store_true", help="跳过影像分析步骤")
@@ -103,4 +104,7 @@ def parse_args():
     parser.add_argument(
         "--keep-last", type=int, default=3, help="产物清理保留最近 N 次运行（默认 3）"
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.keep_last < 1:
+        parser.error("--keep-last must be >= 1")
+    return args

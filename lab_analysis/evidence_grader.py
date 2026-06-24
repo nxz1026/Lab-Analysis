@@ -29,6 +29,22 @@ from . import _log
 logger = _log.get_logger(__name__)
 
 # ---------------------------------------------------------------------------
+# 样本量评分阈值配置
+# ---------------------------------------------------------------------------
+# (最小样本数, 得分, 描述后缀)
+SAMPLE_SIZE_BANDS: list[tuple[int, float, str]] = [
+    (1000, 1.0, "（大样本）"),
+    (500, 0.9, ""),
+    (200, 0.75, ""),
+    (100, 0.65, ""),
+    (50, 0.5, "（中等）"),
+    (20, 0.35, "（小样本）"),
+]
+SAMPLE_SIZE_FALLBACK_SCORE: float = 0.25
+SAMPLE_SIZE_FALLBACK_LABEL: str = "（极小）"
+SAMPLE_SIZE_MIN_YEAR: int = 1900  # 小于此值视为年份而非样本量
+
+# ---------------------------------------------------------------------------
 # 场景权重配置
 # ---------------------------------------------------------------------------
 ScenarioName = Literal["early_diagnosis", "differential_diagnosis", "prognosis"]
@@ -78,14 +94,57 @@ TOPIC_KEYWORDS: dict[str, list[str]] = {
         "distinguish",
         "sepsis",
     ],
+    "infection": [
+        "infection",
+        "infectious",
+        "bacterial",
+        "viral",
+        "pathogen",
+        "sepsis",
+        "antibiotic",
+    ],
     "inflammation": [
         "inflammation",
+        "inflammatory",
         "crp",
         "biomarker",
         "cytokine",
         "il-6",
         "tnf",
         "acute phase",
+        "interleukin",
+    ],
+    "biomarker": [
+        "biomarker",
+        "biological marker",
+        "diagnostic marker",
+        "prognostic marker",
+        "predictive marker",
+        "serum marker",
+    ],
+    "clinical_trial": [
+        "clinical trial",
+        "randomized controlled trial",
+        "rct",
+        "phase iii",
+        "phase 3",
+        "double-blind",
+        "placebo-controlled",
+    ],
+    "meta_analysis": [
+        "meta-analysis",
+        "systematic review",
+        "pooled analysis",
+        "evidence synthesis",
+        "meta-regression",
+    ],
+    "cohort_study": [
+        "cohort",
+        "prospective",
+        "longitudinal",
+        "follow-up",
+        "observational",
+        "registry",
     ],
     "rdw": [
         "rdw",
@@ -193,20 +252,14 @@ def score_sample_size(paper: dict) -> tuple[float, str]:
     # 取最大数字（通常是患者数/事件数）
     n = max(nums)
     # 排除明显是年份的数字（如 2024, 2023）
-    n = n if n < 2100 or n > 2200 else nums[0] if len(nums) > 1 else 50
-    if n >= 1000:
-        return 1.0, f"n≈{n}（大样本）"
-    if n >= 500:
-        return 0.9, f"n≈{n}"
-    if n >= 200:
-        return 0.75, f"n≈{n}"
-    if n >= 100:
-        return 0.65, f"n≈{n}"
-    if n >= 50:
-        return 0.5, f"n≈{n}（中等）"
-    if n >= 20:
-        return 0.35, f"n≈{n}（小样本）"
-    return 0.25, f"n≈{n}（极小）"
+    current_year = datetime.now().year
+    if SAMPLE_SIZE_MIN_YEAR <= n <= current_year + 10:
+        sorted_nums = sorted(set(nums), reverse=True)
+        n = sorted_nums[1] if len(sorted_nums) > 1 else 50
+    for threshold, score, label in SAMPLE_SIZE_BANDS:
+        if n >= threshold:
+            return score, f"n≈{n}{label}"
+    return SAMPLE_SIZE_FALLBACK_SCORE, f"n≈{n}{SAMPLE_SIZE_FALLBACK_LABEL}"
 
 
 def score_parse_quality(paper: dict) -> tuple[float, str]:
@@ -263,8 +316,8 @@ def grade_paper(
         - 期刊名 / 作者 / 等其他字段（可选）
     scenario : {"early_diagnosis","differential_diagnosis","prognosis"}
         场景权重。不同场景下同篇论文分不同。
-    topic : {"sepsis_gn_gp","inflammation","rdw"}
-        主题词库。决定 topic_match 维度的命中关键词集合。
+    topic : str
+        主题词库（见 TOPIC_KEYWORDS 键）。决定 topic_match 维度的命中关键词集合。
 
     Returns
     -------
@@ -275,6 +328,16 @@ def grade_paper(
     --------
     5 维独立打分 → 按 SCENARIO_WEIGHTS[scenario] 加权求和 → tier=S/A/B/C
     """
+    if not isinstance(paper, dict):
+        return GradedPaper(
+            pmid="",
+            title="",
+            score=0.0,
+            tier="C",
+            reasons=["论文数据不是 dict 类型"],
+            scenario=scenario,
+            subscores={k: 0.0 for k in SCENARIO_WEIGHTS[scenario]},
+        )
     weights = SCENARIO_WEIGHTS[scenario]
 
     # 5 维打分
@@ -326,8 +389,8 @@ def rank_papers(
         多篇 PubMed 论文字典列表。
     scenario : {"early_diagnosis","differential_diagnosis","prognosis"}
         场景权重，同 grade_paper。
-    topic : {"sepsis_gn_gp","inflammation","rdw"}
-        主题词库，同 grade_paper。
+    topic : str
+        主题词库（见 TOPIC_KEYWORDS 键），同 grade_paper。
     top_k : int, default 5
         保留前 k 名。None 或 -1 表示不截取。
 

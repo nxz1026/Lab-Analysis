@@ -25,6 +25,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 from lab_analysis.patient_id import validate_id_card
@@ -69,12 +70,13 @@ def main() -> None:
     parser.add_argument("--batch", action="store_true", help="批量模式")
     args = parser.parse_args()
 
-    if not args.id_card:
-        logger.error("[ERROR] 必须提供 --id-card")
+    id_card = args.id_card or os.environ.get("LAB_RAW_ID_CARD", "")
+    if not id_card:
+        logger.error("[ERROR] 必须提供 --id-card 或设置 LAB_RAW_ID_CARD 环境变量")
         raise SystemExit(1)
 
-    if not validate_id_card(args.id_card):
-        logger.error(f"[ERROR] 身份证号格式无效: {args.id_card}")
+    if not validate_id_card(id_card):
+        logger.error("[ERROR] 身份证号格式无效")
         raise SystemExit(1)
 
     if args.type == "lab_image":
@@ -82,7 +84,7 @@ def main() -> None:
             logger.error("[ERROR] lab_image 需要 --path")
             raise SystemExit(1)
         record = ingest_lab_image(
-            Path(args.path), args.id_card, args.report_date or "", args.report_type
+            Path(args.path), id_card, args.report_date or "", args.report_type
         )
         logger.info(f"[OK] 检验图片摄入成功: {record['saved_path']}")
 
@@ -90,13 +92,13 @@ def main() -> None:
         if args.zip_path:
             record = ingest_mri_dicom(
                 zip_path=Path(args.zip_path),
-                patient_id=args.id_card,
+                patient_id=id_card,
                 report_date=args.report_date,
             )
         elif args.dicom_dir:
             record = ingest_mri_dicom(
                 dicom_dir=Path(args.dicom_dir),
-                patient_id=args.id_card,
+                patient_id=id_card,
                 report_date=args.report_date,
             )
         else:
@@ -108,7 +110,7 @@ def main() -> None:
         if not args.path:
             logger.error("[ERROR] mri_report 需要 --path")
             raise SystemExit(1)
-        record = ingest_mri_report(Path(args.path), args.id_card, args.report_date or "")
+        record = ingest_mri_report(Path(args.path), id_card, args.report_date or "")
         logger.info(f"[OK] MRI 报告摄入成功: {record['saved_path']}")
 
 

@@ -63,7 +63,9 @@ def extract_patient_id_from_reports() -> str | None:
                         logger.info(
                             f"[INFO] 从检验报告中提取到身份证号（已脱敏）: {get_deid(id_card)}"
                         )
-                        return id_card
+                        _ret = id_card
+                        del id_card
+                        return _ret
     return None
 
 
@@ -219,7 +221,7 @@ def _handle_failure(
     """统一处理步骤失败: 致命则 sys.exit(1), 否则返回非零 rc。"""
     if fatal:
         logger.error(f"[!] {name} 失败 (rc={rc}, {elapsed:.2f}s), 终止 pipeline")
-        sys.exit(1)
+        raise SystemExit(1)
     logger.error(f"[!] {name} 失败 (rc={rc}, {elapsed:.2f}s), 标记非致命, 继续")
     return rc
 
@@ -264,7 +266,7 @@ def pipeline_step(
                 )
                 if fatal:
                     logger.error(f"[!] {name} 抛异常 ({elapsed:.2f}s), 终止 pipeline")
-                    sys.exit(1)
+                    raise SystemExit(1)
                 logger.error(f"[!] {name} 抛异常 ({elapsed:.2f}s), 标记非致命")
                 return 1
             elapsed = time.monotonic() - start
@@ -284,7 +286,7 @@ def pipeline_step(
                 return rc
             if fatal:
                 logger.error(f"[!] {name} 失败 (rc={rc}, {elapsed:.2f}s), 终止 pipeline")
-                sys.exit(1)
+                raise SystemExit(1)
             logger.error(f"[!] {name} 失败 (rc={rc}, {elapsed:.2f}s), 标记非致命, 继续")
             return rc
 

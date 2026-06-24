@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-import os
 import re
 import shutil
 from pathlib import Path
 
 from .. import _log
+from ..utils import WORK_ROOT
 
 logger = _log.get_logger(__name__)
-
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 def generate_metadata_md(data: dict, validated_patient_id: str) -> str:

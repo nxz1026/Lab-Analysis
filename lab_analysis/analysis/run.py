@@ -32,6 +32,21 @@ from .charts import (
 logger = _log.get_logger(__name__)
 
 
+def _compute_trends(df: pd.DataFrame) -> dict:
+    trend_results = {}
+    key_for_trend = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]  # also appears in moving_average_analysis in _compute.py
+    for metric in key_for_trend:
+        if metric not in df.columns:
+            continue
+        reg = linear_regression_trend(df[metric])
+        if reg["slope"] is not None:
+            trend_results[metric] = reg
+            logger.info(
+                f"  {metric}: slope={reg['slope']:.4f}, R2={reg['r2']:.3f}, trend={reg['trend']}"
+            )
+    return trend_results
+
+
 def _compute_stats(df: pd.DataFrame) -> dict:
     """纯计算：从 DataFrame 生成所有统计结果 dict。"""
     results = {
@@ -54,18 +69,7 @@ def _compute_stats(df: pd.DataFrame) -> dict:
     print(
         f"炎症分类: {dict(zip(df['report_date'].dt.strftime('%m-%d'), inflammation_status, strict=True))}"
     )
-    trend_results = {}
-    key_for_trend = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]
-    for metric in key_for_trend:
-        if metric not in df.columns:
-            continue
-        reg = linear_regression_trend(df[metric])
-        if reg["slope"] is not None:
-            trend_results[metric] = reg
-            logger.info(
-                f"  {metric}: slope={reg['slope']:.4f}, R2={reg['r2']:.3f}, trend={reg['trend']}"
-            )
-    results["linear_regression"] = trend_results
+    results["linear_regression"] = _compute_trends(df)
     corr_metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "PCT", "PLT"]
     corr = correlation_matrix_calc(df, corr_metrics)
     results["correlation_matrix"] = corr
@@ -240,6 +244,13 @@ def run(patient_id: str) -> dict:
             f"找不到前置文件: {paths['metrics_csv']}\n   请先运行 data_loader.py --id-card {patient_id}"
         )
     df = pd.read_csv(paths["metrics_csv"])
+    if df.empty:
+        logger.warning("Empty DataFrame loaded from CSV, skipping analysis")
+        return {
+            "generated": datetime.now().isoformat(),
+            "n_reports": 0,
+            "date_range": {"start": None, "end": None},
+        }
     df["report_date"] = pd.to_datetime(df["report_date"])
     df = df.sort_values("report_date").reset_index(drop=True)
     logger.info(f"数据范围: {df['report_date'].min().date()} ~ {df['report_date'].max().date()}")

@@ -17,6 +17,7 @@ from pathlib import Path
 from lab_analysis.utils import WORK_ROOT
 
 from . import _log
+from ._phi_filter import strip_phi
 
 logger = _log.get_logger(__name__)
 
@@ -44,7 +45,7 @@ _LOINC_MAP: dict[str, tuple[str, str]] = {
     ),
     "PCT": ("33914-3", "Procalcitonin [Mass/Volume] in Serum or Plasma"),
     "MPV": ("32604-5", "Platelet mean volume [Volume]"),
-    "PDW": ("777-3", "Platelet distribution width"),
+    "PDW": ("777-3", "Platelet distribution width [Entitic volume]"),  # TODO: 确认正确 LOINC 码
 }
 
 
@@ -202,8 +203,9 @@ def _build_diagnostic_report(
         },
         "result": [{"reference": f"Observation/{oid}"} for oid in obs_ids],
     }
-    if scoring_card.get("top_hypotheses"):
-        top = scoring_card["top_hypotheses"][0]
+    top_hypotheses = scoring_card.get("top_hypotheses") or []
+    if top_hypotheses:
+        top = top_hypotheses[0]
         dr["conclusion"] = f"{top['hypothesis']}（置信度 {top['confidence']:.0%}）"
         dr["conclusionCodeableConcept"] = {
             "coding": [
@@ -218,7 +220,7 @@ def _build_diagnostic_report(
         dr["presentedForm"] = [
             {
                 "contentType": "text/markdown",
-                "data": base64.b64encode(report_md.encode()).decode(),
+                "data": base64.b64encode(strip_phi(report_md).encode()).decode(),
             }
         ]
     return dr
@@ -312,7 +314,7 @@ def build_fhir_bundle(
         "resourceType": "Bundle",
         "id": f"lab-analysis-{deid}",
         "type": "collection",
-        "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
+        "timestamp": datetime.now().isoformat(),
         "entry": entry,
     }
     return bundle

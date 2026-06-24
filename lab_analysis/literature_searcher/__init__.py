@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -21,7 +20,8 @@ from .strategies import SEARCH_STRATEGIES, auto_generate_queries
 
 logger = _log.get_logger(__name__)
 
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+def _get_work_root() -> Path:
+    return Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 __all__ = [
     "esearch",
@@ -30,7 +30,7 @@ __all__ = [
     "auto_generate_queries",
     "SEARCH_STRATEGIES",
     "search_strategy",
-    "WORK_ROOT",
+    "_get_work_root",
 ]
 
 
@@ -48,14 +48,30 @@ def search_strategy(
     cfg = strategies[strategy_name]
     logger.info(f"  Searching [{strategy_name}]: {cfg['query']}  [近{date_filter}年]")
 
-    result = esearch(cfg["query"], retmax=retmax, sort=cfg["sort"], date_filter=date_filter)
+    try:
+        result = esearch(cfg["query"], retmax=retmax, sort=cfg["sort"], date_filter=date_filter)
+    except Exception:
+        logger.exception(f"  esearch failed for [{strategy_name}]")
+        return {
+            "strategy": strategy_name,
+            "query": cfg["query"],
+            "total_results": 0,
+            "pmids_returned": 0,
+            "papers": [],
+        }
     count = int(result.get("esearchresult", {}).get("count", 0))
-    pmids = result["esearchresult"]["idlist"]
+    pmids = result.get("esearchresult", {}).get("idlist", [])
 
     papers: list[dict] = []
     if pmids:
         time.sleep(1.2)
-        raw_text = efetch(pmids)
+        raw_text_parts: list[str] = []
+        for i in range(0, len(pmids), 100):
+            batch = pmids[i : i + 100]
+            raw_text_parts.append(efetch(batch))
+            if i + 100 < len(pmids):
+                time.sleep(0.5)
+        raw_text = "\n".join(raw_text_parts)
         papers = parse_papers(raw_text, pmids)
         for p in papers:
             p["url"] = f"https://pubmed.ncbi.nlm.nih.gov/{p['pmid']}/"
@@ -96,11 +112,11 @@ def main() -> None:
     if args.id_card:
         raw_ts = os.environ.get("ANALYSIS_TS", "")
         ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
-        lit_dir = WORK_ROOT / "data" / args.id_card / ts / "03_literature"
+        lit_dir = _get_work_root() / "data" / args.id_card / ts / "03_literature"
         args.out = args.out or str(lit_dir / "literature_results.json")
         # pipeline 模式下自动定位 analysis_results.json
         if args.auto_queries and not args.analysis_results:
-            analyzed_dir = WORK_ROOT / "data" / args.id_card / ts / "02_analyzed"
+            analyzed_dir = _get_work_root() / "data" / args.id_card / ts / "02_analyzed"
             candidate = analyzed_dir / "analysis_results.json"
             if candidate.exists():
                 args.analysis_results = str(candidate)
@@ -130,7 +146,7 @@ def main() -> None:
     for t in topics:
         if t not in merged_strategies:
             logger.info(f"Unknown topic: {t}")
-            sys.exit(1)
+            raise SystemExit(1)
 
     results: dict = {
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
