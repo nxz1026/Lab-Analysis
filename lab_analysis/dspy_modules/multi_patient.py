@@ -89,7 +89,7 @@ def _is_dspy_run(data_dir: Path) -> bool:
     return bool(js.exists() and not md.exists())
 
 
-def _build_sample(patient_id: str, ts: str) -> Sample:
+def build_sample(patient_id: str, ts: str) -> Sample:
     """从 patient_id + timestamp 构造 Sample"""
     data_dir = get_data_root() / patient_id / ts
     return Sample(
@@ -113,7 +113,7 @@ def iter_all_samples(patient_ids: list[str] | None = None) -> Iterator[Sample]:
     pids = patient_ids or list_patients()
     for pid in pids:
         for ts in list_timestamps(pid):
-            yield _build_sample(pid, ts)
+            yield build_sample(pid, ts)
 
 
 def find_pairs(patient_id: str) -> list[tuple[str, str]]:
@@ -130,7 +130,7 @@ def find_pairs(patient_id: str) -> list[tuple[str, str]]:
     timestamps = list_timestamps(patient_id)
     if not timestamps:
         return []
-    samples = [_build_sample(patient_id, ts) for ts in timestamps]
+    samples = [build_sample(patient_id, ts) for ts in timestamps]
     pairs: list[tuple[str, str]] = []
     for i, s in enumerate(samples):
         if not s.is_dspy:
