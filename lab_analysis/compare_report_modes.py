@@ -337,9 +337,11 @@ def format_comparison_md(result: dict) -> str:
     ]
     for d in result["section_diffs"]:
         overlap = f"{d['overlap_rate']:.1%}"
+        std_len = d[f"{result['std_mode']}_length"]
+        dspy_len = d[f"{result['dspy_mode']}_length"]
         lines.append(
-            f"| {d['header'][:20]}... | {d[f"{result['std_mode']}_length"]} | "
-            f"{d[f"{result['dspy_mode']}_length"]} | {overlap} | {d['longer']} |"
+            f"| {d['header'][:20]}... | {std_len} | "
+            f"{dspy_len} | {overlap} | {d['longer']} |"
         )
 
     lines.append("\n## 实体提及对比\n")

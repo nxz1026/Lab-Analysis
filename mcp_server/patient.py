@@ -152,7 +152,7 @@ def get_pipeline_status(patient_id: str, timestamp: str = "") -> str:
             except (json.JSONDecodeError, AttributeError):
                 pass
 
-        sample = mp._build_sample(patient_id, timestamp)  # noqa: SLF001
+        sample = mp.build_sample(patient_id, timestamp)
 
         return json.dumps(
             {

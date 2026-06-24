@@ -49,7 +49,10 @@ def trigger_dspy_recompile(force: bool = False, timeout_sec: int = 600) -> str:
             timeout=timeout_sec,
             cwd=str(_PROJECT_ROOT),
             check=False,
-            env={**os.environ},  # 传递当前 env (含 DEEPSEEK_API_KEY)
+            env={
+                "DEEPSEEK_API_KEY": os.environ.get("DEEPSEEK_API_KEY", ""),
+                "PYTHONPATH": os.environ.get("PYTHONPATH", ""),
+            },
         )
         elapsed = round(time.time() - t0, 2)
         return json.dumps(
