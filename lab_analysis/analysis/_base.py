@@ -1,6 +1,5 @@
 """lab_analysis.analysis._base — 统计分析子包共享常量与工具"""
 
-import os
 from pathlib import Path
 
 import matplotlib
@@ -11,10 +10,9 @@ import matplotlib.pyplot as plt
 from lab_analysis.utils import build_paths as build_paths_utils
 
 from .. import _log
+from ..utils import WORK_ROOT
 
 logger = _log.get_logger(__name__)
-
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 # ── 参考配置 ──────────────────────────────────────────────────────────

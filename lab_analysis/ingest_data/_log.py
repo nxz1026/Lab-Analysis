@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import logging
-import os
 import sys
-from datetime import datetime
 from pathlib import Path
 
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+from ..utils import WORK_ROOT, append_to_json_log
+
 INGEST_LOG = WORK_ROOT / ".ingest_log.json"
 LOG_FILE = WORK_ROOT / ".ingest_debug.log"
 
@@ -46,11 +44,4 @@ def _ensure_handlers() -> None:
 
 def append_log(record: dict) -> None:
     """追加摄入记录到日志。"""
-    _ensure_handlers()
-    if INGEST_LOG.exists():
-        log = json.loads(INGEST_LOG.read_text(encoding="utf-8"))
-    else:
-        log = {"ingested": []}
-    log["ingested"].append(record)
-    log["last_updated"] = datetime.now().isoformat()
-    INGEST_LOG.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
+    append_to_json_log(INGEST_LOG, record, root_key="ingested")

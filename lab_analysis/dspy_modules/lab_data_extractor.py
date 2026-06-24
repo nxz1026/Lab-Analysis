@@ -5,7 +5,6 @@ DSPy 版本的检验报告数据提取模块
 提高字段识别准确率和格式规范性
 """
 
-import logging
 from pathlib import Path
 from typing import Optional
 
@@ -64,7 +63,6 @@ class LabDataExtractor(dspy.Module):
                 self.extract, module_name="lab_data_extractor", image_description=image_description
             )
         except SafeCallError as exc:
-            logger = logging.getLogger(__name__)
             logger.error("lab_data_extractor fallback to empty prediction: %s", exc)
             return make_empty_prediction(LabDataExtractionSignature)
 

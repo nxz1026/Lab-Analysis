@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 
 from lab_analysis.dspy_modules import multi_patient as mp
@@ -24,11 +25,13 @@ def list_patients() -> str:
           "pairs": {patient_id: [[std_ts, dspy_ts], ...]}
         }
     """
+    _PATIENT_RE = re.compile(r"^[A-Za-z0-9_-]{15,50}$")
+    _TEMPLATE_KEYWORDS = re.compile(r"(dspy|prompts?|template|test)", re.IGNORECASE)
     try:
-        # 过滤: 只保留看起来像身份证号的 patient_id (15-18 位数字)
-        # 防止 mri_dspy_prompts 这种模板目录被误当 patient
+        # 过滤: 匹配 base64url 脱敏 ID 模式 (字母数字+下划线+连字符, 15-50 字符)
+        # 并排除包含已知模板关键词的目录名
         all_pids = mp.list_patients()
-        pids = [p for p in all_pids if p.isdigit() and 15 <= len(p) <= 18]
+        pids = [p for p in all_pids if _PATIENT_RE.match(p) and not _TEMPLATE_KEYWORDS.search(p)]
         s = mp.stats()
         # 从 stats 里只保留过滤后的 patient
         s["per_patient"] = {k: v for k, v in s["per_patient"].items() if k in pids}
@@ -98,7 +101,8 @@ def get_pipeline_status(patient_id: str, timestamp: str = "") -> str:
 
         # 选 timestamp
         if not timestamp:
-            timestamps = mp.list_timestamps(patient_id)
+            _TS_RE = re.compile(r"^\d{8}_\d{6}$")
+            timestamps = [t for t in mp.list_timestamps(patient_id) if _TS_RE.match(t)]
             if not timestamps:
                 return json.dumps(
                     {
@@ -134,8 +138,8 @@ def get_pipeline_status(patient_id: str, timestamp: str = "") -> str:
         sc = rep / "scoring_card.json"
         dp = rep / "dspy_prompts"
 
-        std_md_length = len(md.read_text(encoding="utf-8")) if md.exists() else None
-        dspy_json_length = len(js.read_text(encoding="utf-8")) if js.exists() else None
+        std_md_length = md.stat().st_size if md.exists() else None
+        dspy_json_length = js.stat().st_size if js.exists() else None
 
         dspy_confidence = None
         n_sections = None

@@ -87,24 +87,6 @@ def get_project_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def get_env_var(name: str, default=None, required: bool = False):
-    """
-    获取环境变量
-
-    Args:
-        name: 环境变量名
-        default: 默认值
-        required: 是否必需，如果为True且变量不存在则抛出异常
-
-    Returns:
-        环境变量值
-    """
-    value = os.environ.get(name, default)
-    if required and value is None:
-        raise EnvironmentError(f"必需的环境变量 {name} 未设置")
-    return value
-
-
 def validate_chinese_id(id_number: str) -> bool:
     """
     验证中国大陆身份证号格式
@@ -146,16 +128,9 @@ def parse_metadata_table(text: str) -> dict:
     return row
 
 
-def append_to_json_log(log_file: Path, record: dict):
-    """
-    追加记录到JSON日志文件
-
-    Args:
-        log_file: 日志文件路径
-        record: 要追加的记录
-    """
-    log = json.loads(log_file.read_text(encoding="utf-8")) if log_file.exists() else {"records": []}
-    log["records"].append(record)
+def append_to_json_log(log_file: Path, record: dict, root_key: str = "records") -> None:
+    log = json.loads(log_file.read_text(encoding="utf-8")) if log_file.exists() else {root_key: []}
+    log[root_key].append(record)
     log["last_updated"] = datetime.now().isoformat()
     log_file.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -183,17 +158,6 @@ def print_progress(
     print(f"\r{prefix} |{bar}| {percent} {suffix}", end="", flush=True)
     if current >= total:
         print()
-
-
-def ensure_dirs(*dirs: Path):
-    """
-    确保目录存在，不存在则创建
-
-    Args:
-        dirs: 目录路径列表
-    """
-    for d in dirs:
-        d.mkdir(parents=True, exist_ok=True)
 
 
 def api_retry_decorator(

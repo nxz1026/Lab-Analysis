@@ -5,7 +5,6 @@ DSPy 版本的 MRI 影像分析模块
 提高解剖定位准确性、所见描述规范性和印证评价可靠性
 """
 
-import logging
 import os
 from pathlib import Path
 from typing import Dict, List
@@ -89,7 +88,7 @@ class MRIAnalysisModule(dspy.Module):
             )
             return result
         except SafeCallError as exc:
-            logging.getLogger(__name__).error("mri_analyzer fallback to empty prediction: %s", exc)
+            logger.error("mri_analyzer fallback to empty prediction: %s", exc)
             return make_empty_prediction(MRIAnalysisSignature)
 
 

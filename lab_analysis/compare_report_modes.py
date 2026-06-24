@@ -25,6 +25,19 @@ from . import _log
 
 logger = _log.get_logger(__name__)
 
+# 章节后缀（对应 REPORT_SECTIONS 索引位）
+_REPORT_SECTIONS_SUFFIXES = [
+    "basic_info",
+    "lab_analysis",
+    "mri_analysis",
+    "multidisciplinary",
+    "diagnosis",
+    "consistency",
+    "action_plan",
+    "followup",
+    "prognosis",
+]
+
 # 关键医疗实体列表（用于实体级对比）
 _KEY_ENTITIES = [
     "hs-CRP",
@@ -75,19 +88,6 @@ def _parse_std_sections(std_md: str) -> list[tuple[str, str]]:
         sections.append((field_name, content))
     return sections
 
-
-# 章节后缀（对应 REPORT_SECTIONS 索引位）
-_REPORT_SECTIONS_SUFFIXES = [
-    "basic_info",
-    "lab_analysis",
-    "mri_analysis",
-    "multidisciplinary",
-    "diagnosis",
-    "consistency",
-    "action_plan",
-    "followup",
-    "prognosis",
-]
 
 
 def _calc_overlap_rate(a: str, b: str) -> float:
@@ -225,14 +225,18 @@ def render_comparison_chart(
     figsize: tuple[float, float] = (11, 6),
 ) -> bytes:
     """生成双模式拼接对比图 (2 子图): 上=长度对比, 下=overlap rate."""
-    import matplotlib
+    try:
+        import matplotlib
 
-    matplotlib.use("Agg")
-    import warnings
+        matplotlib.use("Agg")
+        import warnings
 
-    warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
-    warnings.filterwarnings("ignore", message=".*missing from font.*")
-    from matplotlib.figure import Figure
+        warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
+        warnings.filterwarnings("ignore", message=".*missing from font.*")
+        from matplotlib.figure import Figure
+    except ImportError:
+        logger.warning("matplotlib not available, skipping chart rendering")
+        return b""
 
     diffs = result.get("section_diffs", [])
     if not diffs:
@@ -334,19 +338,21 @@ def format_comparison_md(result: dict) -> str:
     for d in result["section_diffs"]:
         overlap = f"{d['overlap_rate']:.1%}"
         lines.append(
-            f"| {d['header'][:20]}... | {d['Standard_length']} | "
-            f"{d['DSPy_length']} | {overlap} | {d['longer']} |"
+            f"| {d['header'][:20]}... | {d[f"{result['std_mode']}_length"]} | "
+            f"{d[f"{result['dspy_mode']}_length"]} | {overlap} | {d['longer']} |"
         )
 
     lines.append("\n## 实体提及对比\n")
+    std_mode = result.get("std_mode", "Standard")
+    dspy_mode = result.get("dspy_mode", "DSPy")
     for d in result["section_diffs"]:
-        std_ents = d.get("Standard_entities", {})
-        dspy_ents = d.get("DSPy_entities", {})
+        std_ents = d.get(f"{std_mode}_entities", {})
+        dspy_ents = d.get(f"{dspy_mode}_entities", {})
         if std_ents or dspy_ents:
             lines.append(f"### {d['header']}\n")
             all_entities = sorted(set(list(std_ents.keys()) + list(dspy_ents.keys())))
-            lines.append("| 实体 | Standard | DSPy |")
-            lines.append("|------|----------|------|")
+            lines.append(f"| 实体 | {std_mode} | {dspy_mode} |")
+            lines.append(f"|------|{'-' * len(std_mode)}|{'-' * len(dspy_mode)}|")
             for ent in all_entities:
                 lines.append(f"| {ent} | {std_ents.get(ent, 0)} | {dspy_ents.get(ent, 0)} |")
             lines.append("")

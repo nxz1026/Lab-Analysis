@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import atexit
 import contextlib
+import ctypes
 import json
 import logging
 import os
 import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -66,6 +66,15 @@ def _setup_pipeline_logging(ts: str) -> None:
     logger.info("Pipeline 日志初始化: %s", log_file)
 
 
+def _clear_memory(val: str) -> None:
+    """尽力清除字符串内存（Python 字符串不可变，此操作仅覆盖引用）。"""
+    try:
+        buf = ctypes.create_string_buffer(val.encode("utf-8"))
+        ctypes.memset(buf, 0, len(buf))
+    except Exception:
+        pass
+
+
 def main():
     args = parse_args()
     raw_id = None
@@ -77,11 +86,11 @@ def main():
             raw_id = input("请输入患者身份证号: ").strip()
         except (EOFError, KeyboardInterrupt):
             logger.error("\n[ERROR] 无法读取输入，本 Pipeline 要求交互式提供合法身份证号")
-            sys.exit(1)
+            raise SystemExit(1)
     raw_id = validate_id_card(raw_id, interactive=True)
     if not raw_id:
         logger.error("[ERROR] 未获得有效的身份证号，退出")
-        sys.exit(1)
+        raise SystemExit(1)
     deid = get_deid(raw_id)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     ctx = PipelineContext(deid=deid, timestamp=ts)
@@ -112,6 +121,7 @@ def main():
             full_env = dict(os.environ)
             pp = str(root)
             full_env["PYTHONPATH"] = pp + os.pathsep + full_env.get("PYTHONPATH", "")
+            full_env["LAB_RAW_ID_CARD"] = raw_id  # P0: 通过环境变量传递明文ID，避免进程列表泄露
             if args.ingest_lab:
                 for lab_path in args.ingest_lab:
                     cmd = [
@@ -122,8 +132,6 @@ def main():
                         "lab_image",
                         "--path",
                         lab_path,
-                        "--id-card",
-                        raw_id,
                     ]
                     if args.report_date:
                         cmd += ["--report-date", args.report_date]
@@ -140,8 +148,6 @@ def main():
                     "lab_analysis.ingest_data",
                     "--type",
                     "mri_dicom",
-                    "--id-card",
-                    raw_id,
                 ]
                 if args.ingest_dicom_zip:
                     cmd += ["--zip-path", args.ingest_dicom_zip]
@@ -161,26 +167,26 @@ def main():
                     "mri_report",
                     "--path",
                     args.ingest_mri_report,
-                    "--id-card",
-                    raw_id,
                 ]
                 if args.report_date:
                     cmd += ["--report-date", args.report_date]
                 r = subprocess.run(cmd, cwd=str(root), env=full_env)  # noqa: S603
                 if r.returncode != 0:
                     logger.error("  [!] MRI报告摄入失败")
+            del full_env["LAB_RAW_ID_CARD"]
             logger.info("\n[OK] 数据摄入完成，继续执行Pipeline...\n")
+    _clear_memory(raw_id)
     del raw_id
     logger.info("② 前置检查：验证病人数据")
     if not check_patient_data(deid):
         wr = WORK_ROOT
         logger.info(f"\n[ERROR] 病人ID [{deid}] 没有找到对应的原始数据，请确认目录结构：")
         logger.info(f"   {wr / 'raw' / f'patient_{deid}' / 'lab'}/        ← 检验报告截图")
-        print(
+        logger.info(
             f"   {wr / 'raw' / f'patient_{deid}' / 'papers'}/    ← 结构化报告（lab_report_*/metrics.md）"
         )
         logger.info(f"   {wr / 'raw' / f'patient_{deid}' / 'imaging'}/   ← MRI 影像序列（可选）")
-        sys.exit(1)
+        raise SystemExit(1)
     pid_arg = ["--id-card", deid]
     ts_env = ctx.env_dict()
     run_step("③ 数据加载", "data_loader", pid_arg, ts_env)
@@ -259,10 +265,9 @@ def main():
         )
         if rc != 0:
             logger.error("[!] DSPy gen_final_report 失败（非致命，继续）")
-        std_md = WORK_ROOT / "data" / ts_dir / "04_reports" / "final_integrated_report.md"
-        dspy_json = (
-            WORK_ROOT / "data" / f"{deid}/{dspy_ts}" / "04_reports" / "final_integrated_report.json"
-        )
+        std_md = ctx.reports_dir / "final_integrated_report.md"
+        dspy_ts_ctx = PipelineContext(deid=deid, timestamp=dspy_ts)
+        dspy_json = dspy_ts_ctx.reports_dir / "final_integrated_report.json"
         if std_md.exists() and dspy_json.exists():
             try:
                 from lab_analysis.compare_report_modes import (
@@ -271,7 +276,7 @@ def main():
                 )
 
                 cmp = compare_reports_from_files(std_md, dspy_json)
-                cmp_dir = WORK_ROOT / "data" / ts_dir / "04_reports"
+                cmp_dir = ctx.reports_dir
                 (cmp_dir / "mode_comparison.json").write_text(
                     json.dumps(cmp, ensure_ascii=False, indent=2), encoding="utf-8"
                 )
@@ -279,7 +284,7 @@ def main():
                     format_comparison_md(cmp), encoding="utf-8"
                 )
                 logger.info(f"[COMPARE] 对比报告已保存: {cmp_dir}/mode_comparison_report.md")
-            except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+            except Exception as e:
                 logger.info(f"[!] 对比报告生成失败（非致命）: {e}")
         else:
             logger.warning("[!] 缺少标准或 DSPy 报告文件，跳过对比")
@@ -301,11 +306,10 @@ def main():
 
             clean_results = cleanup_all(keep_last=args.keep_last, dry_run=False, id_card=deid)
             print_summary(clean_results)
-        except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+        except Exception as e:
             logger.info(f"  [!] 产物清理失败（非致命）: {e}")
-    data_dir = WORK_ROOT / "data" / ts_dir
     logger.info(f"\n[{datetime.now().isoformat()}] Pipeline 完成")
-    logger.info(f"\n输出目录：{data_dir}/")
-    if data_dir.exists():
-        for f in sorted(data_dir.iterdir()):
+    logger.info(f"\n输出目录：{ctx.data_dir}/")
+    if ctx.data_dir.exists():
+        for f in sorted(ctx.data_dir.iterdir()):
             logger.info(f"  - {f.name}")

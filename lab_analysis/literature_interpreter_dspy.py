@@ -7,7 +7,6 @@
 
 import json
 import os
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -126,13 +125,13 @@ def run_dspy_mode(args):
     except ImportError as e:
         logger.info(f"[错误] DSPy 模块导入失败: {e}")
         logger.info("请安装 DSPy: pip install dspy-ai")
-        sys.exit(1)
+        raise SystemExit(1)
     except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         logger.info(f"[错误] DSPy 执行失败: {e}")
         import traceback
 
         traceback.print_exc()
-        sys.exit(1)
+        raise SystemExit(1)
 
 
 def main():
@@ -162,7 +161,7 @@ def main():
     for label, path in [("analysis_results", args.analysis), ("literature_results", args.lit)]:
         if path and (not Path(path).exists()):
             logger.info(f"[错误] 前置文件不存在: [{label}] {path}")
-            sys.exit(1)
+            raise SystemExit(1)
     mode_name = "DSPy 优化" if args.use_dspy else "标准 Prompt"
     logger.info(f"\n{'=' * 60}")
     logger.info(f"文献解读 - {mode_name} 模式")

@@ -11,9 +11,13 @@ import argparse
 import csv
 import json
 import re
-import sys
 from datetime import datetime
 from pathlib import Path
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 from lab_analysis.utils import build_paths as build_paths_utils
 from lab_analysis.utils import parse_metadata_table
@@ -123,7 +127,22 @@ def parse_metrics_simple(text: str) -> dict[str, float | str]:
 
 
 def parse_metrics_yaml(text: str) -> dict[str, float | str]:
-    """解析 metrics.md 中的 YAML 格式数据。"""
+    """解析 metrics.md 中的 YAML 格式数据，失败时回退到正则解析。"""
+    if yaml is not None:
+        try:
+            parsed = yaml.safe_load(text)
+            if isinstance(parsed, dict) and "metrics" in parsed:
+                metrics_root = parsed["metrics"]
+                if isinstance(metrics_root, dict):
+                    return {
+                        k: float(v) if isinstance(v, (int, float)) else str(v)
+                        for k, v in metrics_root.items()
+                        if v is not None and re.match(r"^\w+$", k)
+                    }
+        except Exception:
+            pass
+
+    # Fallback: regex-based parsing
     metrics: dict[str, float | str] = {}
     in_metrics = False
     for line in text.splitlines():
@@ -326,12 +345,12 @@ def main():
         logger.info(f"[FAIL] 原始数据目录不存在: {paths['raw_papers']}")
         logger.info("   预期路径: raw/patient_{patient_id}/papers/lab_report_*/")
         logger.info(f"   当前 patient_id: {args.id_card}")
-        sys.exit(1)
+        raise SystemExit(1)
 
     reports = load_reports(paths["raw_papers"])
     if not reports:
         logger.error("[FAIL] 未找到任何报告（lab_report_*/ 目录），退出")
-        sys.exit(1)
+        raise SystemExit(1)
 
     logger.info(f"[{datetime.now().isoformat()}] 数据加载开始...")
     logger.info(f"  病人: {args.id_card}")

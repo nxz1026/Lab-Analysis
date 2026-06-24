@@ -19,7 +19,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -158,10 +157,10 @@ def _resolve_input_path(args) -> Path:
         if not candidate.exists():
             logger.info(f"[ERROR] pipeline 模式下找不到输入文件: {candidate}")
             logger.info("  提示：请先运行步骤⑤ literature_searcher，或手动指定 --in")
-            sys.exit(1)
+            raise SystemExit(1)
         return candidate
     logger.error("[ERROR] 请提供 --in <path> 或 --id-card <deid>")
-    sys.exit(1)
+    raise SystemExit(1)
 
 
 def _resolve_output_path(args, inp: Path) -> Path:

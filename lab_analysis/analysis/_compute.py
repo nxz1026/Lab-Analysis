@@ -28,7 +28,7 @@ def linear_regression_trend(series: pd.Series) -> dict:
             "slope_per_day": None,
         }
 
-    x = np.arange(len(valid))
+    x = np.arange(len(valid))  # NOTE: treats time points as equally spaced, ignores actual date gaps
     y = valid.values.astype(float)
     x_mean, y_mean = x.mean(), y.mean()
 
@@ -61,13 +61,11 @@ def correlation_matrix_calc(df: pd.DataFrame, metrics: list) -> dict:
     sub = df[cols].apply(pd.to_numeric, errors="coerce")
     corr = sub.corr(method="pearson")
     result = {}
-    for col in cols:
-        for row in cols:
-            if col == row:
-                continue
-            val = corr.loc[row, col]
+    for i in range(len(cols)):
+        for j in range(i + 1, len(cols)):
+            val = corr.loc[cols[i], cols[j]]
             if pd.notna(val) and abs(val) >= 0.1:
-                result[f"{row}~{col}"] = round(float(val), 3)
+                result[f"{cols[i]}~{cols[j]}"] = round(float(val), 3)
     return result
 
 
@@ -88,7 +86,9 @@ def descriptive_stats(series: pd.Series) -> dict:
     }
 
 
-def moving_average_analysis(df: pd.DataFrame, window: int = 2) -> dict:
+def moving_average_analysis(df: pd.DataFrame, window: int = 3) -> dict:
+    if window <= 1:
+        return {}
     results = {}
     key_metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]
 
@@ -159,7 +159,7 @@ def cv_stability_analysis(df: pd.DataFrame) -> dict:
     return results
 
 
-def zscore_outlier_detection(df: pd.DataFrame, threshold: float = 2.0) -> dict:
+def zscore_outlier_detection(df: pd.DataFrame, threshold: float = 2.0, use_robust: bool = False) -> dict:
     results = {}
     for metric in NUMERIC_METRICS:
         if metric not in df.columns:
@@ -167,12 +167,19 @@ def zscore_outlier_detection(df: pd.DataFrame, threshold: float = 2.0) -> dict:
         series = df[metric].dropna().astype(float)
         if len(series) < 3:
             continue
-        mean = series.mean()
-        std = series.std(ddof=1)
+        if use_robust:
+            from statistics import median
+
+            center = median(series)
+            mad = median([abs(x - center) for x in series])
+            std = mad * 1.4826
+        else:
+            center = series.mean()
+            std = series.std(ddof=1)
         if std == 0:
             continue
 
-        zscores = (series - mean) / std
+        zscores = (series - center) / std
         outliers_mild = zscores[zscores.abs() > threshold]
         outliers_severe = zscores[zscores.abs() > 3.0]
 

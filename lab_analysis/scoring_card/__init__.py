@@ -5,6 +5,8 @@
 
 纯规则引擎，不调 LLM，可重复可测试。
 
+注意：暂无单元测试。本模块为纯规则引擎，逻辑简单，易于补充测试。
+
 用法:
     python -m lab_analysis.scoring_card --id-card <deid>
 """
@@ -51,6 +53,8 @@ __all__ = [
 
 def _cli():
     import argparse
+    import json
+    import os
 
     from lab_analysis.utils import WORK_ROOT
 
@@ -60,8 +64,6 @@ def _cli():
     parser = argparse.ArgumentParser(description="评分卡 & 临床决策支持")
     parser.add_argument("--id-card", required=True, help="脱敏ID")
     args = parser.parse_args()
-
-    import os
 
     raw_ts = os.environ.get("ANALYSIS_TS", "")
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts or args.id_card
@@ -74,8 +76,6 @@ def _cli():
     card = build_scoring_card(args.id_card, data_dir)
     reports_dir = data_dir / "04_reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
-
-    import json
 
     json_path = reports_dir / "scoring_card.json"
     json_path.write_text(json.dumps(card, ensure_ascii=False, indent=2), encoding="utf-8")

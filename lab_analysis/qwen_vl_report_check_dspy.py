@@ -8,7 +8,6 @@
 import base64
 import json
 import os
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -16,9 +15,9 @@ from pathlib import Path
 from lab_analysis.llm_client import call_dashscope_multimodal, load_api_key
 
 from . import _log
+from .utils import WORK_ROOT
 
 logger = _log.get_logger(__name__)
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 load_api_key("DASHSCOPE_API_KEY")
 REPORT_FINDINGS = "【纸质报告关键发现 - 2026-04-11，检查号Y00002207707】\n1. 肝右后叶上段：长径约2.2cm异常信号影，T1稍低、T2及STIR稍高，增强少许点片状弱强化，考虑感染性病变，较前明显缩小\n2. 胰腺：「胰管支架置入后」，胰腺实质萎缩，主胰管扩张程度较前明显，最宽约1.0cm，胰头稍大\n3. 胆道：肝内胆管扩张，胆囊体积增大\n4. 右肾：下份囊肿，长径约1.5cm\n"
 SEQ_SELECTIONS = [
@@ -110,7 +109,7 @@ def main():
     if not imaging_base.exists():
         logger.info(f"[错误] 影像目录不存在: {imaging_base}")
         logger.info("   预期路径: raw/patient_{patient_id}/imaging/seq_01~19/*.dcm")
-        sys.exit(1)
+        raise SystemExit(1)
     mode_label = "[DSPy]" if args.use_dspy else "[标准]"
     logger.info(f"\n[{datetime.now().isoformat()}] {mode_label} 上腹部MRI报告印证分析")
     logger.info(f"  病人: {args.id_card}")

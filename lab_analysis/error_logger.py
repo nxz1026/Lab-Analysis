@@ -13,51 +13,49 @@ error_logger.py - 错误日志记录模块
         log_error("API调用失败", exc_info=e, context={"api": "deepseek"})
 """
 
+from __future__ import annotations
+
 import logging
 import os
+import re
 import sys
 import traceback
+from collections import deque
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from . import _log
+from .utils import WORK_ROOT
 
 logger = _log.get_logger(__name__)
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 ERROR_LOG_FILE = WORK_ROOT / "error.log"
 
 
-def setup_error_logger(log_file: Optional[Path] = None) -> logging.Logger:
-    """
-    配置错误日志记录器
-
-    Args:
-        log_file: 日志文件路径，默认为 WORK_ROOT/error.log
-
-    Returns:
-        配置好的 logger 实例
-    """
+def _init_error_logger(log_file: Path | None = None) -> logging.Logger:
+    elog = logging.getLogger("lab_analysis_error")
+    elog.setLevel(logging.WARNING)
     if log_file is None:
         log_file = ERROR_LOG_FILE
-    logger = logging.getLogger("lab_analysis_error")
-    logger.setLevel(logging.WARNING)
-    if not logger.handlers:
-        formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-        )
-        _log.add_file_handler(logger, log_file, level=logging.WARNING, formatter=formatter)
-        if os.environ.get("DEBUG_ERROR_LOG", "0") == "1":
-            console_handler = logging.StreamHandler(sys.stderr)
-            console_handler.setLevel(logging.ERROR)
-            console_handler.setFormatter(formatter)
-            logger.addHandler(console_handler)
-    return logger
+    formatter = logging.Formatter(
+        "%(asctime)s | %(levelname)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    )
+    _log.add_file_handler(elog, log_file, level=logging.WARNING, formatter=formatter)
+    if os.environ.get("DEBUG_ERROR_LOG", "0") == "1":
+        console_handler = logging.StreamHandler(sys.stderr)
+        console_handler.setLevel(logging.ERROR)
+        console_handler.setFormatter(formatter)
+        elog.addHandler(console_handler)
+    return elog
+
+
+def setup_error_logger(log_file: Path | None = None) -> logging.Logger:
+    return _init_error_logger(log_file)
 
 
 def log_error(
     message: str,
-    exc_info: Optional[Exception] = None,
-    context: Optional[Dict[str, Any]] = None,
+    exc_info: Exception | None = None,
+    context: dict[str, Any] | None = None,
     module: str = "unknown",
 ):
     """
@@ -76,6 +74,7 @@ def log_error(
     error_details = [f"[{module}] {message}"]
     if context:
         context_str = ", ".join((f"{k}={v}" for k, v in context.items()))
+        context_str = re.sub(r"\b\d{17}[\dXx]\b", "[REDACTED_ID]", context_str)
         error_details.append(f"Context: {context_str}")
     if exc_info:
         error_details.append(f"Exception: {type(exc_info).__name__}: {str(exc_info)}")
@@ -90,7 +89,7 @@ def log_error(
         logger.info(f"   {type(exc_info).__name__}: {exc_info}")
 
 
-def log_warning(message: str, context: Optional[Dict[str, Any]] = None, module: str = "unknown"):
+def log_warning(message: str, context: dict[str, Any] | None = None, module: str = "unknown"):
     """
     记录警告日志
 
@@ -113,7 +112,7 @@ def log_pipeline_error(
     step_name: str,
     patient_id: str,
     exc_info: Exception,
-    additional_context: Optional[Dict[str, Any]] = None,
+    additional_context: dict[str, Any] | None = None,
 ):
     """
     记录 Pipeline 步骤错误（专用函数）
@@ -135,12 +134,12 @@ def log_pipeline_error(
     )
 
 
-def get_recent_errors(n: int = 10) -> list:
+def get_recent_errors(n: int = 100) -> list:
     """
     获取最近的 N 条错误日志
 
     Args:
-        n: 返回的错误数量
+        n: 返回的错误数量，默认 100
 
     Returns:
         错误日志行列表
@@ -148,10 +147,12 @@ def get_recent_errors(n: int = 10) -> list:
     if not ERROR_LOG_FILE.exists():
         return []
     try:
+        result = deque(maxlen=n)
         with open(ERROR_LOG_FILE, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-            return lines[-n:]
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
+            for line in f:
+                result.append(line.rstrip("\n").rstrip("\r"))
+        return list(result)
+    except Exception:
         return []
 
 

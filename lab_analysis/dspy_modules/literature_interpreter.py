@@ -4,7 +4,6 @@ DSPy 版本的文献解读模块
 使用 DSPy 框架优化循证医学解读的生成质量
 """
 
-import logging
 from pathlib import Path
 from typing import Dict, List
 
@@ -47,7 +46,7 @@ class LiteratureInterpreterModule(dspy.Module):
                 literature_results=literature_results,
             )
         except SafeCallError as exc:
-            logging.getLogger(__name__).error(
+            logger.error(
                 "literature_interpreter fallback to empty prediction: %s", exc
             )
             return make_empty_prediction(LiteratureInterpretationSignature)

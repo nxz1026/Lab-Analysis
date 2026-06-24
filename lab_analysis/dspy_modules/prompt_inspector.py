@@ -22,9 +22,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .. import _log
+from .._phi_filter import strip_phi
 
 logger = _log.get_logger(__name__)
-
 
 def safe_str(obj: Any, max_length: int = 1000) -> str:
     """安全地将对象转为字符串,截断过长内容"""
@@ -33,7 +33,7 @@ def safe_str(obj: Any, max_length: int = 1000) -> str:
         if len(s) > max_length:
             return s[:max_length] + f"... [截断, 共 {len(s)} 字符]"
         return s
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
+    except Exception:
         return f"<无法序列化: {type(obj).__name__}>"
 
 
@@ -49,7 +49,7 @@ def extract_field_desc(field) -> str:
         if hasattr(field, "description"):
             return str(field.description) if field.description else ""
         return ""
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
+    except Exception:
         return ""
 
 
@@ -67,19 +67,19 @@ def extract_signature_info(signature) -> Dict[str, Any]:
         if instructions is None and hasattr(signature, "__doc__"):
             instructions = signature.__doc__
         info["instructions"] = safe_str(instructions, 2000)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
+    except Exception:
         pass
     try:
         input_fields = getattr(signature, "input_fields", {}) or {}
         for name, field in input_fields.items():
             info["input_fields"][name] = extract_field_desc(field)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
+    except Exception:
         pass
     try:
         output_fields = getattr(signature, "output_fields", {}) or {}
         for name, field in output_fields.items():
             info["output_fields"][name] = extract_field_desc(field)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
+    except Exception:
         pass
     return info
 
@@ -104,7 +104,7 @@ def extract_demos_info(predictor) -> List[Dict[str, Any]]:
             if demo_dict:
                 demo_dict["_demo_index"] = i + 1
                 demos.append(demo_dict)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+    except Exception as e:
         demos.append({"_error": f"提取 demos 失败: {safe_str(e, 200)}"})
     return demos
 
@@ -122,13 +122,13 @@ def extract_predictor_info(predictor, predictor_name: str = "predictor") -> Dict
         signature = getattr(predictor, "signature", None)
         if signature is not None:
             info["signature"] = extract_signature_info(signature)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+    except Exception as e:
         info["signature"] = {"_error": safe_str(e, 200)}
     try:
         demos = extract_demos_info(predictor)
         info["demos"] = demos
         info["num_demos"] = len(demos)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+    except Exception as e:
         info["demos"] = [{"_error": safe_str(e, 200)}]
     return info
 
@@ -147,7 +147,7 @@ def extract_module_prompts(module, module_name: str) -> Dict[str, Any]:
             pred_info = extract_predictor_info(predictor, name)
             result["predictors"].append(pred_info)
             result["total_demos"] += pred_info.get("num_demos", 0)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+    except Exception as e:
         result["_error"] = f"提取 predictors 失败: {safe_str(e, 300)}"
     return result
 
@@ -305,7 +305,7 @@ def get_actual_dspy_prompt() -> str:
                     parts.append(s)
             return "\n\n======= 分隔线 =======\n\n".join(parts)
         return json.dumps(last_call, ensure_ascii=False, indent=2, default=str)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+    except Exception as e:
         return f"[错误] 获取 DSPy prompt 时发生异常: {type(e).__name__}: {e}"
 
 
@@ -329,9 +329,10 @@ def save_actual_dspy_prompt(module_name: str, output_dir: Path) -> Optional[Path
             return None
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / f"{module_name}_dspy_actual_prompt.txt"
-        output_path.write_text(prompt_text, encoding="utf-8")
+        # P0: 落盘前过滤 PHI
+        output_path.write_text(strip_phi(prompt_text), encoding="utf-8")
         logger.info(f"  [保存] 完整 DSPy prompt 已保存 ({len(prompt_text)} 字符): {output_path}")
         return output_path
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+    except Exception as e:
         logger.info(f"  [警告] 保存实际 DSPy prompt 失败: {e}")
         return None

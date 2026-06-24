@@ -60,7 +60,7 @@ def _alert_inflammation(results: dict) -> list[AlertDict]:
                 "level": "CRITICAL",
                 "source": "inflammation",
                 "metric": "hs-CRP",
-                "value": None,  # 调用方可补充
+                "value": 0,  # 调用方可补充
                 "threshold": 3.0,
                 "date": latest_date,
                 "message": f"hs-CRP 急性期（{latest_date}），炎症活跃，超过阈值 3.0",
@@ -72,7 +72,7 @@ def _alert_inflammation(results: dict) -> list[AlertDict]:
                 "level": "WARNING",
                 "source": "inflammation",
                 "metric": "hs-CRP",
-                "value": None,
+                "value": 0,
                 "threshold": (1.0, 3.0),
                 "date": latest_date,
                 "message": f"hs-CRP 过渡期（{latest_date}），hs-CRP 在 1.0-3.0 之间",
@@ -85,6 +85,8 @@ def _alert_reference_range(results: dict) -> list[AlertDict]:
     """指标超出参考范围告警。"""
     alerts: list[AlertDict] = []
     abnormal = results.get("abnormal_summary", {})
+    if not isinstance(abnormal, dict):
+        return alerts
     for metric, info in abnormal.items():
         ref = info.get("ref_range", "?")
         n = info.get("n_abnormal", 0)
@@ -229,7 +231,7 @@ def generate_alerts(results: dict) -> list[AlertDict]:
     alerts.extend(_alert_variability(results))
     alerts.extend(_alert_trend(results))
     # 按严重程度排序
-    alerts.sort(key=lambda a: (_LEVEL_ORDER.get(a["level"], 99), a.get("metric", "")))
+    alerts.sort(key=lambda a: (_LEVEL_ORDER.get(a.get("level", "INFO"), 99), a.get("metric", "")))
     return alerts
 
 
@@ -255,7 +257,11 @@ def generate_alerts_from_file(json_path: str | Path) -> list[AlertDict]:
     if not path.exists():
         logger.info(f"  [WARNING] 找不到 analysis_results.json: {path}")
         return []
-    results = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        results = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        logger.error(f"  [ERROR] 解析 JSON 失败: {path} — {exc}")
+        return []
     return generate_alerts(results)
 
 

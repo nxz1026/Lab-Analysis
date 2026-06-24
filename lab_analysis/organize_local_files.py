@@ -22,25 +22,17 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from . import _log
+from .utils import WORK_ROOT, build_paths as build_paths_utils
 
 logger = _log.get_logger(__name__)
 load_dotenv()
 TODAY = date.today().strftime("%Y-%m-%d")
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", str(Path(__file__).parent.parent)))
 LOCAL_UPLOAD_ROOT = WORK_ROOT / "local_upload"
 
 
 def build_paths(patient_id: str):
-    """根据 patient_id 和 ANALYSIS_TS 环境变量构建路径字典。
-
-    路径结构：data/{patient_id}/{ANALYSIS_TS}/
-    - patient_id: de-identified ID（如 846552421134373347）
-    - ANALYSIS_TS: 仅时间戳（如 20260503_030142），无 de-id 前缀
-    """
-    raw_ts = os.environ.get("ANALYSIS_TS", patient_id)
-    ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
-    data_dir = WORK_ROOT / "data" / patient_id / ts
-    return {"data": data_dir}
+    paths = build_paths_utils(patient_id)
+    return {"data": paths["data_dir"]}
 
 
 def parse_args():

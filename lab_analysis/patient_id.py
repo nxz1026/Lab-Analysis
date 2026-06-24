@@ -30,17 +30,10 @@ from typing import Optional
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from . import _log
+from ._exceptions import SAFE_EXCEPTIONS
 
 logger = _log.get_logger(__name__)
-try:
-    from lab_analysis.utils import validate_chinese_id as _is_valid_id_card
-except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
-    import re
-
-    def _is_valid_id_card(id_number: str) -> bool:
-        if not id_number:
-            return False
-        return bool(re.match("^\\d{17}[\\dXx]$", id_number) or re.match("^\\d{15}$", id_number))
+from lab_analysis.utils import validate_chinese_id as _is_valid_id_card
 
 
 _KEY_FILE = Path(os.environ.get("WORK_ROOT", Path.cwd())) / ".hermes" / "master.key"
@@ -78,8 +71,12 @@ def _decode_key(s: str) -> bytes:
     pad = "=" * (-len(s) % 4)
     try:
         return base64.urlsafe_b64decode(s + pad)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
+    except Exception:
+        pass
+    try:
         return base64.b64decode(s + pad)
+    except Exception as e:
+        raise ValueError(f"无法解码 master key（{len(s)} 字节）：数据已损坏或使用了不同的 key") from e
 
 
 def encode(id_card: str) -> str:
@@ -110,6 +107,14 @@ def decode(deid: str) -> str:
     return AESGCM(key).decrypt(nonce, ct, None).decode("utf-8")
 
 
+def _deid_log(val: str) -> str:
+    """日志安全版脱敏：返回脱敏 ID 或占位符，避免明文 PHI 写日志。"""
+    try:
+        return encode(val)
+    except SAFE_EXCEPTIONS:
+        return "(脱敏失败)"
+
+
 def validate_id_card(
     id_card: Optional[str], extracted_id: Optional[str] = None, interactive: bool = True
 ) -> Optional[str]:
@@ -135,8 +140,8 @@ def validate_id_card(
         return id_card
     if id_ok and ext_ok and (id_card != extracted_id):
         logger.warning("[WARNING] 命令行身份证号与图片识别结果不一致：")
-        logger.info(f"  命令行传入: {id_card}")
-        logger.info(f"  图片识别:   {extracted_id}")
+        logger.info(f"  命令行传入(脱敏): {_deid_log(id_card)}")
+        logger.info(f"  图片识别(脱敏):   {_deid_log(extracted_id)}")
         if not interactive:
             logger.error("[ERROR] 非交互模式且身份证号不一致，放弃此数据")
             return None
@@ -144,12 +149,12 @@ def validate_id_card(
             options=[("使用命令行身份证号", id_card), ("使用图片识别身份证号", extracted_id)]
         )
     if not id_ok and ext_ok:
-        logger.info(f"[INFO] 提供的身份证号无效，将采用 OCR 识别值: {extracted_id}")
+        logger.info(f"[INFO] 将采用 OCR 识别值(脱敏): {_deid_log(extracted_id)}")
         return extracted_id
     if id_card and (not id_ok):
-        logger.info(f"[WARNING] 身份证号 '{id_card}' 不是有效的 15/18 位格式")
+        logger.info(f"[WARNING] 提供的身份证号不是有效的 15/18 位格式")
     if extracted_id and (not ext_ok):
-        logger.info(f"[WARNING] OCR 识别值 '{extracted_id}' 也非有效身份证号")
+        logger.info(f"[WARNING] OCR 识别值也非有效身份证号")
     if not interactive:
         logger.error("[ERROR] 非交互模式下必须提供有效身份证号，放弃此数据")
         return None
@@ -193,13 +198,9 @@ def _prompt_manual_input() -> Optional[str]:
 
 
 if __name__ == "__main__":
-    sample = "110101199003078888"
+    sample = os.environ.get("LAB_DEID_TEST_ID", "110101199003078888")
     obf = encode(sample)
     restored = decode(obf)
-    logger.info(f"原始:   {sample}")
+    logger.info(f"原始:   {_deid_log(sample)}")
     logger.info(f"脱敏:   {obf}")
-    logger.info(f"还原:   {restored}")
-    logger.info(
-        f"确定性: {('[OK] 两次 encode 一致' if encode(sample) == obf else '[FAIL] 不一致')}"
-    )
     logger.info(f"验证:   {('[OK] 往返一致' if sample == restored else '[FAIL] 往返失败')}")

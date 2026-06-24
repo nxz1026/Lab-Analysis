@@ -5,7 +5,6 @@
 
 import json
 import os
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -106,7 +105,7 @@ def main():
     for label, path in [("analysis_results", args.analysis), ("literature_results", args.lit)]:
         if path and (not Path(path).exists()):
             logger.info(f"[错误] 前置文件不存在: [{label}] {path}")
-            sys.exit(1)
+            raise SystemExit(1)
     logger.info("构建 prompt...")
     prompt = build_prompt(args.analysis, args.lit)
     logger.info("调用 DeepSeek...")
