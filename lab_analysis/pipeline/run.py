@@ -18,6 +18,7 @@ from lab_analysis.patient_id import validate_id_card
 from lab_analysis.pipeline.cli import get_deid, parse_args
 from lab_analysis.pipeline.context import PipelineContext
 from lab_analysis.pipeline.ingest import auto_ingest_from_origin_data
+from lab_analysis.pipeline.step_defs import CORE_STEPS
 from lab_analysis.pipeline.steps import (
     check_patient_data,
     extract_patient_id_from_reports,
@@ -189,9 +190,8 @@ def main():
         raise SystemExit(1)
     pid_arg = ["--id-card", deid]
     ts_env = ctx.env_dict()
-    run_step("③ 数据加载", "data_loader", pid_arg, ts_env)
-    run_step("④ 数据分析", "data_analyzer", pid_arg, ts_env)
-    run_step("⑤ 文献检索", "literature_searcher", pid_arg, ts_env)
+    for s in CORE_STEPS:
+        run_step(s.name, s.module, pid_arg, ts_env, fatal=s.fatal)
     if args.skip_lit_filter:
         logger.warning("\n[跳过] 文献二次筛选（--skip-lit-filter）")
     else:
