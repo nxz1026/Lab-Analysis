@@ -31,12 +31,13 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from . import _log
 from ._exceptions import SAFE_EXCEPTIONS
+from .config import WORK_ROOT
 
 logger = _log.get_logger(__name__)
 from lab_analysis.utils import validate_chinese_id as _is_valid_id_card
 
 
-_KEY_FILE = Path(os.environ.get("WORK_ROOT", Path.cwd())) / ".hermes" / "master.key"
+_KEY_FILE = WORK_ROOT / ".hermes" / "master.key"
 _NONCE_LEN = 12
 
 

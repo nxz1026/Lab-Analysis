@@ -11,9 +11,9 @@ from datetime import datetime
 from pathlib import Path
 
 from . import _log
+from .config import WORK_ROOT
 
 logger = _log.get_logger(__name__)
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 
 
 def run_standard_mode(args):

@@ -35,9 +35,11 @@ import threading
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from .config import WORK_ROOT
+
 _CONFIGURED = False
 _LOCK = threading.Lock()
-_WORK_ROOT = os.environ.get("WORK_ROOT", "")
+_WORK_ROOT = str(WORK_ROOT)
 
 # 默认格式: "<时间> [<LEVEL>] <logger名>: <消息>"
 DEFAULT_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"

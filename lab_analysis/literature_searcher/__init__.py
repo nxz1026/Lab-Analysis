@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .. import _log
+from ..config import WORK_ROOT
 from .parser import parse_papers
 from .pubmed import efetch, esearch
 from .strategies import SEARCH_STRATEGIES, auto_generate_queries
@@ -21,7 +22,7 @@ from .strategies import SEARCH_STRATEGIES, auto_generate_queries
 logger = _log.get_logger(__name__)
 
 def _get_work_root() -> Path:
-    return Path(os.environ.get("WORK_ROOT", Path.cwd()))
+    return WORK_ROOT
 
 __all__ = [
     "esearch",

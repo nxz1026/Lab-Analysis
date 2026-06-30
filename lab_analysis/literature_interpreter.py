@@ -11,9 +11,9 @@ from pathlib import Path
 from lab_analysis.llm_client import call_chat_with_retry
 
 from . import _log
+from .config import WORK_ROOT
 
 logger = _log.get_logger(__name__)
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
 _DEEPSEEK_SYSTEM_PROMPT = (
     "你是一位专业的医学检验科和重症医学科临床顾问，结合循证医学证据为患者的检验数据提供深入解读。"
 )
