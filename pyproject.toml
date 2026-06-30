@@ -25,7 +25,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["ruff>=0.4", "pytest>=7.0", "pytest-cov>=4.0", "mypy>=1.0", "hypothesis>=6.0"]
-# TODO: 锁定传递依赖 — 建议生成 constraints.txt (pip freeze > constraints.txt) 后 pip install -c constraints.txt
 dspy = ["dspy-ai>=2.4", "pydicom>=2.4"]
 pdf = ["weasyprint>=62", "markdown>=3.5"]
 dashboard = ["streamlit>=1.28"]

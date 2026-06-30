@@ -209,7 +209,7 @@ def main() -> None:
     logger.info(f"\n[DONE] 检索完成: {results['total_unique_papers']} 篇唯一文献")
     logger.info(f"   输出: {out_path}")
     for sr in results["searches"]:
-        print(
+        logger.info(
             f"   [{sr['strategy']}] {sr['total_results']} total → {sr['pmids_returned']} returned"
         )
 

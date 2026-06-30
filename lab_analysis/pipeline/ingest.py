@@ -33,7 +33,7 @@ def auto_ingest_from_origin_data(
         logger.info("[INFO] Origin_data 目录中没有找到任何可处理的文件")
         return False
     logger.info(f"\n{'=' * 60}\n[STEP ①] 自动数据摄入 - 从 Origin_data 目录\n{'=' * 60}")
-    print(
+    logger.info(
         f"发现 {len(lab_images)} 张检验报告图片, {len(mri_images)} 张MRI报告图片, {len(dicom_zips)} 个DICOM压缩包, {len(dcm_files)} 个DICOM文件"
     )
     total_success = 0
@@ -106,11 +106,11 @@ def auto_ingest_from_origin_data(
                 traceback.print_exc()
     if dcm_files:
         logger.info(f"\n{'─' * 60}\n【DICOM文件处理】\n{'─' * 60}")
-        print(
+        logger.warning(
             f"  [WARNING] 发现 {len(dcm_files)} 个DICOM文件在根目录\n  [INFO] 建议将DICOM文件组织到子目录或使用ZIP压缩包\n  [INFO] 跳过直接处理，请使用 --ingest-dicom-dir 手动指定"
         )
     total_files = len(lab_images) + len(mri_images) + len(dicom_zips)
-    print(
+    logger.info(
         f"\n{'=' * 60}\n数据摄入完成: 共处理 {total_files} 个文件，成功 {total_success} 个\n{'=' * 60}\n"
     )
     return total_success > 0

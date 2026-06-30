@@ -2,7 +2,7 @@
 import logging
 import re
 
-_PHI_ID_PATTERN = re.compile(r"\b\d{17}[\dXx]\b|\b\d{15}\b")
+_PHI_ID_PATTERN = re.compile(r"(?<!\d)\d{17}[\dXx](?!\d)|(?<!\d)\d{15}(?!\d)")
 
 
 def strip_phi(text: str) -> str:

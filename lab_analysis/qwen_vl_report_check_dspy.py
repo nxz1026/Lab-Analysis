@@ -127,7 +127,7 @@ def main():
             continue
         mid_idx = len(dcm_files) // 2
         selected_file = sorted(dcm_files)[mid_idx]
-        print(
+        logger.info(
             f"[图片] 选取: {seq_id}/{selected_file.name} ({seq_desc}) 第{mid_idx + 1}/{len(dcm_files)}帧"
         )
         image_b64 = load_dicom_image(selected_file)
