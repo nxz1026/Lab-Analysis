@@ -58,9 +58,8 @@ def _load_or_create_master_key() -> bytes:
     _KEY_FILE.write_text(base64.urlsafe_b64encode(new_key).decode("ascii"), encoding="utf-8")
     with contextlib.suppress(OSError):
         os.chmod(_KEY_FILE, stat.S_IRUSR | stat.S_IWUSR)
-    print(
-        f"[WARN] 已生成新的脱敏主密钥: {_KEY_FILE}\n       该文件包含还原身份证号的唯一凭证，切勿提交或外传。\n       生产环境建议改用环境变量 LAB_DEID_KEY 注入。",
-        file=sys.stderr,
+    logger.warning(
+        f"[WARN] 已生成新的脱敏主密钥: {_KEY_FILE}\n       该文件包含还原身份证号的唯一凭证，切勿提交或外传。\n       生产环境建议改用环境变量 LAB_DEID_KEY 注入。"
     )
     return new_key
 

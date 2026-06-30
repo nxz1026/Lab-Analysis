@@ -31,7 +31,7 @@ def process_batch(
         if batch_mode:
             display_item = item[0] if isinstance(item, tuple) else item
             logger.info(f"\n{'=' * 60}")
-            print(
+            logger.info(
                 f"[{idx}/{total}] 处理: {(display_item.name if hasattr(display_item, 'name') else display_item)}"
             )
             logger.info(f"{'=' * 60}")

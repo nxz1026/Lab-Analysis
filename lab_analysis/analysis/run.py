@@ -66,7 +66,7 @@ def _compute_stats(df: pd.DataFrame) -> dict:
         "labels": inflammation_status,
         "report_dates": df["report_date"].dt.strftime("%Y-%m-%d").tolist(),
     }
-    print(
+    logger.info(
         f"炎症分类: {dict(zip(df['report_date'].dt.strftime('%m-%d'), inflammation_status, strict=True))}"
     )
     results["linear_regression"] = _compute_trends(df)

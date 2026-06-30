@@ -104,10 +104,10 @@ def run_dspy_mode(args):
             save_prompts_to_json("literature_interpreter", prompts_data, prompts_dir)
             save_prompts_to_markdown("literature_interpreter", prompts_data, prompts_dir)
             save_actual_dspy_prompt("literature_interpreter", prompts_dir)
-            print(
+            logger.info(
                 f"[DSPy] 优化 prompt 已保存: {prompts_dir}/literature_interpreter_dspy_prompts.{{json,md}}"
             )
-            print(
+            logger.info(
                 f"[DSPy] 完整 prompt 已保存: {prompts_dir}/literature_interpreter_dspy_actual_prompt.txt"
             )
         except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:

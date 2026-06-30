@@ -64,7 +64,7 @@ def fake_id_env(monkeypatch):
     # disable logging side effects
     monkeypatch.setattr(run_mod, "_setup_pipeline_logging", lambda ts: None)
     # P1-4: 重置 cleanup 幂等标志, 避免跨测试干扰
-    monkeypatch.setattr(run_mod, "_cleanup_done", False)
+    run_mod._cleanup_done_var.set(False)
 
 
 def test_main_calls_all_standard_steps(monkeypatch, fake_id_env, tmp_path):
@@ -191,32 +191,27 @@ def test_main_fails_on_data_loader_error(monkeypatch, fake_id_env, tmp_path):
 
 
 def test_cleanup_pipeline_state_idempotent(monkeypatch, fake_id_env):
-    """P1-4: _cleanup_pipeline_state 多次调用应幂等 (同一进程多次 main() 不重复 flush)。"""
+    """_cleanup_pipeline_state 多次调用应幂等 (同一进程多次 main() 不重复 flush)。"""
     flush_calls: list = []
     fake_handler = MagicMock()
-    fake_handler.level = 0  # 数字 level, logger.callHandlers 会比较 levelno >= hdlr.level
+    fake_handler.level = 0
     fake_handler.flush = lambda: flush_calls.append(1)
-    monkeypatch.setattr(run_mod, "_cleanup_done", False)
+    run_mod._cleanup_done_var.set(False)
     monkeypatch.setattr(run_mod.logger, "handlers", [fake_handler])
-    # 第一次调用
     run_mod._cleanup_pipeline_state()
-    # 第二次调用 — 应直接 return
     run_mod._cleanup_pipeline_state()
     assert len(flush_calls) == 1, f"应幂等, 实际 flush 调用 {len(flush_calls)} 次"
 
 
 def test_cleanup_pipeline_state_handler_flush_failure_swallowed(monkeypatch, fake_id_env):
-    """P1-4: cleanup 期间 handler.flush() 失败不应阻止后续清理。"""
+    """cleanup 期间 handler.flush() 失败不应阻止后续清理。"""
     broken_handler = MagicMock()
     broken_handler.level = 0
     broken_handler.flush.side_effect = OSError("disk full")
-    monkeypatch.setattr(run_mod, "_cleanup_done", False)
+    run_mod._cleanup_done_var.set(False)
     monkeypatch.setattr(run_mod.logger, "handlers", [broken_handler])
-    # 不应抛异常
     run_mod._cleanup_pipeline_state()
-    # 幂等性 — 清理标志应已设
-    assert run_mod._cleanup_done is True
-    # broken handler 的 flush 被调用过
+    assert run_mod._cleanup_done_var.get() is True
     assert broken_handler.flush.called
 
 

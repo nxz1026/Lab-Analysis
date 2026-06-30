@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import atexit
 import contextlib
+import contextvars
 import ctypes
 import json
 import logging
@@ -34,11 +35,11 @@ logger = _log.get_logger("pipeline")
 # 设计: 注册到 atexit, 不论 main() 走正常结束、sys.exit(1)、KeyboardInterrupt、还是
 # 未捕获异常, 进程退出前 atexit handler 都会被调用, 保证 logger handler flush。
 # 幂等性: 使用模块级 _cleanup_done 标志防止同一进程多次调用 main() 时重复 flush。
-_cleanup_done = False
+_cleanup_done_var: contextvars.ContextVar[bool] = contextvars.ContextVar("cleanup_done", default=False)
 
 
 def _cleanup_pipeline_state() -> None:
-    """P1-4: 统一的 pipeline 退出清理 (flush logger handlers, 幂等)。
+    """统一的 pipeline 退出清理 (flush logger handlers, 幂等)。
 
     调用场景:
     - main() 入口处 atexit.register, 正常结束触发
@@ -46,10 +47,9 @@ def _cleanup_pipeline_state() -> None:
     - 未捕获 Exception → 进程退出前 atexit 触发
     - 重复调用 main() (e.g. 测试) → 幂等, 只 flush 一次
     """
-    global _cleanup_done
-    if _cleanup_done:
+    if _cleanup_done_var.get():
         return
-    _cleanup_done = True
+    _cleanup_done_var.set(True)
     for h in logger.handlers:
         # best-effort: cleanup 不能二次崩 (SIM105: 用 contextlib.suppress)
         with contextlib.suppress(Exception):

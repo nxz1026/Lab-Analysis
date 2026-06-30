@@ -93,7 +93,7 @@ def main():
 
         idx = random.randint(0, len(dcm_files) - 1)  # noqa: S311
         img_path = dcm_files[idx]
-        print(
+        logger.info(
             f"[图片] 选取: {seq_dir_name}/{img_path.name} ({seq_desc}) 第{idx + 1}/{len(dcm_files)}帧"
         )
         try:
