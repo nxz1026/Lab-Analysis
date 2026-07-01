@@ -21,10 +21,10 @@ _DEEPSEEK_SYSTEM_PROMPT = (
 
 def load_json(path: str, default=None):
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
-        return default or {}
+        return default if default is not None else {}
 
 
 def build_prompt(analysis_path: str, lit_path: str) -> str:
@@ -86,7 +86,6 @@ def main():
     parser.add_argument("--out", default=None, help="输出 JSON 路径")
     parser.add_argument("--id-card", default=None, help="脱敏ID(由 pipeline 传入)")
     args = parser.parse_args()
-    import os
 
     wiki_data = WORK_ROOT / "data"
     if args.id_card:

@@ -71,8 +71,8 @@ def _decode_key(s: str) -> bytes:
     pad = "=" * (-len(s) % 4)
     try:
         return base64.urlsafe_b64decode(s + pad)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("urlsafe_b64decode 失败，尝试标准 base64: %s", exc)
     try:
         return base64.b64decode(s + pad)
     except Exception as e:

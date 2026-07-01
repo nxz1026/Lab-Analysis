@@ -12,6 +12,7 @@ from typing import Dict, List
 import dspy
 
 from .. import _log
+from ..config import WORK_ROOT
 from ._cache_metrics import record_hit, record_load_fail, record_miss
 from ._retry import SafeCallError, make_empty_prediction, safe_predict
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
@@ -167,7 +168,6 @@ def run_dspy_mri_analysis(
     from dotenv import load_dotenv
 
     load_dotenv()
-    work_root = Path(os.environ.get("WORK_ROOT", Path.cwd()))
     api_key = os.environ.get("DASHSCOPE_API_KEY")
     if not api_key:
         raise ValueError("未找到 DASHSCOPE_API_KEY 环境变量")

@@ -41,7 +41,10 @@ def build_scoring_card(patient_id: str, data_dir: Path) -> ScoringResult:
     imaging_dir = data_dir / "05_imaging"
     results = _load_json(analyzed_dir / "analysis_results.json")
     alerts = _load_alerts(analyzed_dir / "alerts.json")
-    lit_filtered = _load_json(lit_dir / "literature_results.filtered.json")
+    lit_filtered_path = lit_dir / "literature_results.filtered.json"
+    lit_filtered = _load_json(lit_filtered_path)
+    if not lit_filtered:
+        logger.warning("  [WARNING] %s 不存在或为空，请先运行文献筛选", lit_filtered_path.name)
     mri_results = _load_json(imaging_dir / "mri_report_check_results.json")
 
     if not results:

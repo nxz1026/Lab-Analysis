@@ -105,7 +105,7 @@ def save_structured_report(data: dict, patient_id: str) -> str:
     original_image = report_dir / "original_image.jpg"
     if not original_image.exists():
         lab_dir = WORK_ROOT / "raw" / f"patient_{patient_id_obf}" / "lab"
-        if lab_dir.exists():
+        if lab_dir.exists() and report_date:
             for img_file in lab_dir.glob(f"*{report_date}*"):
                 if img_file.suffix.lower() in [".jpg", ".jpeg", ".png"]:
                     shutil.copy2(img_file, original_image)

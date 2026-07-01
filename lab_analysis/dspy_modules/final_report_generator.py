@@ -11,6 +11,7 @@ from pathlib import Path
 import dspy
 
 from .. import _log
+from ..config import WORK_ROOT
 from ..report_schema import REPORT_MD_TEMPLATE, REPORT_SECTIONS
 from ._cache_metrics import record_hit, record_load_fail, record_miss
 from ._retry import SafeCallError, make_empty_prediction, safe_predict
@@ -169,8 +170,6 @@ def run_dspy_final_report(
     Returns:
         生成的报告字典
     """
-    import os
-
     import dspy
     from dotenv import load_dotenv
 
@@ -293,10 +292,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DSPy 最终报告生成")
     parser.add_argument("--id-card", required=True, help="患者ID")
     args = parser.parse_args()
-    work_root = Path(os.environ.get("WORK_ROOT", Path.cwd()))
     raw_ts = os.environ.get("ANALYSIS_TS", args.id_card)
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts
-    data_dir = work_root / "data" / args.id_card / ts
+    data_dir = WORK_ROOT / "data" / args.id_card / ts
     logger.info("[DSPy] 开始生成最终报告...")
     logger.info(f"  患者ID: {args.id_card}")
     logger.info(f"  数据目录: {data_dir}")

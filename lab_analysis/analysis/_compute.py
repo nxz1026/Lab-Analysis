@@ -25,7 +25,7 @@ def linear_regression_trend(series: pd.Series) -> dict:
             "intercept": None,
             "r2": None,
             "trend": "数据不足",
-            "slope_per_day": None,
+            "slope_per_observation": None,
         }
 
     x = np.arange(len(valid))  # NOTE: treats time points as equally spaced, ignores actual date gaps
@@ -36,7 +36,7 @@ def linear_regression_trend(series: pd.Series) -> dict:
     denominator = np.sum((x - x_mean) ** 2)
 
     if denominator == 0:
-        return {"slope": 0, "intercept": y_mean, "r2": 0, "trend": "无变化", "slope_per_day": 0}
+        return {"slope": 0, "intercept": y_mean, "r2": 0, "trend": "无变化", "slope_per_observation": 0}
 
     slope = numerator / denominator
     intercept = y_mean - slope * x_mean
@@ -51,7 +51,7 @@ def linear_regression_trend(series: pd.Series) -> dict:
         "intercept": round(float(intercept), 4),
         "r2": round(float(r2), 4),
         "trend": trend,
-        "slope_per_day": round(float(slope), 4),
+        "slope_per_observation": round(float(slope), 4),
         "n_points": int(len(valid)),
     }
 

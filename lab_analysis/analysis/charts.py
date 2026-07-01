@@ -52,7 +52,9 @@ def plot_trend_regression(df: pd.DataFrame, results: dict, output_path: Path):
 
         reg = linear_results.get(metric, {})
         if reg.get("slope") is not None and len(y_vals) >= 2:
-            slope, intercept, r2 = reg["slope"], reg["intercept"], reg["r2"]
+            slope = reg.get("slope", 0)
+            intercept = reg.get("intercept", 0)
+            r2 = reg.get("r2", 0)
             x_line = np.array([x_idx.min(), x_idx.max()])
             y_line = slope * x_line + intercept
             ax.plot(x_line, y_line, "--", color="#e74c3c", linewidth=1.8, label=f"拟合 R²={r2:.3f}")
