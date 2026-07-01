@@ -21,7 +21,7 @@ def _load_patient_info(lab_path: Path) -> dict:
     """从 lab_metrics.json 的第一份报告里读取患者信息。"""
     if lab_path.exists():
         try:
-            d = json.loads(lab_path.read_text())
+            d = json.loads(lab_path.read_text(encoding="utf-8"))
             reports = d.get("reports", [])
             if reports:
                 report = reports[0]
@@ -30,8 +30,8 @@ def _load_patient_info(lab_path: Path) -> dict:
                     "age_sex": report.get("age_sex", "未知"),
                     "exam_id": report.get("exam_id", "未知"),
                 }
-        except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
-            pass
+        except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as exc:
+            logger.warning("_load_patient_info: 解析失败 %s — %s", lab_path, exc)
     return {"name": "患者", "age_sex": "未知", "exam_id": "未知"}
 
 
@@ -260,8 +260,6 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
 def main():
     args = parse_args()
     patient_id = args.id_card
-    import os
-
     raw_ts = os.environ.get("ANALYSIS_TS", "")
     ts = raw_ts.split("/")[-1] if "/" in raw_ts else raw_ts or patient_id
     data_dir = WORK_ROOT / "data" / patient_id / ts

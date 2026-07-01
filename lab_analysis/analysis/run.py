@@ -133,7 +133,7 @@ def _compute_stats(df: pd.DataFrame) -> dict:
             results["predictions"] = preds
             print_predictions(preds)
     except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
-        logger.info(f"  [WARNING] 指标预测失败: {e}")
+        logger.warning("指标预测失败: %s", e)
     return results
 
 

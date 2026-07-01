@@ -11,6 +11,7 @@ from typing import Optional
 import dspy
 
 from .. import _log
+from ..config import WORK_ROOT
 from ._cache_metrics import record_hit, record_load_fail, record_miss
 from ._retry import SafeCallError, make_empty_prediction, safe_predict
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
@@ -174,7 +175,6 @@ def run_dspy_extraction(image_path: Path, initial_ocr_text: str = ""):
     from dotenv import load_dotenv
 
     load_dotenv()
-    work_root = Path(os.environ.get("WORK_ROOT", Path.cwd()))
     api_key = os.environ.get("ZHIPU_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
         raise ValueError("未找到 ZHIPU_API_KEY 或 DEEPSEEK_API_KEY")

@@ -227,7 +227,6 @@ def main():
 
 
 if __name__ == "__main__":
-    import os
     from datetime import datetime
 
     sys.exit(main())

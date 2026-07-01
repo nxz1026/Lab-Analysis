@@ -18,7 +18,7 @@ import dspy
 
 from .. import _log
 
-_LOG = _log.get_logger(__name__)
+logger = _log.get_logger(__name__)
 _DEFAULT_MAX_RETRIES = 3
 _DEFAULT_BACKOFF_BASE = 1.5
 
@@ -56,7 +56,7 @@ def safe_predict(
             if attempt >= max_retries:
                 break
             sleep_for = backoff_base**attempt
-            _LOG.warning(
+            logger.warning(
                 "[%s] attempt %d/%d failed (%s); retrying in %.1fs",
                 module_name,
                 attempt,

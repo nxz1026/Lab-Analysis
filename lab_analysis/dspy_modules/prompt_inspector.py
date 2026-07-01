@@ -67,20 +67,20 @@ def extract_signature_info(signature) -> Dict[str, Any]:
         if instructions is None and hasattr(signature, "__doc__"):
             instructions = signature.__doc__
         info["instructions"] = safe_str(instructions, 2000)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("extract_signature_info: instructions 提取失败: %s", exc)
     try:
         input_fields = getattr(signature, "input_fields", {}) or {}
         for name, field in input_fields.items():
             info["input_fields"][name] = extract_field_desc(field)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("extract_signature_info: input_fields 提取失败: %s", exc)
     try:
         output_fields = getattr(signature, "output_fields", {}) or {}
         for name, field in output_fields.items():
             info["output_fields"][name] = extract_field_desc(field)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("extract_signature_info: output_fields 提取失败: %s", exc)
     return info
 
 

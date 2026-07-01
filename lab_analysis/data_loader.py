@@ -139,8 +139,8 @@ def parse_metrics_yaml(text: str) -> dict[str, float | str]:
                         for k, v in metrics_root.items()
                         if v is not None and re.match(r"^\w+$", k)
                     }
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("parse_metrics_yaml: YAML 解析失败，回退到正则: %s", exc)
 
     # Fallback: regex-based parsing
     metrics: dict[str, float | str] = {}
