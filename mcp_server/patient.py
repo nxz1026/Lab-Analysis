@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
 
 from lab_analysis.dspy_modules import multi_patient as mp
 
 from . import mcp
+
+logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
@@ -25,7 +28,7 @@ def list_patients() -> str:
           "pairs": {patient_id: [[std_ts, dspy_ts], ...]}
         }
     """
-    _PATIENT_RE = re.compile(r"^[A-Za-z0-9_-]{15,50}$")
+    _PATIENT_RE = re.compile(r"^[A-Za-z0-9_-]{15,}$")
     _TEMPLATE_KEYWORDS = re.compile(r"(dspy|prompts?|template|test)", re.IGNORECASE)
     try:
         # 过滤: 匹配 base64url 脱敏 ID 模式 (字母数字+下划线+连字符, 15-50 字符)
@@ -47,6 +50,7 @@ def list_patients() -> str:
         s["filtered_out"] = [p for p in all_pids if p not in pids]
         return json.dumps(s, ensure_ascii=False, indent=2)
     except Exception as e:
+        logger.exception("list_patients 失败")
         return json.dumps(
             {"error": str(e), "type": type(e).__name__},
             ensure_ascii=False,
@@ -181,6 +185,7 @@ def get_pipeline_status(patient_id: str, timestamp: str = "") -> str:
             indent=2,
         )
     except Exception as e:
+        logger.exception("get_pipeline_status 失败")
         return json.dumps(
             {"error": str(e), "type": type(e).__name__},
             ensure_ascii=False,

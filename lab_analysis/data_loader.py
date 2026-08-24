@@ -20,9 +20,10 @@ except ImportError:
     yaml = None
 
 from lab_analysis.utils import build_paths as build_paths_utils
-from lab_analysis.utils import parse_metadata_table
+from lab_analysis.utils import parse_numeric_value, parse_metadata_table
 
 from . import _log
+from .analysis._base import NUMERIC_METRICS, REF_RANGES
 
 logger = _log.get_logger(__name__)
 
@@ -39,66 +40,60 @@ def build_paths(patient_id: str):
     return paths
 
 
-# 所有指标（顺序与表格列一致）
-ALL_METRICS = [
-    "WBC",
-    "RBC",
-    "HGB",
-    "HCT",
-    "PLT",
-    "PCT",
-    "P-LCR",
-    "MCV",
-    "MCH",
-    "MCHC",
-    "NEUT%",
-    "LYMPH%",
-    "MONO%",
-    "EO%",
-    "BASO%",
-    "NEUT#",
-    "LYMPH#",
-    "MONO#",
-    "EO#",
-    "BASO#",
-    "RDW-SD",
-    "RDW-CV",
-    "MPV",
-    "PDW",
-    "CRP",
-    "hs-CRP",
-]
+# 别名：ALL_METRICS = NUMERIC_METRICS（单一事实源在 analysis._base）
+ALL_METRICS = NUMERIC_METRICS
 
-# 参考范围（用于判断正常/异常，仅作参考，notes.md 中有精确值时以notes为准）
-REF_RANGES = {
-    "WBC": (3.5, 9.5),
-    "RBC": (4.3, 5.8),
-    "HGB": (130, 175),
-    "HCT": (40, 50),
-    "PLT": (125, 350),
-    "PCT": (0.108, 0.272),
-    "NEUT%": (40, 75),
-    "LYMPH%": (20, 50),
-    "MONO%": (2, 10),
-    "EO%": (0.4, 8),
-    "BASO%": (0, 1),
-    "NEUT#": (1.8, 6.3),
-    "LYMPH#": (1.1, 3.2),
-    "MONO#": (0.1, 0.6),
-    "RDW-SD": (37, 50),
-    "RDW-CV": (0, 15),
-    "CRP": (0, 10),
-    "hs-CRP": (0, 1.0),
+
+# 指标别名映射（用于将 metrics.md 中的字段名标准化）
+METRIC_ALIASES = {
+    # 标准格式（直接使用）
+    "hs-CRP": "hs-CRP",
+    "CRP": "CRP",
+    "WBC": "WBC",
+    "RBC": "RBC",
+    "HGB": "HGB",
+    "HCT": "HCT",
+    "PLT": "PLT",
+    "PCT": "PCT",
+    "P-LCR": "P-LCR",
+    "MCV": "MCV",
+    "MCH": "MCH",
+    "MCHC": "MCHC",
+    "NEUT%": "NEUT%",
+    "LYMPH%": "LYMPH%",
+    "MONO%": "MONO%",
+    "EO%": "EO%",
+    "BASO%": "BASO%",
+    "NEUT#": "NEUT#",
+    "LYMPH#": "LYMPH#",
+    "MONO#": "MONO#",
+    "EO#": "EO#",
+    "BASO#": "BASO#",
+    "RDW-SD": "RDW-SD",
+    "RDW-CV": "RDW-CV",
+    "MPV": "MPV",
+    "PDW": "PDW",
+    # 兼容旧格式/别名
+    "hsCRP": "hs-CRP",
+    "P_LCR": "P-LCR",
+    "NEUT_percent": "NEUT%",
+    "NEUT_abs": "NEUT#",
+    "LYMPH_percent": "LYMPH%",
+    "LYMPH_abs": "LYMPH#",
+    "MONO_percent": "MONO%",
+    "MONO_abs": "MONO#",
+    "EO_percent": "EO%",
+    "EO_abs": "EO#",
+    "BASO_percent": "BASO%",
+    "BASO_abs": "BASO#",
+    "RDW_SD": "RDW-SD",
+    "RDW_CV": "RDW-CV",
 }
 
 
 def extract_value(result_str: str):
-    """从结果字符串提取数值，支持 >10、<0.5 等格式。"""
-    if not result_str or result_str.strip() in ("—", "–", "-", ""):
-        return None
-    s = result_str.strip().strip("*").strip()
-    m = re.search(r"^[^0-9]*([0-9]+\.?\d*)", s)
-    return float(m.group(1)) if m else None
+    """从结果字符串提取数值，支持 >10、<0.5 等格式。（委托给 parse_numeric_value）"""
+    return parse_numeric_value(result_str)
 
 
 def parse_metrics_simple(text: str) -> dict[str, float | str]:
@@ -209,52 +204,7 @@ def load_reports(raw_papers: Path):
             metrics_text = metrics_path.read_text(encoding="utf-8")
             metrics_data = parse_metrics_simple(metrics_text)
 
-        # 映射 metrics.md 中的字段名到标准名
-        METRIC_ALIASES = {
-            # 标准格式（直接使用）
-            "hs-CRP": "hs-CRP",
-            "CRP": "CRP",
-            "WBC": "WBC",
-            "RBC": "RBC",
-            "HGB": "HGB",
-            "HCT": "HCT",
-            "PLT": "PLT",
-            "PCT": "PCT",
-            "P-LCR": "P-LCR",
-            "MCV": "MCV",
-            "MCH": "MCH",
-            "MCHC": "MCHC",
-            "NEUT%": "NEUT%",
-            "LYMPH%": "LYMPH%",
-            "MONO%": "MONO%",
-            "EO%": "EO%",
-            "BASO%": "BASO%",
-            "NEUT#": "NEUT#",
-            "LYMPH#": "LYMPH#",
-            "MONO#": "MONO#",
-            "EO#": "EO#",
-            "BASO#": "BASO#",
-            "RDW-SD": "RDW-SD",
-            "RDW-CV": "RDW-CV",
-            "MPV": "MPV",
-            "PDW": "PDW",
-            # 兼容旧格式/别名
-            "hsCRP": "hs-CRP",
-            "P_LCR": "P-LCR",
-            "NEUT_percent": "NEUT%",
-            "NEUT_abs": "NEUT#",
-            "LYMPH_percent": "LYMPH%",
-            "LYMPH_abs": "LYMPH#",
-            "MONO_percent": "MONO%",
-            "MONO_abs": "MONO#",
-            "EO_percent": "EO%",
-            "EO_abs": "EO#",
-            "BASO_percent": "BASO%",
-            "BASO_abs": "BASO#",
-            "RDW_SD": "RDW-SD",
-            "RDW_CV": "RDW-CV",
-        }
-
+        # 映射 metrics.md 中的字段名到标准名（使用模块级 METRIC_ALIASES）
         for alias, std_name in METRIC_ALIASES.items():
             if alias in metrics_data:
                 val = metrics_data[alias]

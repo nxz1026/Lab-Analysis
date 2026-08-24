@@ -79,14 +79,19 @@ def rename_dicom_sequences(source_dir: Path, target_dir: Path) -> int:
 
     count = 0
     skipped = 0
-    for idx, (seq_dir, dcm_count) in enumerate(seq_dirs, 1):
+    # 找出已存在的最大序号，续编而非从 seq_01 重新开始
+    existing_seqs = sorted(
+        p.name for p in target_dir.iterdir() if p.is_dir() and p.name.startswith("seq_")
+    )
+    next_idx = len(existing_seqs) + 1 if existing_seqs else 1
+    for idx, (seq_dir, dcm_count) in enumerate(seq_dirs, next_idx):
         seq_name = f"seq_{idx:02d}"
         dest_seq_dir = target_dir / seq_name
         print_progress(
-            idx, total, prefix="处理序列:", suffix=f"{seq_dir.name} ({dcm_count} frames)"
+            idx - next_idx + 1, total, prefix="处理序列:", suffix=f"{seq_dir.name} ({dcm_count} frames)"
         )
         if dest_seq_dir.exists():
-            logger.debug(f"跳过已存在的序列: {seq_name}")
+            logger.info(f"跳过已存在的序列: {seq_name}")
             skipped += 1
             continue
         try:
@@ -98,6 +103,7 @@ def rename_dicom_sequences(source_dir: Path, target_dir: Path) -> int:
             logger.info(f"\n[ERROR] 复制失败: {seq_dir.name} - {e}")
 
     logger.info(f"DICOM 序列处理完成: 成功 {count} 个, 跳过 {skipped} 个")
+    logger.info(f"  注意: 跳过 {skipped} 个已存在的序列目录, 请检查是否需要合并数据")
     return count
 
 

@@ -55,10 +55,12 @@ def score_lab_abnormality(results: dict, alerts: list[dict]) -> float:
     n_abnormal = len(abnormal)
     score += min(40, n_abnormal * 8)
 
-    # 严重 Z-score 异常（最多 30 分）
+    # 严重 Z-score 异常（最多 30 分，总分封顶）
+    severe_score = 0.0
     for _metric, info in zscores.items():
         severe = info.get("outliers_severe", {})
-        score += min(30, severe.get("count", 0) * 15)
+        severe_score += severe.get("count", 0) * 15
+    score += min(30, severe_score)
 
     # CRITICAL 告警（最多 30 分）
     n_critical = sum(1 for a in alerts if a.get("level") == "CRITICAL")

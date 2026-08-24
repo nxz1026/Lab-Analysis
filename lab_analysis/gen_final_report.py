@@ -6,15 +6,12 @@ import os
 from pathlib import Path
 
 from lab_analysis.llm_client import call_chat, load_api_key
-from lab_analysis.report_schema import PROMPT_SECTION_TEMPLATES
+from lab_analysis.report_schema import FINAL_REPORT_SYSTEM_PROMPT, LLM_CALL_PARAMS, PROMPT_SECTION_TEMPLATES
 
 from . import _log
 from .utils import WORK_ROOT
 
 logger = _log.get_logger(__name__)
-_FINAL_REPORT_SYSTEM_PROMPT = (
-    "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"
-)
 
 
 def _load_patient_info(lab_path: Path) -> dict:
@@ -286,10 +283,8 @@ def main():
     content = call_chat(
         "deepseek",
         user_prompt=USER_PROMPT,
-        system_prompt=_FINAL_REPORT_SYSTEM_PROMPT,
-        max_tokens=5000,
-        temperature=0.3,
-        timeout=180,
+        system_prompt=FINAL_REPORT_SYSTEM_PROMPT,
+        **LLM_CALL_PARAMS,
         api_key=DEEPSEEK_API_KEY,
     )
     logger.info(f"Content length: {len(content)}")
@@ -306,7 +301,7 @@ def main():
                 from lab_analysis.gen_final_report_dspy import run_dspy_mode as _dspy_run
 
                 _dspy_args = _argparse.Namespace(id_card=patient_id, use_dspy=True)
-                dspy_result = _dspy_run(_dspy_args)
+                dspy_result = _dspy_run(patient_id, data_dir)
                 dspy_sections = dspy_result.get("sections", {})
                 dspy_confidence = dspy_result.get("confidence")
                 comp = compare_reports(content, dspy_sections, dspy_confidence)

@@ -20,6 +20,7 @@ from .literature_interpreter import (
     run_dspy_interpretation,
 )
 from .mri_analyzer import MRIAnalysisModule, compile_mri_analyzer, run_dspy_mri_analysis
+from .multi_patient import run_multi_patient_pipeline
 from .prompt_inspector import (
     extract_module_prompts,
     get_actual_dspy_prompt,
@@ -46,6 +47,8 @@ __all__ = [
     "save_prompts_to_markdown",
     "get_actual_dspy_prompt",
     "save_actual_dspy_prompt",
+    # multi-patient
+    "run_multi_patient_pipeline",
     # retry helpers
     "safe_predict",
     "SafeCallError",

@@ -36,6 +36,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from .config import WORK_ROOT
+from ._phi_filter import PHIFilter
 
 _CONFIGURED = False
 _LOCK = threading.Lock()
@@ -107,6 +108,9 @@ def configure(level: str | int | None = None) -> None:
                 datefmt=datefmt,
                 stream=sys.stderr,
             )
+            # 在所有 handler 上加 PHI 过滤器，确保子 logger 传播时也生效
+            for h in root.handlers:
+                h.addFilter(PHIFilter())
         else:
             root.setLevel(lvl)
         # 默认抑制 DSPy / LiteLLM 的过度啰嗦，除非 LOG_LEVEL 显式指定
@@ -164,6 +168,7 @@ def add_file_handler(
         fmt, datefmt = _resolve_format()
         formatter = logging.Formatter(fmt, datefmt=datefmt)
     handler.setFormatter(formatter)
+    handler.addFilter(PHIFilter())
     if level is not None:
         handler.setLevel(_resolve_level(level))
     logger.addHandler(handler)

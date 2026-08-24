@@ -81,3 +81,36 @@ def build_section_field_name(suffix: str) -> str:
     if idx is None:
         raise ValueError(f"未知章节后缀: {suffix!r}")
     return f"section_{idx}_{suffix}"
+
+
+# 关键医疗实体列表（用于实体级对比和量化评估）
+KEY_ENTITIES: list[str] = [
+    "hs-CRP",
+    "CRP",
+    "WBC",
+    "NEUT#",
+    "MONO%",
+    "RDW-SD",
+    "RDW-CV",
+    "PCT",
+    "PLT",
+    "急性期",
+    "缓解期",
+    "过渡期",
+    "炎症",
+    "慢性胰腺炎",
+    "胰腺",
+    "感染",
+]
+
+# 系统提示词（标准版和DSPy版共用）
+FINAL_REPORT_SYSTEM_PROMPT = (
+    "你是一个无害的医学资料分析助手，基于提供的患者数据生成结构化临床报告。"
+)
+
+# LLM 调用参数（标准版和DSPy版共用）
+LLM_CALL_PARAMS: dict = {
+    "max_tokens": 5000,
+    "temperature": 0.3,
+    "timeout": 180,
+}

@@ -103,14 +103,21 @@ def _collect_supporting_signals(results: dict, alerts: list[dict], rule_name: st
     inflam = results.get("inflammation_classification", {})
     labels = inflam.get("labels", [])
     dates = inflam.get("report_dates", [])
-    for d, lbl in zip(dates, labels, strict=True):
-        signals.append(f"{d}: {lbl}")
+    try:
+        for d, lbl in zip(dates, labels, strict=True):
+            signals.append(f"{d}: {lbl}")
+    except (TypeError, ValueError):
+        logger.warning("inflammation labels/dates 长度不匹配，跳过")
 
     # 来自 trend
     reg = results.get("linear_regression", {})
     for metric, info in reg.items():
-        if info.get("r2", 0) >= 0.7:
-            signals.append(f"{metric} {info['trend']}（slope={info['slope']:.3f}）")
+        try:
+            if info.get("r2", 0) >= 0.7:
+                slope = info.get("slope", 0)
+                signals.append(f"{metric} {info['trend']}（slope={slope:.3f}）")
+        except (TypeError, KeyError):
+            continue
 
     return signals[:8]
 

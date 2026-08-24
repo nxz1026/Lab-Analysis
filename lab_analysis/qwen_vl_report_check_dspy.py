@@ -41,7 +41,11 @@ def load_dicom_image(path: Path) -> str:
 
         dcm = pydicom.dcmread(str(path))
         img = dcm.pixel_array
-        img = ((img - img.min()) / (img.max() - img.min()) * 255).astype("uint8")
+        img_min, img_max = img.min(), img.max()
+        if img_max > img_min:
+            img = ((img - img_min) / (img_max - img_min) * 255).astype("uint8")
+        else:
+            img = ((img - img_min) * 255).astype("uint8")
         pil_img = Image.fromarray(img)
         buffer = io.BytesIO()
         pil_img.save(buffer, format="JPEG")

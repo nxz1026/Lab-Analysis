@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
+import re
 from pathlib import Path
 
 from . import mcp
+
+logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
@@ -35,7 +39,7 @@ def render_quant_trend(patient_id: str = "", out_dir: str = "", x_key: str = "st
         report_ids: list[str] = []
         if base.is_dir():
             for pdir in sorted(base.iterdir()):
-                if not pdir.is_dir() or not pdir.name.isdigit():
+                if not pdir.is_dir() or not re.match(r'^[A-Za-z0-9_-]{15,}$', pdir.name):
                     continue
                 if patient_id and pdir.name != patient_id:
                     continue
@@ -81,6 +85,7 @@ def render_quant_trend(patient_id: str = "", out_dir: str = "", x_key: str = "st
             indent=2,
         )
     except Exception as e:
+        logger.exception("render_quant_trend 失败")
         return json.dumps(
             {"error": str(e), "type": type(e).__name__},
             ensure_ascii=False,

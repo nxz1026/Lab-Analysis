@@ -7,7 +7,7 @@
 [![CI](https://img.shields.io/badge/CI-passing-success.svg)](.github/workflows/tests.yml)
 [![Quant Gate](https://img.shields.io/badge/Quant_Gate-6/6_PASS-success.svg)](lab_analysis/quant_metrics.py)
 [![DSPy](https://img.shields.io/badge/DSPy-3.2+-orange.svg)](https://dspy.ai/)
-[![Tests](https://img.shields.io/badge/Tests-606_✔️-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-289_✔️-success.svg)](tests/)
 [![MCP](https://img.shields.io/badge/MCP-6_Tools-purple.svg)](mcp_server.py)
 [![Coverage](https://img.shields.io/badge/Coverage-60%25-yellow.svg)](pyproject.toml)
 [![Code Style](https://img.shields.io/badge/Code-Ruff-blueviolet.svg)](pyproject.toml)
@@ -478,7 +478,25 @@ MIT — 详见 [LICENSE](LICENSE)
 
 ---
 
-## 作者
+## Changelog
+
+### 2026-08-24 · Code Review Remediation (P0-P3)
+
+基于外部代码审查报告的 33 项修复，覆盖严重 bug、安全漏洞、数据完整性问题及代码卫生。
+
+**P0 严重（6项）**：`scoring_card/__main__` 导入修复、`trend.py` base64url deid 匹配修正、PHI filter 移至 handler、`work_root`→`WORK_ROOT` + NameError 捕获、DICOM 重复导入静默丢数据修复、`batch_vision_extract` 产物文件名修正
+
+**P1 高优（14项）**：`run_dspy_mode` 参数错位、论文边界定位错误、recompile env 变量继承、多患者检测报错、encode 大小写归一化、BadZipFile 捕获、诊疗卡号/身份证号分离、cleanup 结果后累加、ci_95_lower 真值判断修复、dimensions 总分封顶、hypotheses zip/dict 保护、qwen_vl 零除保护、注释误导清除、PDW LOINC 编码修正
+
+**P2 重构（5项）**：ALL_METRICS/REF_RANGES 收敛到 `analysis/_base.py`、章节后缀/KEY_ENTITIES 收敛到 `report_schema.py`、系统提示词+API参数提取为共享常量、`parse_numeric_value` 统一数值解析、日志 handler 追踪 + cleanup 重置
+
+**P3 代码卫生（8项）**：死代码删除、变量名修正、__init__.py 注册、空 try/except 清理、未用常量清理、import 提到顶部、字典提出循环
+
+**数据**：修改 38 文件，删除 1 死代码文件，归档 15 个一次性 examples 脚本。测试 289 passed。
+
+---
+
+
 
 **nxz1026** — [GitHub @nxz1026](https://github.com/nxz1026)
 

@@ -36,36 +36,50 @@ logger = _log.get_logger(__name__)
 
 
 def extract_patient_id_from_reports() -> str | None:
-    """从已摄入的检验报告 metadata.md 中提取身份证号。"""
+    """从已摄入的检验报告 metadata.md 中提取身份证号。
+
+    当 raw/ 下存在多个患者目录时，要求用户显式指定，不自动猜测。
+    """
     raw_dir = WORK_ROOT / "raw"
     if not raw_dir.exists():
         return None
-    for patient_dir in raw_dir.iterdir():
-        if not (patient_dir.is_dir() and patient_dir.name.startswith("patient_")):
-            continue
-        papers_dir = patient_dir / "papers"
-        if not papers_dir.exists():
-            continue
-        for report_dir in sorted(papers_dir.glob("lab_report_*")):
-            if not report_dir.is_dir():
-                continue
-            meta_path = report_dir / "metadata.md"
-            if not meta_path.exists():
-                continue
-            for line in meta_path.read_text(encoding="utf-8").splitlines():
-                line = line.strip()
-                if line.startswith("|") and ("身份证号" in line or "患者ID" in line):
-                    parts = [p.strip() for p in line.split("|")]
-                    if len(parts) >= 3 and parts[2]:
-                        id_card = parts[2]
-                        from lab_analysis.pipeline.cli import get_deid
 
-                        logger.info(
-                            f"[INFO] 从检验报告中提取到身份证号（已脱敏）: {get_deid(id_card)}"
-                        )
-                        _ret = id_card
-                        del id_card
-                        return _ret
+    patient_dirs = [
+        d for d in raw_dir.iterdir()
+        if d.is_dir() and d.name.startswith("patient_")
+    ]
+    if not patient_dirs:
+        return None
+    if len(patient_dirs) > 1:
+        names = [d.name for d in patient_dirs]
+        raise ValueError(
+            f"raw/ 下存在 {len(patient_dirs)} 个患者目录，请显式指定目标患者：{names}"
+        )
+
+    patient_dir = patient_dirs[0]
+    papers_dir = patient_dir / "papers"
+    if not papers_dir.exists():
+        return None
+    for report_dir in sorted(papers_dir.glob("lab_report_*")):
+        if not report_dir.is_dir():
+            continue
+        meta_path = report_dir / "metadata.md"
+        if not meta_path.exists():
+            continue
+        for line in meta_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith("|") and ("身份证号" in line or "患者ID" in line):
+                parts = [p.strip() for p in line.split("|")]
+                if len(parts) >= 3 and parts[2]:
+                    id_card = parts[2]
+                    from lab_analysis.pipeline.cli import get_deid
+
+                    logger.info(
+                        f"[INFO] 从检验报告中提取到身份证号（已脱敏）: {get_deid(id_card)}"
+                    )
+                    _ret = id_card
+                    del id_card
+                    return _ret
     return None
 
 

@@ -66,6 +66,8 @@ def cleanup_patient(
     Returns:
         ``{"deid": str, "kept": [str], "deleted": [{"ts": str, "size": int}], "freed_bytes": int}``
     """
+    if keep_last < 1:
+        raise ValueError(f"keep_last 必须 >= 1，收到: {keep_last}")
     patient_dir = _DATA_DIR / deid
     result: dict = {
         "deid": deid,
@@ -95,13 +97,15 @@ def cleanup_patient(
 
     for d in delete_dirs:
         size = _get_dir_size(d)
-        result["deleted"].append({"ts": d.name, "size": size})
-        result["freed_bytes"] += size
         if dry_run:
             logger.info(f"  [DRY-RUN] 将删除: {d.name} ({_format_size(size)})")
+            result["deleted"].append({"ts": d.name, "size": size})
+            result["freed_bytes"] += size
         else:
             try:
                 shutil.rmtree(d)
+                result["deleted"].append({"ts": d.name, "size": size})
+                result["freed_bytes"] += size
                 logger.info(f"  [DELETE] {d.name} ({_format_size(size)})")
             except OSError as e:
                 logger.info(f"  [ERROR] 删除失败 {d.name}: {e}")

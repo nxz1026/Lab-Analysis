@@ -208,14 +208,14 @@ def run_dspy_mri_analysis(
     }
     logger.info(f"[成功] 分析完成 (置信度: {result.confidence_score:.2f})")
     try:
-        prompts_dir = work_root / "data" / "mri_dspy_prompts"
+        prompts_dir = WORK_ROOT / "data" / "mri_dspy_prompts"
         prompts_dir.mkdir(parents=True, exist_ok=True)
         save_dspy_prompts(module, prompts_dir)
         from .prompt_inspector import save_actual_dspy_prompt
 
         save_actual_dspy_prompt("mri_analyzer", prompts_dir)
         output["prompts_dir"] = str(prompts_dir)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError, NameError) as e:
         logger.info(f"  [警告] 保存 DSPy prompts 失败: {e}")
     return output
 

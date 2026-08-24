@@ -19,24 +19,7 @@ from __future__ import annotations
 
 from typing import Any
 
-# 关键实体列表 (与 compare_report_modes 保持一致)
-KEY_ENTITIES: list[str] = [
-    "hs-CRP",
-    "CRP",
-    "WBC",
-    "NEUT#",
-    "MONO%",
-    "RDW-SD",
-    "RDW-CV",
-    "PCT",
-    "PLT",
-    "急性期",
-    "缓解期",
-    "过渡期",
-    "炎症",
-    "慢性胰腺炎",
-    "胰腺",
-]
+from lab_analysis.report_schema import KEY_ENTITIES
 
 
 # ── 工具函数 ──────────────────────────────────────────────────
@@ -240,7 +223,7 @@ def metric_feedback_delta(feedback_data: dict) -> dict[str, Any]:
         }
 
     deltas: list[float] = []
-    same_text_count = 0
+    different_text_count = 0
     for c in corrections:
         orig = c.get("original_confidence", 0) or 0
         corr = c.get("corrected_confidence", 0) or 0
@@ -248,13 +231,13 @@ def metric_feedback_delta(feedback_data: dict) -> dict[str, Any]:
         if c.get("corrected_hypothesis") and c["corrected_hypothesis"] != c.get(
             "original_hypothesis", ""
         ):
-            same_text_count += 1
+            different_text_count += 1
 
     avg = sum(deltas) / len(deltas) if deltas else 0.0
     return {
         "available": True,
         "n_corrections": len(corrections),
-        "n_rewrites": same_text_count,
+        "n_rewrites": different_text_count,
         "avg_delta_confidence": round(avg, 4),
         "max_delta": round(max(deltas), 4) if deltas else 0.0,
         "min_delta": round(min(deltas), 4) if deltas else 0.0,

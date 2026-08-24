@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 
 from lab_analysis.llm_client import load_api_key
+from lab_analysis.utils import parse_numeric_value
 
 from .. import _log
 from . import ocr as _ocr
@@ -70,20 +71,17 @@ _METRIC_ALIAS = {
 _DATE_PATTERN = re.compile(r"(\d{4})\s*[-年]\s*(\d{1,2})\s*[-月]\s*(\d{1,2})")
 _NAME_PATTERN = re.compile(r"姓名\(Name\).*?[:：]\s*(\S+)")
 _ID_PATTERN = re.compile(r"诊疗卡号.*?(\d{17}[\dXx])")
+_CARD_NUMBER_PATTERN = re.compile(r"卡号.*?(\d{10,})")
 _DEPT_PATTERN = re.compile(r"科别\(Dept\.?\).*?[:：]\s*(\S+)")
 _DIAG_PATTERN = re.compile(r"诊断\(Diag\.?\).*?[:：]\s*(\S+)")
 
 
 def _parse_value(raw_val: str) -> float:
-    """解析数值：<10 → 10.0, >3.0 → 3.0, 6.70 → 6.70"""
-    s = raw_val.strip().replace(" ", "")
-    lt = re.match(r"<\s*([\d.]+)", s)
-    if lt:
-        return float(lt.group(1))
-    gt = re.match(r">\s*([\d.]+)", s)
-    if gt:
-        return float(gt.group(1))
-    return float(s)
+    """解析数值：委托给统一 helper parse_numeric_value。"""
+    result = parse_numeric_value(raw_val)
+    if result is None:
+        raise ValueError(f"无法解析数值: {raw_val!r}")
+    return result
 
 
 def _parse_ocr_to_json(ocr_text: str) -> dict:
@@ -103,6 +101,9 @@ def _parse_ocr_to_json(ocr_text: str) -> dict:
     diag_m = _DIAG_PATTERN.search(ocr_text)
     date_m = _DATE_PATTERN.search(ocr_text)
     result["patient_id"] = id_m.group(1) if id_m else name_m.group(1) if name_m else ""
+    # 诊疗卡号是医院内部编号，不是身份证号，单独存储供参考
+    card_m = _CARD_NUMBER_PATTERN.search(ocr_text)
+    result["card_number"] = card_m.group(1) if card_m else (id_m.group(1) if id_m else "")
     result["report_date"] = (
         f"{date_m.group(1)}-{date_m.group(2).zfill(2)}-{date_m.group(3).zfill(2)}" if date_m else ""
     )

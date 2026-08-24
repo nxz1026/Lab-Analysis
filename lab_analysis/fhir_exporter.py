@@ -45,7 +45,7 @@ _LOINC_MAP: dict[str, tuple[str, str]] = {
     ),
     "PCT": ("33914-3", "Procalcitonin [Mass/Volume] in Serum or Plasma"),
     "MPV": ("32604-5", "Platelet mean volume [Volume]"),
-    "PDW": ("777-3", "Platelet distribution width [Entitic volume]"),  # TODO: 确认正确 LOINC 码
+    "PDW": ("5973-6", "Platelet distribution width [Entitic volume]"),  # PLT 是 777-3, PDW 是 5973-6
 }
 
 

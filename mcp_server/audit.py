@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from scripts import audit_dspy_models as audit_mod
 
 from . import mcp
+
+logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
@@ -39,6 +42,7 @@ def audit_dspy_models() -> str:
             indent=2,
         )
     except Exception as e:
+        logger.exception("audit_dspy_models 失败")
         return json.dumps(
             {"overall_up_to_date": False, "error": str(e)},
             ensure_ascii=False,

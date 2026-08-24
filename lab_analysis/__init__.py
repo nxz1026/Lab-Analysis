@@ -25,6 +25,4 @@ try:
 except SAFE_EXCEPTIONS:
     pass
 
-logging.getLogger().addFilter(PHIFilter())
-
 __version__ = "0.1.0"

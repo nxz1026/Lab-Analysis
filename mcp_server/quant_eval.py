@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from pathlib import Path
 
 from . import mcp
+
+logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
@@ -118,6 +121,7 @@ def run_quant_eval(
                 html_path = artifact_dir / "quant_eval_report.html"
                 html_path.write_text(html_str, encoding="utf-8")
             except Exception as e:
+                logger.exception("render_metrics 失败")
                 png_path = None
                 html_path = None
                 result["visual_error"] = f"{type(e).__name__}: {e}"
@@ -146,6 +150,7 @@ def run_quant_eval(
                     encoding="utf-8",
                 )
             except Exception as e:
+                logger.exception("quant_eval_gate 失败")
                 result["gate_error"] = f"{type(e).__name__}: {e}"
 
         # U5: 写 .latest.txt marker
@@ -167,6 +172,7 @@ def run_quant_eval(
         }
         return json.dumps(result, ensure_ascii=False, indent=2)
     except Exception as e:
+        logger.exception("run_quant_eval 失败")
         return json.dumps(
             {"error": str(e), "type": type(e).__name__},
             ensure_ascii=False,

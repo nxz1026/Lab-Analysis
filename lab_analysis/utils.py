@@ -47,8 +47,7 @@ def fix_console_encoding():
 
 
 def build_paths(patient_id: str, timestamp: str | None = None) -> dict:
-    """
-    根据 patient_id 和可选 timestamp 构建路径字典。
+    """根据 patient_id 和可选 timestamp 构建路径字典。
 
     Args:
         patient_id: 患者ID（脱敏后）
@@ -74,6 +73,34 @@ def build_paths(patient_id: str, timestamp: str | None = None) -> dict:
         "output_dir": data_dir,
         "analyzed_dir": data_dir / "02_analyzed",
     }
+
+
+def parse_numeric_value(raw_val: str) -> float | None:
+    """统一数值解析：处理 <10、>3.0、6.70、—、-、N/A 等格式。
+
+    - "<10" → 10.0（取检测限值）
+    - ">3.0" → 3.0（取检测限值）
+    - "6.70" → 6.70
+    - "—" / "-" / "" / "N/A" → None（缺失值）
+    """
+    if not raw_val:
+        return None
+    s = raw_val.strip().strip("*").strip()
+    if not s or s in ("—", "–", "-", "N/A", "na", "null", "none"):
+        return None
+    # 处理 <X 格式
+    lt = re.match(r"^<\s*([\d.]+)", s)
+    if lt:
+        return float(lt.group(1))
+    # 处理 >X 格式
+    gt = re.match(r"^>\s*([\d.]+)", s)
+    if gt:
+        return float(gt.group(1))
+    # 普通数值
+    m = re.search(r"([0-9]+\.?\d*)", s)
+    if m:
+        return float(m.group(1))
+    return None
 
 
 def get_project_root() -> Path:

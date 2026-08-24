@@ -42,7 +42,8 @@ def parse_papers(raw_text: str, pmids: list[str] | None = None) -> list[dict]:
     raw_lines = raw_text.split("\n")
     for i, pos in enumerate(pmid_positions):
         # 文章内容区域：上一 PMID 行之后 到 本 PMID 行之前
-        start = pmid_positions[i - 1] + len(raw_lines[i - 1]) + 1 if i > 0 else 0
+        # 使用位置偏移而非行号索引，因为 i 是论文序号不是行号
+        start = pmid_positions[i - 1] + len("PMID:") + 1 if i > 0 else 0
         end = pos
         content = raw_text[start:end].strip()
         lines = content.split("\n")

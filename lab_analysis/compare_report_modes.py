@@ -19,44 +19,17 @@ import re
 from pathlib import Path
 from typing import Any
 
-from lab_analysis.report_schema import REPORT_SECTIONS
+from lab_analysis.report_schema import KEY_ENTITIES, REPORT_SECTIONS
 
 from . import _log
 
 logger = _log.get_logger(__name__)
 
-# 章节后缀（对应 REPORT_SECTIONS 索引位）
-_REPORT_SECTIONS_SUFFIXES = [
-    "basic_info",
-    "lab_analysis",
-    "mri_analysis",
-    "multidisciplinary",
-    "diagnosis",
-    "consistency",
-    "action_plan",
-    "followup",
-    "prognosis",
-]
+# 章节后缀（从单一事实源 REPORT_SECTIONS 推导）
+_REPORT_SECTIONS_SUFFIXES: list[str] = [suffix for suffix, _, _ in REPORT_SECTIONS]
 
-# 关键医疗实体列表（用于实体级对比）
-_KEY_ENTITIES = [
-    "hs-CRP",
-    "CRP",
-    "WBC",
-    "NEUT#",
-    "MONO%",
-    "RDW-SD",
-    "RDW-CV",
-    "PCT",
-    "PLT",
-    "急性期",
-    "缓解期",
-    "过渡期",
-    "炎症",
-    "慢性胰腺炎",
-    "胰腺",
-    "感染",
-]
+# 关键医疗实体列表（从单一事实源 import）
+_KEY_ENTITIES = KEY_ENTITIES
 
 
 def _parse_std_sections(std_md: str) -> list[tuple[str, str]]:

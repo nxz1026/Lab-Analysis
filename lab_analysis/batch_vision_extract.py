@@ -84,9 +84,10 @@ def run_vision_extractor(image_path: Path, interactive: bool = False) -> dict:
         logger.error("[FAIL] 识别失败")
         return None
 
-    metrics_dir = image_path.parent / f"extracted_{image_path.stem}.json"
-    if metrics_dir.exists():
-        return json.loads(metrics_dir.read_text(encoding="utf-8"))
+    # extract_lab_data 输出 metadata.md / metrics.md 到 raw/patient_{deid}/papers/lab_report_* 目录
+    # 不再产出 extracted_*.json，改为检查子进程 stderr/stdout 中的成功标记
+    if "已生成" in result.stdout or "提取完成" in result.stdout:
+        return {"status": "success", "output": result.stdout}
     return None
 
 

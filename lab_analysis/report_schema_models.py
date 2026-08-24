@@ -16,17 +16,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-_SECTION_SUFFIXES: list[str] = [
-    "basic_info",
-    "lab_analysis",
-    "mri_analysis",
-    "multidisciplinary",
-    "diagnosis",
-    "consistency",
-    "action_plan",
-    "followup",
-    "prognosis",
-]
+from .report_schema import REPORT_SECTIONS
+
+# 从单一事实源 REPORT_SECTIONS 推导后缀列表
+_SECTION_SUFFIXES: list[str] = [suffix for suffix, _, _ in REPORT_SECTIONS]
 MIN_SECTION_LENGTH = 10
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Callable
 
 try:
@@ -10,13 +11,16 @@ try:
     HAS_TENACITY = True
 except ImportError:
     HAS_TENACITY = False
+    logging.getLogger(__name__).warning(
+        "[WARN] tenacity 未安装，api_retry_decorator 退化为空操作"
+    )
 
 
 def api_retry_decorator(
     max_attempts: int = 3,
     min_wait: float = 1.0,
     max_wait: float = 60.0,
-    retry_on_exceptions: tuple = (Exception,),
+    retry_on_exceptions: tuple = (ConnectionError, TimeoutError),
     description: str = "API调用",
 ):
     """

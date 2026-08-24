@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -10,6 +11,8 @@ import time
 from pathlib import Path
 
 from . import mcp
+
+logger = logging.getLogger(__name__)
 
 # 项目根 = mcp_server/ 的父目录
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -50,6 +53,7 @@ def trigger_dspy_recompile(force: bool = False, timeout_sec: int = 600) -> str:
             cwd=str(_PROJECT_ROOT),
             check=False,
             env={
+                **os.environ,
                 "DEEPSEEK_API_KEY": os.environ.get("DEEPSEEK_API_KEY", ""),
                 "PYTHONPATH": os.environ.get("PYTHONPATH", ""),
             },
@@ -84,6 +88,7 @@ def trigger_dspy_recompile(force: bool = False, timeout_sec: int = 600) -> str:
             indent=2,
         )
     except Exception as e:
+        logger.exception("trigger_dspy_recompile 失败")
         elapsed = round(time.time() - t0, 2)
         return json.dumps(
             {

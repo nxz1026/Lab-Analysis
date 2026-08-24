@@ -37,6 +37,8 @@ logger = _log.get_logger(__name__)
 # 未捕获异常, 进程退出前 atexit handler 都会被调用, 保证 logger handler flush。
 # 幂等性: 使用 ContextVar 标志防止同一进程多次调用 main() 时重复 flush。
 _cleanup_done_var: contextvars.ContextVar[bool] = contextvars.ContextVar("cleanup_done", default=False)
+# 跟踪每次 main() 添加的 handler, 以便下次调用时清理
+_pipeline_handlers: list[logging.Handler] = []
 
 
 def _cleanup_pipeline_state() -> None:
@@ -51,10 +53,12 @@ def _cleanup_pipeline_state() -> None:
     if _cleanup_done_var.get():
         return
     _cleanup_done_var.set(True)
-    for h in logger.handlers:
-        # best-effort: cleanup 不能二次崩 (SIM105: 用 contextlib.suppress)
+    # flush 并移除本 pipeline 添加的 handler
+    for h in _pipeline_handlers[:]:
         with contextlib.suppress(Exception):
             h.flush()
+            logger.removeHandler(h)
+    _pipeline_handlers.clear()
     logger.info("[CLEANUP] Pipeline 状态清理完成 (logger flushed)")
 
 
@@ -62,7 +66,8 @@ def _setup_pipeline_logging(ts: str) -> None:
     """配置 pipeline 日志：输出到 logs/pipeline_{ts}.log。"""
     log_dir = WORK_ROOT / "logs"
     log_file = log_dir / f"pipeline_{ts}.log"
-    _log.add_file_handler(logger, log_file)
+    handler = _log.add_file_handler(logger, log_file)
+    _pipeline_handlers.append(handler)
     logger.setLevel(logging.INFO)
     logger.info("Pipeline 日志初始化: %s", log_file)
 

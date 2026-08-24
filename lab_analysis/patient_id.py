@@ -56,9 +56,15 @@ def _load_or_create_master_key() -> bytes:
         return key
     _KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
     new_key = secrets.token_bytes(32)
-    _KEY_FILE.write_text(base64.urlsafe_b64encode(new_key).decode("ascii"), encoding="utf-8")
-    with contextlib.suppress(OSError):
-        os.chmod(_KEY_FILE, stat.S_IRUSR | stat.S_IWUSR)
+    tmp_file = _KEY_FILE.with_suffix(".tmp")
+    try:
+        tmp_file.write_text(base64.urlsafe_b64encode(new_key).decode("ascii"), encoding="utf-8")
+        os.chmod(tmp_file, stat.S_IRUSR | stat.S_IWUSR)
+        tmp_file.rename(_KEY_FILE)
+    except OSError as e:
+        with contextlib.suppress(OSError):
+            tmp_file.unlink(missing_ok=True)
+        raise OSError(f"写入 master key 失败: {e}") from e
     logger.warning(
         f"[WARN] 已生成新的脱敏主密钥: {_KEY_FILE}\n       该文件包含还原身份证号的唯一凭证，切勿提交或外传。\n       生产环境建议改用环境变量 LAB_DEID_KEY 注入。"
     )
@@ -84,9 +90,11 @@ def encode(id_card: str) -> str:
 
     - 合成 nonce = HMAC-SHA256(master_key, id_card)[:12]，保证确定性。
     - deid = base64url(nonce || ciphertext_with_tag)，仅含 URL 安全字符。
+    - 输入统一转大写，避免 "X" 与 "x" 产生不同 deid。
     """
     if not id_card:
         raise ValueError("encode() 拒绝空字符串")
+    id_card = id_card.upper()
     key = _load_or_create_master_key()
     data = id_card.encode("utf-8")
     nonce = hmac.new(key, data, hashlib.sha256).digest()[:_NONCE_LEN]

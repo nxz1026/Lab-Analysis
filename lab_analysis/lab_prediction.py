@@ -141,7 +141,7 @@ def print_predictions(predictions: dict):
         return
     logger.info("\n--- 指标预测 ---")
     for metric, p in predictions.items():
-        ci = f"[{p['ci_95_lower']:.2f}, {p['ci_95_upper']:.2f}]" if p.get("ci_95_lower") else "N/A"
+        ci = f"[{p['ci_95_lower']:.2f}, {p['ci_95_upper']:.2f}]" if p.get("ci_95_lower") is not None else "N/A"
         alert_str = f" ⚠️ {p['alert']}" if p.get("alert") else ""
         logger.info(
             f"  {metric}: 下次预测={p['next_value']:.3f}  95%CI={ci}  {p['trend']}{alert_str}"

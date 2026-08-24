@@ -27,7 +27,6 @@ setup_chinese()
 def plot_trend_regression(df: pd.DataFrame, results: dict, output_path: Path):
     """① 趋势回归图：7个关键指标的时序折线 + 回归拟合线"""
     metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]
-    metrics = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]
     n = len(metrics)
     cols = 3
     rows = (n + cols - 1) // cols

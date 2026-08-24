@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import traceback
+import zipfile
 
 from lab_analysis.utils import WORK_ROOT
 
@@ -59,7 +60,7 @@ def auto_ingest_from_origin_data(
                     logger.info("  [OK] 摄入成功")
                 else:
                     logger.error("  [FAIL] 摄入失败")
-            except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+            except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError, zipfile.BadZipFile) as e:
                 logger.info(f"  [ERROR] 处理失败: {e}")
                 traceback.print_exc()
     if mri_images:
@@ -80,7 +81,7 @@ def auto_ingest_from_origin_data(
                     logger.info("  [OK] MRI报告摄入成功")
                 else:
                     logger.error("  [FAIL] MRI报告摄入失败")
-            except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+            except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError, zipfile.BadZipFile) as e:
                 logger.info(f"  [ERROR] 处理失败: {e}")
                 traceback.print_exc()
     if dicom_zips:
@@ -101,7 +102,7 @@ def auto_ingest_from_origin_data(
                     logger.info("  [OK] DICOM压缩包摄入成功")
                 else:
                     logger.error("  [FAIL] DICOM压缩包摄入失败")
-            except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+            except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError, zipfile.BadZipFile) as e:
                 logger.info(f"  [ERROR] 处理失败: {e}")
                 traceback.print_exc()
     if dcm_files:

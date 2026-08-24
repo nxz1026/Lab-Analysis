@@ -181,8 +181,7 @@ def run_dspy_final_report(
     lm = dspy.LM(
         model="deepseek/deepseek-chat", api_key=api_key, api_base="https://api.deepseek.com/v1"
     )
-    # P0: 配置完成后立即清除内存中的 API key
-    del api_key
+    # P0: 配置 LLM 完成
     old_lm = getattr(dspy.settings, "lm", None)
     dspy.configure(lm=lm)
     logger.info("[DSPy] LLM 已配置: deepseek-chat")
@@ -248,9 +247,6 @@ def run_dspy_final_report(
             section_8_followup=result.section_8_followup,
             section_9_prognosis=result.section_9_prognosis,
         )
-    except Exception:
-        raise
-    else:
         try:
             prompts_dir = data_dir / "04_reports" / "dspy_prompts"
             save_dspy_prompts(module, prompts_dir)

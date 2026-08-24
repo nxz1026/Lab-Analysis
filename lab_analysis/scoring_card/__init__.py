@@ -88,5 +88,9 @@ def _cli():
     logger.info("\n" + md)
 
 
+# 供 python -m lab_analysis.scoring_card 使用
+main = _cli
+
+
 if __name__ == "__main__":
-    _cli()
+    main()
