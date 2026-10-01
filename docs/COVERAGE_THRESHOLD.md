@@ -29,9 +29,41 @@ TOTAL: 43.83%  (5999 statements, 3370 miss, 1760 branch, 109 branch miss)
 高分模块 (≥70%): 略, 见 `coverage.xml` 与 CI artifact  
 低分模块 (<30%): 由 `--cov-report=term-missing` 列出 (CI 上传 `coverage-${{ matrix.python-version }}`)
 
+## ⚠️ 当前 CI 真实状态（2026-10-01 复测）
+
+| 环节 | 状态 |
+|---|---|
+| `Lint (ruff check)` | ✅ **已通过**（退出码 0）。原 1365 项 → 现仅保留 1 项登记豁免（`_log.py` PLR0913，见 `COMPLEXITY_BASELINE.md`） |
+| `Lint (ruff format --check)` | ❌ **仍红**：35 个文件未按 `ruff format` 格式化。**这是存量问题**——在改动前的 HEAD 上同样是 35 个，非本次引入 |
+| `Static type check (mypy)` | — 未执行（被上一环节阻断） |
+| `Audit DSPy compiled models` | — 未执行；修好 mtime 检查后预计会因模型过期而红，见 `UPGRADE_NOTES_2026-10.md` |
+| `Test with pytest + coverage` | — 未执行 |
+
+### 剩余一个门：`ruff format --check`
+
+`tests.yml` 该步骤的注释写着「仓库已完成全量 format 迁移，严格阳断保证不再回退」，
+但**实测 HEAD 上也有 35 个文件不合规**，该注释与事实不符。
+
+处理方式二选一：
+
+1. 跑一次 `python -m ruff format .` —— 一次性解决，但会产生一个覆盖 35 个文件的大 diff，
+   **建议单独成一个 commit**，不要和审计修复混在一起，否则真实改动会被淹没。
+2. 暂时把该步骤改为非阻断（如 `continue-on-error: true`），
+   在注释里注明存量待清，避免它继续挡住 pytest。
+
+> `ruff check` 已经绿了，但在 `ruff format` 这一步解决之前，pytest 仍然跑不到。
+> **这是现在卡住 CI 的唯一环节。**
+
+### `fail_under` 与实际覆盖率不一致
+
+`pyproject.toml` 现为 `fail_under = 60`，而本文件历史演进记录停在 42% / 实际 43.83%。
+**在 pytest 真正跑起来并产出 `coverage.xml` 之前，60 这个数字没有依据**；
+若实际覆盖率仍接近 44%，pytest 步骤会因覆盖率不达标而红。
+建议：先让 format 步骤通过、让 pytest 跑一次拿到真实数字，再决定 60 是保留还是回调。
+
 ## 配置文件位置
 
-`pyproject.toml` 中:
+`pyproject.toml` 中（`fail_under` 现值 60，见上方说明）:
 
 ```toml
 [tool.coverage.run]
@@ -43,10 +75,9 @@ omit = [
 ]
 
 [tool.coverage.report]
-# CI 阈值渐进 (P2-7 → P2-3): 25% → 40% → 42%
-# 历史: 22.80% (2026-05) → 25% (2026-06 初) → 40% (2026-06-23 P2-7) → 42% (2026-06-23 P2-3)
-# 后续每 PR +2%, 但要求总覆盖大于阈值 +1 缓冲
-fail_under = 42
+# 当前生效门槛 60；历史演进 22.80% → 25% → 40% → 42%(2026-06) 已不再对应当前配置。
+# 60 尚未经真实覆盖率验证（pytest 因 lint 红灯从未在 CI 执行），见上文。
+fail_under = 60
 show_missing = true
 skip_covered = false
 exclude_lines = [

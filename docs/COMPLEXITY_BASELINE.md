@@ -1,7 +1,11 @@
 # 复杂度基线 (Complexity Baseline)
 
 > ruff C901 / PLR0911 / PLR0912 / PLR0913 / PLR0915 / C408 全部启用,
-> 通过 per-file-ignores 将历史入口函数标记为基线, 不阻断 PR, 但每个被忽略的函数必须在本文档登记。
+> 通过 per-file-ignores 将历史入口函数标记为基线, 不阻断 PR, 但每个被忽略的函数必须在本档登记。
+
+> ⚠️ **本基线只覆盖复杂度规则。** `ruff check .` 另外还启用了 `F / I / B / SIM / S / T10 / PTH`。
+> 2026-10 审计已把这几类的存量告警**逐项修复**（见 `UPGRADE_NOTES_2026-10.md`），
+> 本次唯一保留的豁免是下面新增的 `_log.py` PLR0913。
 
 ## 启用规则 (`pyproject.toml`)
 
@@ -34,16 +38,22 @@ extend-select = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "C408"]
 # === DSPy 训练 / 编译 ===
 "lab_analysis/dspy_modules/lab_data_extractor.py"       = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 "lab_analysis/dspy_modules/literature_interpreter.py"  = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+# 2026-10: run_dspy_final_report 因「LLM 失败降级标记 + 失败横幅」升到 C901 13 / PLR0915 63
 "lab_analysis/dspy_modules/final_report_generator.py"   = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 "lab_analysis/dspy_modules/mri_analyzer.py"             = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 "lab_analysis/dspy_modules/multi_patient.py"            = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 "lab_analysis/literature_interpreter_dspy.py"           = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 "lab_analysis/qwen_vl_report_check_dspy.py"             = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 
-# === 报告生成 ===
-"lab_analysis/gen_final_report.py"          = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+# === 报告生成 ==="lab_analysis/gen_final_report.py"          = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+# 2026-10: run_dspy_mode 升到 C901 15 / PLR0912 14 / PLR0915 64
 "lab_analysis/gen_final_report_dspy.py"     = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 "lab_analysis/gen_final_report_pdf.py"      = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+
+# === 基础设施 ===
+# add_file_handler(logger, log_file, *, level, formatter, max_bytes, backup_count)
+# 配置型 API: 2 个定位参数 + 4 个带默认值的 keyword-only 选项, 并成 5 个会让调用端更难读
+"lab_analysis/_log.py"                = ["PLR0913"]
 
 # === 单文件业务 ===
 "lab_analysis/batch_vision_extract.py"      = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]

@@ -245,7 +245,7 @@ cp .env.example .env
 
 | Variable | Required | Purpose | Provider |
 |----------|----------|---------|----------|
-| `WORK_ROOT` | Yes | Working root (default: current dir) | — |
+| `WORK_ROOT` | Yes | Working root (default: project root, i.e. the directory containing `pyproject.toml`; falls back to the current dir only if that cannot be resolved) | — |
 | `DEEPSEEK_API_KEY` | Yes | LLM for interpretation / report generation | DeepSeek |
 | `DASHSCOPE_API_KEY` | Yes | Qwen-VL imaging analysis | Alibaba Cloud |
 | `SCNET_OCR_API_KEY` | No | Lab report OCR | SCNet |
@@ -288,6 +288,24 @@ python -m lab_analysis.scoring_card   --id-card <deid>
 python -m lab_analysis.fhir_exporter  --id-card <deid>
 python -m lab_analysis.cleanup_runs   --keep-last 3 --dry-run
 ```
+
+#### Step ⑦ imaging: the paper-report text must be supplied explicitly
+
+```bash
+python -m lab_analysis.qwen_vl_report_check \
+    --id-card <deid> \
+    --report-text  <this patient's paper MRI report text.txt> \
+    --exam-id SYNTH-EXAM-0001 --exam-date 2024-02-22 \
+    --indication "abdominal pain" --patient-desc "male, 58"
+```
+
+`--report-text` must point at **this patient's own** report text (an OCR dump is fine).
+**When it is omitted the module only describes the images and skips the cross-check
+step**; the output JSON then carries `cross_checked: false` and the Markdown header
+says no cross-check was performed. The module ships **no** built-in sample-case data —
+any fallback would amount to writing another patient's findings into this patient's report.
+The remaining flags are optional and default to "not provided". `qwen_vl_report_check_dspy`
+takes the same flags.
 
 Steps ⑥⑦⑧ need `ANALYSIS_TS` env var:
 
@@ -374,6 +392,12 @@ CLI: `--lit-filter-scenario <scenario> --lit-filter-top-k <N>`
 
 ## CI / CD
 
+> ⚠️ **Status as of 2026-10 (re-checked): `ruff check` now passes; CI is still blocked at
+> `ruff format --check`** (35 files unformatted — **pre-existing**; the count is the same on
+> the unmodified HEAD), so pytest / coverage / the import smoke test **still have never run
+> in CI**. Separately, the DSPy models need recompiling now that the staleness check
+> actually works. See `docs/UPGRADE_NOTES_2026-10.md` and `docs/COVERAGE_THRESHOLD.md`.
+
 GitHub Actions `.github/workflows/tests.yml`:
 
 | Job | Trigger | Content |
@@ -431,7 +455,8 @@ mypy lab_analysis/                     # Type check (strict mode)
 
 - PEP 8 + type annotations (`from __future__ import annotations`)
 - `pathlib.Path` for all paths
-- `WORK_ROOT` from `utils.py` (single source of truth)
+- `WORK_ROOT` is defined once in `lab_analysis/config.py` and re-exported by `utils.py` (single source of truth)
+- **PHI policy: never write a plaintext national ID to disk or into a log.** Use `patient_id.encode()` for the `deid`, and rely on the global redaction layer (`_phi_filter.install_global_phi_redaction`, a `logging` record factory). Note that the record factory only covers `logging` output — `print()`, `json.dump()` and `Path.write_text()` are **not** covered, so filter those explicitly.
 - Dual-mode scripts: `<module>.py` + `<module>_dspy.py`
 - Logging: `_log.get_logger(__name__)` everywhere
 - Exceptions: `SAFE_EXCEPTIONS` from `_exceptions.py` for non-critical paths
@@ -455,10 +480,12 @@ mypy lab_analysis/                     # Type check (strict mode)
 
 ## Documentation
 
+- [⚠️ Upgrade Notes (2026-10 audit fixes)](docs/UPGRADE_NOTES_2026-10.md) — **read before merging**: PHI handling, DSPy recompile, list of behaviour changes
 - [DSPy Integration](docs/DSPY_INTEGRATION.md)
 - [DSPy Usage Guide](docs/DSPY_USAGE.md)
 - [Evidence Grading](docs/EVIDENCE_GRADING.md)
 - [MCP Integration](docs/MCP_INTEGRATION.md)
+- [Coverage threshold & real CI status](docs/COVERAGE_THRESHOLD.md)
 
 ---
 

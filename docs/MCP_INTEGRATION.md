@@ -241,8 +241,21 @@ python -m pytest tests/test_mcp_server.py -v
 
 参数：
 - `patient_id=""` — 不传则全 patient 混排，传则只取该 patient
-- `out_dir=""` — PNG 输出目录（默认 = `data/{patient_id or '_all'}/trend/`）
+- `out_dir=""` — PNG 输出目录（默认 = `data/{patient_id or '_all'}/trend/`）。
+  **必须位于 `WORK_ROOT` 之内**，否则工具返回 `{"error": "out_dir 必须位于 WORK_ROOT 内: ..."}`。
+  同理 `run_quant_eval` 的 `out_dir`（2026-10 加入，见 `UPGRADE_NOTES_2026-10.md`）。
 - `x_key="std_ts"` — X 轴 label 来源（`std_ts` / `dspy_ts` / `deid`）
+
+---
+
+## 5.8 工具入参校验约定（2026-10 起）
+
+`run_quant_eval` / `render_quant_trend` 的 `id_card` / `patient_id` / `std_ts` / `dspy_ts`
+必须匹配 `^[A-Za-z0-9_-]{1,64}$`；上界 64 是因为真实 deid = base64url(12B nonce +
+18B 明文 + 16B GCM tag) = **62 字符**。`list_patients` 的过滤同样放宽到 `{1,64}`
+（此前 `{15,50}` 会把所有真实患者滤掉，导致该工具恒返回 0 个患者）。
+
+越界/含分隔符的入参会得到结构化 error，不会抛出异常穿透 MCP 协议层。
 
 ---
 

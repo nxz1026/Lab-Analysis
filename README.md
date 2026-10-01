@@ -245,7 +245,7 @@ cp .env.example .env
 
 | 变量 | 必需 | 用途 | 提供商 |
 |------|------|------|--------|
-| `WORK_ROOT` | 是 | 工作根目录（默认当前目录） | — |
+| `WORK_ROOT` | 是 | 工作根目录（默认项目根目录） | — |
 | `DEEPSEEK_API_KEY` | 是 | 文献解读/报告生成的 LLM | DeepSeek |
 | `DASHSCOPE_API_KEY` | 是 | Qwen-VL 影像分析 | 阿里云 |
 | `SCNET_OCR_API_KEY` | 否 | 检验报告 OCR | SCNet |
@@ -288,6 +288,21 @@ python -m lab_analysis.scoring_card   --id-card <deid>
 python -m lab_analysis.fhir_exporter  --id-card <deid>
 python -m lab_analysis.cleanup_runs   --keep-last 3 --dry-run
 ```
+
+#### 步骤⑦ 影像分析：纸质报告文本必须显式提供
+
+```bash
+python -m lab_analysis.qwen_vl_report_check \
+    --id-card <deid> \
+    --report-text  <该患者的纸质MRI报告文本.txt> \
+    --exam-id SYNTH-EXAM-0001 --exam-date 2024-02-22 \
+    --indication "腹痛待查" --patient-desc "男, 58岁"
+```
+
+`--report-text` 指向**该患者自己的**纸质报告文本（OCR 出来即可）。**不提供时模块只做纯影像
+描述并跳过「印证」环节**，输出 JSON 里 `cross_checked: false`，报告表头会注明未做印证。
+模块内不内置任何示例病例数据——任何内置兜底都等于把别人的检查结论写进本患者的报告。
+其余参数均可选，缺省显示「未提供」。DSPy 版 `qwen_vl_report_check_dspy` 参数相同。
 
 步骤 ⑥⑦⑧ 需要 `ANALYSIS_TS` 环境变量：
 
@@ -374,6 +389,12 @@ CLI：`--lit-filter-scenario <scenario> --lit-filter-top-k <N>`
 
 ## CI / CD
 
+> ⚠️ **当前状态（2026-10 复测）：`ruff check` 已通过；CI 仍卡在 `ruff format --check`**
+> （35 个文件未格式化，**属存量**，改动前 HEAD 上同样是 35 个），因此
+> pytest / 覆盖率 / 导入冒烟**仍未在 CI 上执行过**。
+> 另：DSPy 模型需重新编译（过期检查现已真正生效）。
+> 完整说明见 `docs/UPGRADE_NOTES_2026-10.md` 与 `docs/COVERAGE_THRESHOLD.md`。
+
 GitHub Actions `.github/workflows/tests.yml`：
 
 | 任务 | 触发条件 | 内容 |
@@ -431,7 +452,8 @@ mypy lab_analysis/                     # 类型检查（严格模式）
 
 - PEP 8 + 类型注解（`from __future__ import annotations`）
 - 所有路径使用 `pathlib.Path`
-- `WORK_ROOT` 统一来自 `utils.py`
+- `WORK_ROOT` 在 `lab_analysis/config.py` 中定义一次，由 `utils.py` 再导出（单一来源）
+- **PHI 红线：明文身份证号既不落盘也不进日志。** 目录/文件名一律用 `patient_id.encode()` 产出的 `deid`；日志依赖全局脱敏层（`_phi_filter.install_global_phi_redaction`，基于 `logging` 的 record factory）。注意 record factory **只覆盖 `logging` 输出**——`print()`、`json.dump()`、`Path.write_text()` 都不在其列，这些出口需自行过滤。
 - 双轨脚本命名：`<module>.py` + `<module>_dspy.py`
 - 日志统一使用 `_log.get_logger(__name__)`
 - 异常处理：非关键路径使用 `_exceptions.py` 中的 `SAFE_EXCEPTIONS`
@@ -455,10 +477,12 @@ mypy lab_analysis/                     # 类型检查（严格模式）
 
 ## 文档
 
+- [⚠️ 升级须知（2026-10 审计修复）](docs/UPGRADE_NOTES_2026-10.md) — **合并前必读**：PHI 处置、DSPy 重编译、行为变更清单
 - [DSPy 集成](docs/DSPY_INTEGRATION.md)
 - [DSPy 使用指南](docs/DSPY_USAGE.md)
 - [证据分级](docs/EVIDENCE_GRADING.md)
 - [MCP 集成](docs/MCP_INTEGRATION.md)
+- [覆盖率门槛与 CI 真实状态](docs/COVERAGE_THRESHOLD.md)
 
 ---
 
