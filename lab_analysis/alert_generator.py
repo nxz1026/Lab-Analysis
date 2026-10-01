@@ -52,7 +52,9 @@ def _alert_inflammation(results: dict) -> list[AlertDict]:
     if not labels:
         return alerts
     if dates and len(labels) != len(dates):
-        logger.warning("_alert_inflammation: labels(%d) 和 dates(%d) 长度不一致", len(labels), len(dates))
+        logger.warning(
+            "_alert_inflammation: labels(%d) 和 dates(%d) 长度不一致", len(labels), len(dates)
+        )
     # 只看最近一次
     latest_label = labels[-1]
     latest_date = dates[-1] if dates else "?"

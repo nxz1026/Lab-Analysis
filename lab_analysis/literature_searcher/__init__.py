@@ -21,8 +21,10 @@ from .strategies import SEARCH_STRATEGIES, auto_generate_queries
 
 logger = _log.get_logger(__name__)
 
+
 def _get_work_root() -> Path:
     return WORK_ROOT
+
 
 __all__ = [
     "esearch",

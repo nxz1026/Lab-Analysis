@@ -171,6 +171,7 @@ def test_list_patients_basic():
 def test_list_patients_filters_non_id_dirs():
     """list_patients 应过滤 mri_dspy_prompts 这种模板目录。"""
     import re
+
     result = json.loads(mcp_server.list_patients())
     # 真实 deid = base64url(12B nonce + 18B 明文 + 16B tag) = 62 字符,
     # 上界必须 >= 64, 否则本断言会把所有真实患者误判为「非脱敏ID格式」

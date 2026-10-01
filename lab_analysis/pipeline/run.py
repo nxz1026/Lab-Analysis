@@ -36,7 +36,9 @@ logger = _log.get_logger(__name__)
 # 设计: 注册到 atexit, 不论 main() 走正常结束、sys.exit(1)、KeyboardInterrupt、还是
 # 未捕获异常, 进程退出前 atexit handler 都会被调用, 保证 logger handler flush。
 # 幂等性: 使用 ContextVar 标志防止同一进程多次调用 main() 时重复 flush。
-_cleanup_done_var: contextvars.ContextVar[bool] = contextvars.ContextVar("cleanup_done", default=False)
+_cleanup_done_var: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "cleanup_done", default=False
+)
 
 
 def _cleanup_pipeline_state() -> None:

@@ -47,18 +47,27 @@ LLM 的价值放在步骤⑥（解读），不在打分。
 SCENARIO_WEIGHTS = {
     "early_diagnosis": {
         # 早期诊断：偏新颖 + 时效
-        "topic_match": 0.35, "evidence_level": 0.25, "recency": 0.20,
-        "sample_size": 0.10, "parse_quality": 0.10,
+        "topic_match": 0.35,
+        "evidence_level": 0.25,
+        "recency": 0.20,
+        "sample_size": 0.10,
+        "parse_quality": 0.10,
     },
     "differential_diagnosis": {
         # 鉴别诊断：偏对比研究 + 样本量
-        "topic_match": 0.30, "evidence_level": 0.25, "recency": 0.10,
-        "sample_size": 0.25, "parse_quality": 0.10,
+        "topic_match": 0.30,
+        "evidence_level": 0.25,
+        "recency": 0.10,
+        "sample_size": 0.25,
+        "parse_quality": 0.10,
     },
     "prognosis": {
         # 预后：偏证据等级（队列研究）+ 样本量
-        "topic_match": 0.25, "evidence_level": 0.35, "recency": 0.10,
-        "sample_size": 0.20, "parse_quality": 0.10,
+        "topic_match": 0.25,
+        "evidence_level": 0.35,
+        "recency": 0.10,
+        "sample_size": 0.20,
+        "parse_quality": 0.10,
     },
 }
 ```
@@ -136,7 +145,7 @@ graded = grade_paper(
     topic="sepsis_gn_gp",
 )
 print(graded.score, graded.tier)
-print(graded.reasons)   # 5 条解释
+print(graded.reasons)  # 5 条解释
 
 # 批量排序
 ranked = rank_papers(papers, scenario="differential_diagnosis", top_k=8)

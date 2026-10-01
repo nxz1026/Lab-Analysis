@@ -175,7 +175,14 @@ def main():
                     logger.info(
                         f"  [成功] {src.name}/{item.name} -> 中间结果/dspy_prompts/{item.name}"
                     )
-                except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+                except (
+                    ValueError,
+                    TypeError,
+                    KeyError,
+                    AttributeError,
+                    OSError,
+                    RuntimeError,
+                ) as e:
                     logger.info(f"  [失败] 合并 {item.name} 失败: {e}")
         if dspy_merged == 0:
             logger.warning("  [警告] 未找到任何 DSPy prompts 源目录")

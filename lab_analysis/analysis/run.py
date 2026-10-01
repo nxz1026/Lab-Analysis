@@ -34,7 +34,15 @@ logger = _log.get_logger(__name__)
 
 def _compute_trends(df: pd.DataFrame) -> dict:
     trend_results = {}
-    key_for_trend = ["hs-CRP", "CRP", "WBC", "NEUT#", "MONO%", "RDW-SD", "RDW-CV"]  # also appears in moving_average_analysis in _compute.py
+    key_for_trend = [
+        "hs-CRP",
+        "CRP",
+        "WBC",
+        "NEUT#",
+        "MONO%",
+        "RDW-SD",
+        "RDW-CV",
+    ]  # also appears in moving_average_analysis in _compute.py
     for metric in key_for_trend:
         if metric not in df.columns:
             continue

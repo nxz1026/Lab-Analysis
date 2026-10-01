@@ -12,5 +12,6 @@ def test_load_api_key_missing():
 
 def test_load_dicom_image_missing(tmp_path):
     import pytest
+
     with pytest.raises(RuntimeError):
         load_dicom_image(tmp_path / "nonexistent.dcm")

@@ -182,15 +182,18 @@ def analyze_single_dspy(
 
         ctx = patient_ctx or {}
         # 临床背景必须来自本患者的实参, 绝不使用写死的示例人口学信息
-        clinical_context = "，".join(
-            x
-            for x in (
-                ctx.get("patient_desc", ""),
-                ctx.get("indication", ""),
-                f"检查编号{ctx.get('exam_id', '')}" if ctx.get("exam_id") else "",
+        clinical_context = (
+            "，".join(
+                x
+                for x in (
+                    ctx.get("patient_desc", ""),
+                    ctx.get("indication", ""),
+                    f"检查编号{ctx.get('exam_id', '')}" if ctx.get("exam_id") else "",
+                )
+                if x
             )
-            if x
-        ) or "未提供"
+            or "未提供"
+        )
         model_path = str(
             Path(__file__).parent.parent / "models" / "dspy" / "mri_analyzer_compiled.json"
         )
@@ -325,7 +328,9 @@ def main():
     # 落盘的是「实际发给模型的提示词」, 且必须过 PHI 过滤 —— 见 prompt_inspector 的
     # "# P0: 落盘前过滤 PHI" 要求, 标准模式此前漏了这一步
     rendered_prompt = (
-        PROMPT_TEMPLATE.format(report_finding=report_findings, **_prompt_fields("", "", patient_ctx))
+        PROMPT_TEMPLATE.format(
+            report_finding=report_findings, **_prompt_fields("", "", patient_ctx)
+        )
         if report_findings
         else PROMPT_TEMPLATE_NO_REPORT.format(**_prompt_fields("", "", patient_ctx))
     )

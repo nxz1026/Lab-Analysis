@@ -26,7 +26,9 @@ class TestComputeTrends:
 
 class TestComputeStats:
     def test_returns_dict(self):
-        df = pd.DataFrame({"hs-CRP": [1.0, 2.0], "report_date": pd.to_datetime(["2026-01-01", "2026-01-15"])})
+        df = pd.DataFrame(
+            {"hs-CRP": [1.0, 2.0], "report_date": pd.to_datetime(["2026-01-01", "2026-01-15"])}
+        )
         result = _compute_stats(df)
         assert isinstance(result, dict)
 
@@ -36,6 +38,8 @@ class TestComputeStats:
         assert result["n_reports"] == 1
 
     def test_contains_inflammation(self):
-        df = pd.DataFrame({"hs-CRP": [0.5, 5.0], "report_date": pd.to_datetime(["2026-01-01", "2026-01-15"])})
+        df = pd.DataFrame(
+            {"hs-CRP": [0.5, 5.0], "report_date": pd.to_datetime(["2026-01-01", "2026-01-15"])}
+        )
         result = _compute_stats(df)
         assert "inflammation_classification" in result

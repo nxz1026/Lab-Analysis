@@ -193,7 +193,12 @@ def test_default_thresholds_all_defined():
 def _run_gate(src: Path) -> subprocess.CompletedProcess:
     """Helper: run quant_eval_gate.py with UTF-8 encoding (fix GBK on Windows)."""
     return subprocess.run(  # noqa: S603
-        [sys.executable, str(PROJECT_ROOT / "scripts" / "quant_eval_gate.py"), "--report-path", str(src)],
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "scripts" / "quant_eval_gate.py"),
+            "--report-path",
+            str(src),
+        ],
         capture_output=True,
         text=True,
         encoding="utf-8",

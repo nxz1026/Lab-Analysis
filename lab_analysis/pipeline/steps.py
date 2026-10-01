@@ -168,7 +168,9 @@ def run_step(
             timeout = int(os.environ.get("PIPELINE_STEP_TIMEOUT", "1800"))
         except ValueError:
             timeout = 1800
-    logger.info(f"\n{'=' * 60}\n[STEP] {name}\n命令: {' '.join(cmd)}\ntimeout: {timeout}s\n{'=' * 60}")
+    logger.info(
+        f"\n{'=' * 60}\n[STEP] {name}\n命令: {' '.join(cmd)}\ntimeout: {timeout}s\n{'=' * 60}"
+    )
     full_env = dict(os.environ)
     if env:
         full_env.update(env)
@@ -199,7 +201,9 @@ def run_step(
             },
             module="pipeline",
         )
-        return _handle_failure(name, module, cmd, 124, elapsed=time.monotonic() - start, fatal=fatal)
+        return _handle_failure(
+            name, module, cmd, 124, elapsed=time.monotonic() - start, fatal=fatal
+        )
     except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         log_pipeline_error(
             step_name=name,
@@ -222,9 +226,7 @@ def run_step(
             },
             module="pipeline",
         )
-        return _handle_failure(
-            name, module, cmd, result.returncode, elapsed=elapsed, fatal=fatal
-        )
+        return _handle_failure(name, module, cmd, result.returncode, elapsed=elapsed, fatal=fatal)
     logger.info(f"[OK] {name} 完成 ({elapsed:.2f}s)")
     return 0
 
@@ -298,9 +300,7 @@ def pipeline_step(
                 rc = result
             else:
                 # P1-1: 对非预期类型 raise, 防止 dict/list/str 被静默判为成功
-                raise TypeError(
-                    f"{name} returned {type(result).__name__}, expected bool/int/None"
-                )
+                raise TypeError(f"{name} returned {type(result).__name__}, expected bool/int/None")
             if rc == 0:
                 logger.info(f"[OK] {name} 完成 ({elapsed:.2f}s)")
                 return rc

@@ -89,7 +89,6 @@ def _parse_std_sections(std_md: str) -> list[tuple[str, str]]:
     return sections
 
 
-
 def _calc_overlap_rate(a: str, b: str) -> float:
     """用 difflib SequenceMatcher 计算两段文本的内容重叠比例。"""
     if not a and not b:
@@ -340,8 +339,7 @@ def format_comparison_md(result: dict) -> str:
         std_len = d[f"{result['std_mode']}_length"]
         dspy_len = d[f"{result['dspy_mode']}_length"]
         lines.append(
-            f"| {d['header'][:20]}... | {std_len} | "
-            f"{dspy_len} | {overlap} | {d['longer']} |"
+            f"| {d['header'][:20]}... | {std_len} | {dspy_len} | {overlap} | {d['longer']} |"
         )
 
     lines.append("\n## 实体提及对比\n")

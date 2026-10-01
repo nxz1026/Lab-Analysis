@@ -73,9 +73,7 @@ class FinalReportGenerator(dspy.Module):
                 quality_control=quality_control,
             )
         except SafeCallError as exc:
-            logger.error(
-                "final_report_generator fallback to empty prediction: %s", exc
-            )
+            logger.error("final_report_generator fallback to empty prediction: %s", exc)
             return make_empty_prediction(FinalReportSignature)
 
 
@@ -190,7 +188,9 @@ def run_dspy_final_report(
     try:
         from importlib.resources import files as _pkg_files
 
-        _model_ref = _pkg_files("lab_analysis").joinpath("models/dspy/final_report_generator_compiled.json")
+        _model_ref = _pkg_files("lab_analysis").joinpath(
+            "models/dspy/final_report_generator_compiled.json"
+        )
         if _model_ref.is_file():
             compiled_model_path = Path(str(_model_ref))
     except Exception as e:

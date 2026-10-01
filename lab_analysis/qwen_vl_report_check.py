@@ -255,8 +255,7 @@ def main():
     with md_path.open("w", encoding="utf-8") as f:
         f.write("# MRI 报告印证分析\n\n")
         f.write(
-            f"**检查日期**: {patient_ctx['exam_date']}  "
-            f"**检查编号**: {patient_ctx['exam_id']}\n\n"
+            f"**检查日期**: {patient_ctx['exam_date']}  **检查编号**: {patient_ctx['exam_id']}\n\n"
         )
         if report_findings:
             f.write(f"## 纸质报告关键发现\n\n{report_findings}\n\n---\n\n")

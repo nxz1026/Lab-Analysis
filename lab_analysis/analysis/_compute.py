@@ -28,7 +28,9 @@ def linear_regression_trend(series: pd.Series) -> dict:
             "slope_per_observation": None,
         }
 
-    x = np.arange(len(valid))  # NOTE: treats time points as equally spaced, ignores actual date gaps
+    x = np.arange(
+        len(valid)
+    )  # NOTE: treats time points as equally spaced, ignores actual date gaps
     y = valid.values.astype(float)
     x_mean, y_mean = x.mean(), y.mean()
 
@@ -36,7 +38,13 @@ def linear_regression_trend(series: pd.Series) -> dict:
     denominator = np.sum((x - x_mean) ** 2)
 
     if denominator == 0:
-        return {"slope": 0, "intercept": y_mean, "r2": 0, "trend": "无变化", "slope_per_observation": 0}
+        return {
+            "slope": 0,
+            "intercept": y_mean,
+            "r2": 0,
+            "trend": "无变化",
+            "slope_per_observation": 0,
+        }
 
     slope = numerator / denominator
     intercept = y_mean - slope * x_mean
@@ -159,7 +167,9 @@ def cv_stability_analysis(df: pd.DataFrame) -> dict:
     return results
 
 
-def zscore_outlier_detection(df: pd.DataFrame, threshold: float = 2.0, use_robust: bool = False) -> dict:
+def zscore_outlier_detection(
+    df: pd.DataFrame, threshold: float = 2.0, use_robust: bool = False
+) -> dict:
     results = {}
     for metric in NUMERIC_METRICS:
         if metric not in df.columns:

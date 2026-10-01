@@ -122,7 +122,7 @@ from lab_analysis.dspy_modules import compile_interpreter, LiteratureInterpreter
 
 # 加载训练数据
 train_data = [...]  # List[Dict]
-dev_data = [...]    # List[Dict]
+dev_data = [...]  # List[Dict]
 
 # 编译模块
 compiled_module = compile_interpreter(train_data, dev_data)

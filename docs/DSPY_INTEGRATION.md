@@ -65,9 +65,9 @@ import dspy
 
 # 配置 DeepSeek
 lm = dspy.LM(
-    model='deepseek/deepseek-chat',
-    api_key=os.environ['DEEPSEEK_API_KEY'],
-    api_base='https://api.deepseek.com/v1'
+    model="deepseek/deepseek-chat",
+    api_key=os.environ["DEEPSEEK_API_KEY"],
+    api_base="https://api.deepseek.com/v1",
 )
 dspy.configure(lm=lm)
 ```
@@ -109,8 +109,7 @@ from pathlib import Path
 
 # 运行 DSPy 版本的文献解读
 result = run_dspy_interpretation(
-    patient_id="SYNTH-PATIENT-0001",
-    data_dir=Path("data/SYNTH-PATIENT-0001/20260611_113946")
+    patient_id="SYNTH-PATIENT-0001", data_dir=Path("data/SYNTH-PATIENT-0001/20260611_113946")
 )
 
 print(f"解读可信度: {result['confidence']:.2f}")
@@ -133,12 +132,12 @@ python -m lab_analysis.dspy_modules.literature_interpreter \
 修改 `pipeline.py`,添加 DSPy 选项:
 
 ```python
-parser.add_argument("--use-dspy", action="store_true", 
-                   help="使用 DSPy 优化的模块")
+parser.add_argument("--use-dspy", action="store_true", help="使用 DSPy 优化的模块")
 
 # 在步骤⑥中
 if args.use_dspy:
     from lab_analysis.dspy_modules import run_dspy_interpretation
+
     result = run_dspy_interpretation(deid, paths["data_dir"])
 else:
     # 使用原版
@@ -174,12 +173,12 @@ else:
 ```python
 from lab_analysis.dspy_modules.literature_interpreter import (
     LiteratureInterpreterModule,
-    compile_interpreter
+    compile_interpreter,
 )
 import json
 
 # 加载训练数据
-with open('train_data.json', 'r') as f:
+with open("train_data.json", "r") as f:
     train_data = json.load(f)
 
 # 分割训练集和验证集
@@ -190,7 +189,7 @@ dev_set = train_data[80:]
 compiled_module = compile_interpreter(train_set, dev_set)
 
 # 保存优化后的模块
-compiled_module.save('compiled_interpreter.pkl')
+compiled_module.save("compiled_interpreter.pkl")
 ```
 
 ### 加载已编译模块
@@ -200,7 +199,7 @@ from lab_analysis.dspy_modules import LiteratureInterpreterModule
 
 # 加载
 module = LiteratureInterpreterModule()
-module.load('compiled_interpreter.pkl')
+module.load("compiled_interpreter.pkl")
 
 # 使用
 result = module(patient_id, analysis_results, literature_results)
@@ -225,9 +224,9 @@ result = module(patient_id, analysis_results, literature_results)
 def evaluate_interpretation(pred, ground_truth):
     """评估解读质量"""
     scores = {
-        'completeness': check_sections(pred),
-        'relevance': semantic_similarity(pred, ground_truth),
-        'accuracy': factual_consistency(pred, ground_truth)
+        "completeness": check_sections(pred),
+        "relevance": semantic_similarity(pred, ground_truth),
+        "accuracy": factual_consistency(pred, ground_truth),
     }
     return scores
 ```

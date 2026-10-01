@@ -85,7 +85,9 @@ def _decode_key(s: str) -> bytes:
     try:
         return base64.b64decode(s + pad)
     except Exception as e:
-        raise ValueError(f"无法解码 master key（{len(s)} 字节）：数据已损坏或使用了不同的 key") from e
+        raise ValueError(
+            f"无法解码 master key（{len(s)} 字节）：数据已损坏或使用了不同的 key"
+        ) from e
 
 
 def encode(id_card: str) -> str:

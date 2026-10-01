@@ -30,7 +30,9 @@ def _load_patient_mapping() -> dict[str, str]:
         if isinstance(data, dict):
             return {str(k): str(v) for k, v in data.items()}
     except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as exc:
-        get_logger(__name__).warning("Failed to load patient mapping from %s: %s", mapping_path, exc)
+        get_logger(__name__).warning(
+            "Failed to load patient mapping from %s: %s", mapping_path, exc
+        )
     return {}
 
 

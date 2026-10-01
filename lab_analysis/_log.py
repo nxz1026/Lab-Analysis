@@ -165,7 +165,9 @@ def add_file_handler(
         if isinstance(h, RotatingFileHandler) and getattr(h, "baseFilename", None) == resolved:
             return h
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    handler = RotatingFileHandler(log_path, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
+    handler = RotatingFileHandler(
+        log_path, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
+    )
     if formatter is None:
         fmt, datefmt = _resolve_format()
         formatter = logging.Formatter(fmt, datefmt=datefmt)

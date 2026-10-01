@@ -47,9 +47,7 @@ class LiteratureInterpreterModule(dspy.Module):
                 literature_results=literature_results,
             )
         except SafeCallError as exc:
-            logger.error(
-                "literature_interpreter fallback to empty prediction: %s", exc
-            )
+            logger.error("literature_interpreter fallback to empty prediction: %s", exc)
             return make_empty_prediction(LiteratureInterpretationSignature)
         return dspy.Prediction(
             interpretation=prediction.interpretation, confidence=prediction.confidence

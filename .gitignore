@@ -72,3 +72,7 @@ run.bat
 
 # LiteLLM prompt cache (DSPy BootstrapFewShot 加速)
 .litellm_cache/
+
+# 测试运行时落在仓库根的 DSPy prompt 产物
+# (正常路径写在 data/<deid>/<ts>/ 下, 根目录这份是测试用默认参数产生的)
+dspy_prompts/

@@ -26,6 +26,7 @@ from .._phi_filter import strip_phi
 
 logger = _log.get_logger(__name__)
 
+
 def safe_str(obj: Any, max_length: int = 1000) -> str:
     """安全地将对象转为字符串,截断过长内容"""
     try:

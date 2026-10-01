@@ -2,6 +2,7 @@
 
 P0-2: 原 scoring_card.py 拆包为子目录时遗漏了 __main__.py.
 """
+
 from . import main
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 """Unit tests for lab_analysis.ingest_data package."""
+
 from __future__ import annotations
 
 import json
@@ -76,9 +77,7 @@ class TestSaveImage:
 
 class TestIngestLabImage:
     def test_records_metadata(self, isolated_work_root, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "lab_analysis.pipeline.cli.get_deid", lambda x: "DEID03"
-        )
+        monkeypatch.setattr("lab_analysis.pipeline.cli.get_deid", lambda x: "DEID03")
         src = tmp_path / "lab.jpg"
         src.write_bytes(b"x")
         rec = ingest_lab_image(src, VALID_ID, "2024-01-15", "outpatient")
@@ -93,14 +92,11 @@ class TestIngestLabImage:
 
 class TestIngestMriReport:
     def test_saves_to_papers_subdir(self, isolated_work_root, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "lab_analysis.pipeline.cli.get_deid", lambda x: "DEID04"
-        )
+        monkeypatch.setattr("lab_analysis.pipeline.cli.get_deid", lambda x: "DEID04")
         src = tmp_path / "mri_report.txt"
         src.write_text("MRI 报告内容")
         rec = ingest_mri_report(src, VALID_ID, "2024-02-22")
-        expected = (isolated_work_root / "raw" / "patient_DEID04" /
-                    "papers" / "mri_report.txt")
+        expected = isolated_work_root / "raw" / "patient_DEID04" / "papers" / "mri_report.txt"
         assert expected.exists()
         assert rec["type"] == "mri_report"
         assert rec["patient_id_obf"] == "DEID04"
@@ -206,31 +202,22 @@ class TestRenameDicomSequences:
 
 class TestIngestMriDicom:
     def test_dicom_dir_branch(self, isolated_work_root, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "lab_analysis.pipeline.cli.get_deid", lambda x: "DEID05"
-        )
+        monkeypatch.setattr("lab_analysis.pipeline.cli.get_deid", lambda x: "DEID05")
         src = tmp_path / "src"
         (src / "S1").mkdir(parents=True)
         (src / "S1" / "a.dcm").write_bytes(b"1")
-        rec = ingest_mri_dicom(dicom_dir=src, patient_id=VALID_ID,
-                               report_date="2024-02-22")
+        rec = ingest_mri_dicom(dicom_dir=src, patient_id=VALID_ID, report_date="2024-02-22")
         assert rec["type"] == "mri_dicom"
         assert rec["sequence_count"] == 1
         assert "patient_DEID05" in rec["saved_dir"]
 
     def test_no_source_raises(self, isolated_work_root, monkeypatch):
-        monkeypatch.setattr(
-            "lab_analysis.pipeline.cli.get_deid", lambda x: "DEID06"
-        )
+        monkeypatch.setattr("lab_analysis.pipeline.cli.get_deid", lambda x: "DEID06")
         with pytest.raises(ValueError, match="zip-path"):
             ingest_mri_dicom(patient_id=VALID_ID)
 
-    def test_zip_path_branch_cleans_temp(
-        self, isolated_work_root, tmp_path, monkeypatch
-    ):
-        monkeypatch.setattr(
-            "lab_analysis.pipeline.cli.get_deid", lambda x: "DEID07"
-        )
+    def test_zip_path_branch_cleans_temp(self, isolated_work_root, tmp_path, monkeypatch):
+        monkeypatch.setattr("lab_analysis.pipeline.cli.get_deid", lambda x: "DEID07")
         z = tmp_path / "d.zip"
         with zipfile.ZipFile(z, "w") as zf:
             zf.writestr("series01/a.dcm", b"1")
@@ -244,6 +231,7 @@ class TestMainCLI:
     def test_missing_type_exits(self, isolated_work_root, monkeypatch):
         """No --type → argparse exits with code 2 (standard argparse behavior)."""
         from lab_analysis.ingest_data import main as ingest_main
+
         monkeypatch.setattr(sys, "argv", ["ingest_data", "--id-card", VALID_ID])
         with pytest.raises(SystemExit) as exc:
             ingest_main()
@@ -251,73 +239,79 @@ class TestMainCLI:
 
     def test_missing_id_card_exits(self, isolated_work_root, monkeypatch):
         from lab_analysis.ingest_data import main as ingest_main
-        monkeypatch.setattr(sys, "argv", [
-            "ingest_data", "--type", "lab_image"
-        ])
+
+        monkeypatch.setattr(sys, "argv", ["ingest_data", "--type", "lab_image"])
         with pytest.raises(SystemExit) as exc:
             ingest_main()
         assert exc.value.code == 1
 
     def test_invalid_id_exits(self, isolated_work_root, monkeypatch):
         from lab_analysis.ingest_data import main as ingest_main
+
         # Mock validate_id_card to reject the bad id and not prompt
+        monkeypatch.setattr("lab_analysis.ingest_data.validate_id_card", lambda x: None)
         monkeypatch.setattr(
-            "lab_analysis.ingest_data.validate_id_card", lambda x: None
+            sys,
+            "argv",
+            ["ingest_data", "--type", "lab_image", "--path", "x.jpg", "--id-card", "BAD"],
         )
-        monkeypatch.setattr(sys, "argv", [
-            "ingest_data", "--type", "lab_image", "--path", "x.jpg",
-            "--id-card", "BAD"
-        ])
         with pytest.raises(SystemExit) as exc:
             ingest_main()
         assert exc.value.code == 1
 
-    def test_lab_image_path_missing_exits(
-        self, isolated_work_root, monkeypatch
-    ):
+    def test_lab_image_path_missing_exits(self, isolated_work_root, monkeypatch):
         from lab_analysis.ingest_data import main as ingest_main
-        monkeypatch.setattr(sys, "argv", [
-            "ingest_data", "--type", "lab_image", "--id-card", VALID_ID
-        ])
+
+        monkeypatch.setattr(
+            sys, "argv", ["ingest_data", "--type", "lab_image", "--id-card", VALID_ID]
+        )
         with pytest.raises(SystemExit) as exc:
             ingest_main()
         assert exc.value.code == 1
 
     def test_mri_dicom_no_source_exits(self, isolated_work_root, monkeypatch):
         from lab_analysis.ingest_data import main as ingest_main
-        monkeypatch.setattr(sys, "argv", [
-            "ingest_data", "--type", "mri_dicom", "--id-card", VALID_ID
-        ])
-        with pytest.raises(SystemExit) as exc:
-            ingest_main()
-        assert exc.value.code == 1
 
-    def test_mri_report_path_missing_exits(
-        self, isolated_work_root, monkeypatch
-    ):
-        from lab_analysis.ingest_data import main as ingest_main
-        monkeypatch.setattr(sys, "argv", [
-            "ingest_data", "--type", "mri_report", "--id-card", VALID_ID
-        ])
-        with pytest.raises(SystemExit) as exc:
-            ingest_main()
-        assert exc.value.code == 1
-
-    def test_lab_image_happy_path(
-        self, isolated_work_root, tmp_path, monkeypatch
-    ):
-        from lab_analysis.ingest_data import main as ingest_main
         monkeypatch.setattr(
-            "lab_analysis.pipeline.cli.get_deid", lambda x: "DEIDH1"
+            sys, "argv", ["ingest_data", "--type", "mri_dicom", "--id-card", VALID_ID]
         )
+        with pytest.raises(SystemExit) as exc:
+            ingest_main()
+        assert exc.value.code == 1
+
+    def test_mri_report_path_missing_exits(self, isolated_work_root, monkeypatch):
+        from lab_analysis.ingest_data import main as ingest_main
+
+        monkeypatch.setattr(
+            sys, "argv", ["ingest_data", "--type", "mri_report", "--id-card", VALID_ID]
+        )
+        with pytest.raises(SystemExit) as exc:
+            ingest_main()
+        assert exc.value.code == 1
+
+    def test_lab_image_happy_path(self, isolated_work_root, tmp_path, monkeypatch):
+        from lab_analysis.ingest_data import main as ingest_main
+
+        monkeypatch.setattr("lab_analysis.pipeline.cli.get_deid", lambda x: "DEIDH1")
         src = tmp_path / "lab.jpg"
         src.write_bytes(b"x")
-        monkeypatch.setattr(sys, "argv", [
-            "ingest_data", "--type", "lab_image",
-            "--path", str(src), "--id-card", VALID_ID,
-            "--report-date", "2024-01-15", "--report-type", "outpatient"
-        ])
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "ingest_data",
+                "--type",
+                "lab_image",
+                "--path",
+                str(src),
+                "--id-card",
+                VALID_ID,
+                "--report-date",
+                "2024-01-15",
+                "--report-type",
+                "outpatient",
+            ],
+        )
         ingest_main()
-        target = (isolated_work_root / "raw" / "patient_DEIDH1" /
-                  "lab" / "lab.jpg")
+        target = isolated_work_root / "raw" / "patient_DEIDH1" / "lab" / "lab.jpg"
         assert target.exists()

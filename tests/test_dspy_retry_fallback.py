@@ -112,9 +112,7 @@ def test_safe_predict_backoff_grows(monkeypatch):
     sleeps = []
     monkeypatch.setattr("lab_analysis.dspy_modules._retry.time.sleep", lambda s: sleeps.append(s))
     # 抖动是刻意加的 (并发患者不锁步重试), 这里固定系数才能断言精确的指数增长
-    monkeypatch.setattr(
-        "lab_analysis.dspy_modules._retry._JITTER_RNG.uniform", lambda a, b: 1.0
-    )
+    monkeypatch.setattr("lab_analysis.dspy_modules._retry._JITTER_RNG.uniform", lambda a, b: 1.0)
     with pytest.raises(SafeCallError):
         safe_predict(
             _stub_predictor([requests.ConnectionError("x")] * 3),
@@ -140,7 +138,9 @@ def test_safe_predict_backoff_has_jitter(monkeypatch):
         )
     assert len(sleeps) == 2
     for actual, base in zip(sleeps, (1.0, 1.0), strict=True):
-        assert 0.5 * base <= actual <= 1.5 * base, f"抖动越界: {actual} 不在 [{base * 0.5}, {base * 1.5}]"
+        assert 0.5 * base <= actual <= 1.5 * base, (
+            f"抖动越界: {actual} 不在 [{base * 0.5}, {base * 1.5}]"
+        )
 
 
 # -------------------- make_empty_prediction --------------------

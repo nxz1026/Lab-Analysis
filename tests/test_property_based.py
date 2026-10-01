@@ -149,9 +149,7 @@ def _lab_abnormality_results(draw):
         )
     )
     abnormal = {f"m{i}": 1.0 for i in range(n_abnormal)}
-    zscores = {
-        name: {"outliers_severe": {"count": cnt}} for name, cnt in z_metrics
-    }
+    zscores = {name: {"outliers_severe": {"count": cnt}} for name, cnt in z_metrics}
     return abnormal, zscores
 
 
@@ -159,9 +157,7 @@ def _lab_abnormality_results(draw):
 def _alerts(draw):
     n = draw(st.integers(min_value=0, max_value=10))
     levels = ["CRITICAL", "WARNING", "INFO"]
-    return [
-        {"level": draw(st.sampled_from(levels)), "msg": "x"} for _ in range(n)
-    ]
+    return [{"level": draw(st.sampled_from(levels)), "msg": "x"} for _ in range(n)]
 
 
 class TestScoreInflammation:
@@ -236,10 +232,7 @@ class TestScoreImagingConsistency:
 def _cv_data(draw):
     risks = ["高", "中", "低", None]
     n = draw(st.integers(min_value=0, max_value=10))
-    return {
-        f"metric_{i}": {"risk_level": draw(st.sampled_from(risks))}
-        for i in range(n)
-    }
+    return {f"metric_{i}": {"risk_level": draw(st.sampled_from(risks))} for i in range(n)}
 
 
 class TestScoreVariabilityRisk:

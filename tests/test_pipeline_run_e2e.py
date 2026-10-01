@@ -6,6 +6,7 @@ Strategy:
 - Verify all step names are visited, and that --skip-* flags skip the
   corresponding step.
 """
+
 from __future__ import annotations
 
 import sys
@@ -58,8 +59,11 @@ def fake_id_env(monkeypatch):
     monkeypatch.setattr(run_mod, "extract_patient_id_from_reports", lambda: _VALID_ID)
     monkeypatch.setattr(run_mod, "validate_id_card", lambda x, interactive=True: x)
     monkeypatch.setattr(run_mod, "get_deid", lambda x: "DEID00001")
-    monkeypatch.setattr(run_mod, "PipelineContext",
-                        lambda deid, timestamp: MagicMock(env_dict=lambda: {"ANALYSIS_TS": timestamp}))
+    monkeypatch.setattr(
+        run_mod,
+        "PipelineContext",
+        lambda deid, timestamp: MagicMock(env_dict=lambda: {"ANALYSIS_TS": timestamp}),
+    )
     monkeypatch.setattr(run_mod, "check_patient_data", lambda deid: True)
     # disable logging side effects
     monkeypatch.setattr(run_mod, "_setup_pipeline_logging", lambda ts: None)
@@ -86,9 +90,15 @@ def test_main_calls_all_standard_steps(monkeypatch, fake_id_env, tmp_path):
         run_mod.main()
 
     expected = [
-        "data_loader", "data_analyzer", "literature_searcher",
-        "literature_filter", "literature_interpreter", "qwen_vl_report_check",
-        "gen_final_report", "scoring_card", "organize_local_files",
+        "data_loader",
+        "data_analyzer",
+        "literature_searcher",
+        "literature_filter",
+        "literature_interpreter",
+        "qwen_vl_report_check",
+        "gen_final_report",
+        "scoring_card",
+        "organize_local_files",
         "fhir_exporter",
     ]
     assert calls == expected, f"got {calls}"
@@ -97,8 +107,7 @@ def test_main_calls_all_standard_steps(monkeypatch, fake_id_env, tmp_path):
 def test_main_skip_llm_skips_lit_interp(monkeypatch, fake_id_env, tmp_path):
     """--skip-llm drops the lit_interpreter step but imaging still runs."""
     calls: list[str] = []
-    monkeypatch.setattr(run_mod, "run_step",
-                        lambda n, m, *a, **k: (calls.append(m) or 0))
+    monkeypatch.setattr(run_mod, "run_step", lambda n, m, *a, **k: calls.append(m) or 0)
     # P2-4: 细化粒度 — 只 patch run_mod 命名空间下的 subprocess.run, 不替换整个 subprocess 模块
     monkeypatch.setattr(run_mod.subprocess, "run", _fake_subprocess_run)
     monkeypatch.setattr(run_mod, "parse_args", lambda: _args(skip_llm=True))
@@ -118,8 +127,7 @@ def test_main_skip_llm_skips_lit_interp(monkeypatch, fake_id_env, tmp_path):
 
 def test_main_skip_imaging_runs_lit_interp(monkeypatch, fake_id_env, tmp_path):
     calls: list[str] = []
-    monkeypatch.setattr(run_mod, "run_step",
-                        lambda n, m, *a, **k: (calls.append(m) or 0))
+    monkeypatch.setattr(run_mod, "run_step", lambda n, m, *a, **k: calls.append(m) or 0)
     # P2-4: 细化粒度 — 只 patch run_mod 命名空间下的 subprocess.run, 不替换整个 subprocess 模块
     monkeypatch.setattr(run_mod.subprocess, "run", _fake_subprocess_run)
     monkeypatch.setattr(run_mod, "parse_args", lambda: _args(skip_imaging=True))
@@ -135,8 +143,7 @@ def test_main_skip_imaging_runs_lit_interp(monkeypatch, fake_id_env, tmp_path):
 def test_main_use_dspy_routes_to_dspy_modules(monkeypatch, fake_id_env, tmp_path):
     """--use-dspy should route interpretation/imaging/report to *_dspy modules."""
     calls: list[str] = []
-    monkeypatch.setattr(run_mod, "run_step",
-                        lambda n, m, *a, **k: (calls.append(m) or 0))
+    monkeypatch.setattr(run_mod, "run_step", lambda n, m, *a, **k: calls.append(m) or 0)
     # P2-4: 细化粒度 — 只 patch run_mod 命名空间下的 subprocess.run, 不替换整个 subprocess 模块
     monkeypatch.setattr(run_mod.subprocess, "run", _fake_subprocess_run)
     monkeypatch.setattr(run_mod, "parse_args", lambda: _args(use_dspy=True))
@@ -182,8 +189,7 @@ def test_main_fails_on_data_loader_error(monkeypatch, fake_id_env, tmp_path):
     monkeypatch.setattr(atexit_mod, "register", tracking_register)
     monkeypatch.setattr(sys, "argv", ["lab-analysis"])
 
-    with patch.object(run_mod, "WORK_ROOT", tmp_path), \
-         pytest.raises(SystemExit) as exc:
+    with patch.object(run_mod, "WORK_ROOT", tmp_path), pytest.raises(SystemExit) as exc:
         run_mod.main()
     assert exc.value.code == 1
     # P1-4: fatal 路径下 _cleanup_pipeline_state 必须已注册到 atexit
@@ -220,13 +226,11 @@ def test_main_invalid_id_exits(monkeypatch, tmp_path):
     monkeypatch.setattr(run_mod, "extract_patient_id_from_reports", lambda: "BAD")
     monkeypatch.setattr(run_mod, "validate_id_card", lambda x, interactive=True: None)
     calls: list[str] = []
-    monkeypatch.setattr(run_mod, "run_step",
-                        lambda n, m, *a, **k: (calls.append(m) or 0))
+    monkeypatch.setattr(run_mod, "run_step", lambda n, m, *a, **k: calls.append(m) or 0)
     monkeypatch.setattr(run_mod, "parse_args", lambda: _args())
     monkeypatch.setattr(sys, "argv", ["lab-analysis"])
 
-    with patch.object(run_mod, "WORK_ROOT", tmp_path), \
-         pytest.raises(SystemExit) as exc:
+    with patch.object(run_mod, "WORK_ROOT", tmp_path), pytest.raises(SystemExit) as exc:
         run_mod.main()
     assert exc.value.code == 1
     assert calls == [], f"no steps should run, got {calls}"
@@ -234,8 +238,7 @@ def test_main_invalid_id_exits(monkeypatch, tmp_path):
 
 def test_main_skip_lit_filter(monkeypatch, fake_id_env, tmp_path):
     calls: list[str] = []
-    monkeypatch.setattr(run_mod, "run_step",
-                        lambda n, m, *a, **k: (calls.append(m) or 0))
+    monkeypatch.setattr(run_mod, "run_step", lambda n, m, *a, **k: calls.append(m) or 0)
     # P2-4: 细化粒度 — 只 patch run_mod 命名空间下的 subprocess.run, 不替换整个 subprocess 模块
     monkeypatch.setattr(run_mod.subprocess, "run", _fake_subprocess_run)
     monkeypatch.setattr(run_mod, "parse_args", lambda: _args(skip_lit_filter=True))
@@ -253,8 +256,7 @@ def test_main_skip_lit_filter(monkeypatch, fake_id_env, tmp_path):
 def test_main_skip_scoring_runs_main_pipeline(monkeypatch, fake_id_env, tmp_path):
     """--skip-scoring should not affect the main pipeline, only drop scoring_card."""
     calls: list[str] = []
-    monkeypatch.setattr(run_mod, "run_step",
-                        lambda n, m, *a, **k: (calls.append(m) or 0))
+    monkeypatch.setattr(run_mod, "run_step", lambda n, m, *a, **k: calls.append(m) or 0)
     # P2-4: 细化粒度 — 只 patch run_mod 命名空间下的 subprocess.run, 不替换整个 subprocess 模块
     monkeypatch.setattr(run_mod.subprocess, "run", _fake_subprocess_run)
     monkeypatch.setattr(run_mod, "parse_args", lambda: _args(skip_scoring=True))
