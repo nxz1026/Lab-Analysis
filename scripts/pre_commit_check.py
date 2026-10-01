@@ -27,7 +27,8 @@ REPO = Path(__file__).resolve().parent.parent
 def run(cmd: list[str], cwd: Path | None = None) -> int:
     """执行命令并实时输出，退出码透传。"""
     print(f"\n>>> {' '.join(cmd)}")
-    return subprocess.call(cmd, cwd=cwd or REPO)
+    # 参数为列表且无 shell=True, 命令全部由本脚本硬编码
+    return subprocess.call(cmd, cwd=cwd or REPO)  # noqa: S603
 
 
 def main() -> int:

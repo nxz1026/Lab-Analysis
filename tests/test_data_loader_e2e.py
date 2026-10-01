@@ -187,7 +187,7 @@ class TestToCsv:
         to_csv(sample_reports, out)
         assert out.exists()
         # 读 csv 验证
-        with open(out, encoding="utf-8", newline="") as f:
+        with out.open(encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
         assert len(rows) == 2

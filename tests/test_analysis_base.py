@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from lab_analysis.analysis._base import (
     INFLAMMATION_COLORS,
     NUMERIC_METRICS,
@@ -26,7 +24,7 @@ class TestConstants:
             assert m in REF_RANGES
 
     def test_ref_ranges_are_tuples(self):
-        for k, v in REF_RANGES.items():
+        for _k, v in REF_RANGES.items():
             assert isinstance(v, tuple)
             assert len(v) == 2
 

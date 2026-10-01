@@ -260,16 +260,16 @@ def run(patient_id: str) -> dict:
     logger.info("\n--- 异常告警摘要 ---")
     print_alerts(alerts)
     alerts_path = paths["analyzed_dir"] / "alerts.json"
-    with open(alerts_path, "w", encoding="utf-8") as f:
+    with alerts_path.open("w", encoding="utf-8") as f:
         json.dump(alerts, f, ensure_ascii=False, indent=2)
     logger.info(f"  告警已保存: {alerts_path}\n")
     paths["analyzed_dir"].mkdir(parents=True, exist_ok=True)
     paths["reports_dir"].mkdir(parents=True, exist_ok=True)
-    with open(paths["output_json"], "w", encoding="utf-8") as f:
+    with paths["output_json"].open("w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
     logger.info(f"JSON 已保存: {paths['output_json']}")
     md_report = _generate_md_report(results, patient_id)
-    with open(paths["report_md"], "w", encoding="utf-8") as f:
+    with paths["report_md"].open("w", encoding="utf-8") as f:
         f.write(md_report)
     logger.info(f"Markdown 已保存: {paths['report_md']}")
     _generate_charts(df, results, paths)

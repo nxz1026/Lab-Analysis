@@ -14,8 +14,10 @@ from dotenv import load_dotenv
 # 加载 .env 文件
 load_dotenv()
 
-# 获取工作区根目录
-WORK_ROOT = Path(os.environ.get("WORK_ROOT", Path.cwd()))
+# 获取工作区根目录: 优先 WORK_ROOT 环境变量, 未设置时用项目根目录 (本脚本所在目录)。
+# 不默认 Path.cwd(): WORK_ROOT 同时决定 data/ 与脱敏主密钥的位置, 依赖 cwd 会让
+# 同一位患者在不同目录下得到两个互不可解密的 deid (与 lab_analysis/config.py 保持一致)。
+WORK_ROOT = Path(os.environ.get("WORK_ROOT") or Path(__file__).resolve().parent)
 
 
 def create_directories():

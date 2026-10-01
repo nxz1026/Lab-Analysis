@@ -39,10 +39,16 @@ def parse_papers(raw_text: str, pmids: list[str] | None = None) -> list[dict]:
     if not pmid_positions:
         return papers
 
-    raw_lines = raw_text.split("\n")
     for i, pos in enumerate(pmid_positions):
-        # 文章内容区域：上一 PMID 行之后 到 本 PMID 行之前
-        start = pmid_positions[i - 1] + len(raw_lines[i - 1]) + 1 if i > 0 else 0
+        # 文章内容区域：上一 PMID 行之后 到 本 PMID 行之前。
+        # ⚠️ 必须按「上一条 PMID 所在行的换行符」定位, 不能按行号取上一行 ——
+        # 行号与上一条 PMID 无关, 偏移量会错位几十个字符,
+        # 导致第 2 篇起期刊名被截断、第 3 篇起标题被摘要文本顶替。
+        if i > 0:
+            nl = raw_text.find("\n", pmid_positions[i - 1])
+            start = (nl + 1) if nl != -1 else pmid_positions[i - 1] + 1
+        else:
+            start = 0
         end = pos
         content = raw_text[start:end].strip()
         lines = content.split("\n")

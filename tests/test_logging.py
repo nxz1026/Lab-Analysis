@@ -13,10 +13,17 @@ from __future__ import annotations
 
 import json
 import logging
+import tempfile
+from pathlib import Path
 
 import pytest
 
 from lab_analysis import _log
+
+# 合成的 LogRecord.pathname: 仅为格式化测试提供路径字符串, 从不真正落盘,
+# 因此无需清理。保持 basename 为 "x.py" —— LogRecord.module 取自它,
+# 换成 tempfile 路径后 module 仍是 "x", 与断言无关但保持原语义。
+_FAKE_PATHNAME = str(Path(tempfile.gettempdir()) / "x.py")
 
 
 @pytest.fixture(autouse=True)
@@ -155,7 +162,7 @@ class TestJsonFormatter:
         record = logging.LogRecord(
             name="x.y",
             level=logging.INFO,
-            pathname="/tmp/x.py",
+            pathname=_FAKE_PATHNAME,
             lineno=42,
             msg="hello",
             args=(),
@@ -173,7 +180,7 @@ class TestJsonFormatter:
         record = logging.LogRecord(
             name="x",
             level=logging.WARNING,
-            pathname="/tmp/x.py",
+            pathname=_FAKE_PATHNAME,
             lineno=1,
             msg="中文 + emoji = ok",
             args=(),
@@ -191,7 +198,7 @@ class TestJsonFormatter:
             record = logging.LogRecord(
                 name="x",
                 level=logging.ERROR,
-                pathname="/tmp/x.py",
+                pathname=_FAKE_PATHNAME,
                 lineno=1,
                 msg="failed",
                 args=(),

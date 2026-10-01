@@ -39,7 +39,7 @@ def run_standard_mode(patient_id: str, data_dir: Path):
     prompts_dir = data_dir / "04_reports" / "dspy_prompts"
     prompts_dir.mkdir(parents=True, exist_ok=True)
     standard_prompt_path = prompts_dir / "final_report_generator_standard_prompt.txt"
-    with open(standard_prompt_path, "w", encoding="utf-8") as f:
+    with standard_prompt_path.open("w", encoding="utf-8") as f:
         f.write(prompt)
     logger.info(f"[标准] 原始 prompt 已保存: {standard_prompt_path}")
     logger.info(f"[标准] prompt 长度: {len(prompt)} 字符")
@@ -66,6 +66,35 @@ def run_standard_mode(patient_id: str, data_dir: Path):
         "prompts_dir": str(prompts_dir),
     }
     return output
+
+
+def _mri_summary_from_json(path: Path) -> str:
+    """从 mri_report_check_results.json 拼一段可读的影像印证摘要。
+
+    DSPy 模式只写 JSON 不写 Markdown, 若只读 md 则报告影像章节恒为空。
+    analysis 字段统一为 ``[{"text": ...}]`` (两个生产者都已归一)。
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        return ""
+    lines = ["# MRI 影像印证摘要", ""]
+    if not data.get("cross_checked", True):
+        lines.append("> 本次未提供纸质报告文本，以下为纯影像描述，未做报告印证。")
+        lines.append("")
+    for r in data.get("results", []) or []:
+        if r.get("status") != "success":
+            lines.append(f"- {r.get('seq_name', '?')}: [失败] {r.get('error', '')}")
+            continue
+        analysis = r.get("analysis", [])
+        if isinstance(analysis, list) and analysis:
+            first = analysis[0]
+            text = first.get("text", "") if isinstance(first, dict) else str(first)
+        else:
+            text = str(analysis)
+        lines.append(f"## {r.get('seq_name', '?')} — {r.get('seq_desc', '')}")
+        lines.append(text.strip())
+        lines.append("")
+    return "\n".join(lines)
 
 
 def run_dspy_mode(patient_id: str, data_dir: Path):
@@ -105,7 +134,7 @@ def run_dspy_mode(patient_id: str, data_dir: Path):
         analysis_path = data_dir / "02_analyzed" / "analysis_results.json"
         if analysis_path.exists():
             try:
-                with open(analysis_path, "r", encoding="utf-8") as f:
+                with analysis_path.open("r", encoding="utf-8") as f:
                     analysis_results = json.load(f)
             except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
                 pass
@@ -115,10 +144,17 @@ def run_dspy_mode(patient_id: str, data_dir: Path):
             with contextlib.suppress(Exception):
                 literature_interpretation = interp_path.read_text(encoding="utf-8")
         mri_analysis = ""
-        mri_path = data_dir / "05_imaging" / "mri_report_check_results.md"
-        if mri_path.exists():
+        # 影像印证结果写在 03_literature/ (见 qwen_vl_report_check*.py), 05_imaging/ 下
+        # 没有这个文件 —— 原先读错目录导致报告影像章节恒为空。
+        # 优先读 Markdown; DSPy 模式只写 JSON 不写 md, 故回退到 JSON 自行拼摘要。
+        mri_md = data_dir / "03_literature" / "mri_report_check_results.md"
+        mri_json = data_dir / "03_literature" / "mri_report_check_results.json"
+        if mri_md.exists():
             with contextlib.suppress(Exception):
-                mri_analysis = mri_path.read_text(encoding="utf-8")
+                mri_analysis = mri_md.read_text(encoding="utf-8")
+        elif mri_json.exists():
+            with contextlib.suppress(Exception):
+                mri_analysis = _mri_summary_from_json(mri_json)
         quality_control = assess_three_source_consistency(data_dir)
         logger.info("[DSPy] 开始生成报告...")
         output = run_dspy_final_report(
@@ -137,13 +173,13 @@ def run_dspy_mode(patient_id: str, data_dir: Path):
     except ImportError as e:
         logger.info(f"[错误] DSPy 模块导入失败: {e}")
         logger.info("请安装 DSPy: pip install dspy-ai")
-        raise SystemExit(1)
+        raise SystemExit(1) from e
     except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         logger.info(f"[错误] DSPy 执行失败: {e}")
         import traceback
 
         traceback.print_exc()
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
 
 def main():
@@ -189,11 +225,11 @@ def main():
     else:
         logger.warning("[校验] 跳过: output 不含 sections 字段 (standard 模式 raw text)")
     output_path = reports_dir / "final_integrated_report.json"
-    with open(output_path, "w", encoding="utf-8") as f:
+    with output_path.open("w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
     md_path = reports_dir / "final_integrated_report.md"
     report_md = output.get("report_markdown", "")
-    with open(md_path, "w", encoding="utf-8") as f:
+    with md_path.open("w", encoding="utf-8") as f:
         f.write(report_md)
     logger.info(f"\n[成功] 报告生成完成 → {output_path}")
     logger.info(f"[报告] Markdown 已保存: {md_path}")

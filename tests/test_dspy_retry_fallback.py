@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import pytest
+import requests
 
 from lab_analysis.dspy_modules._retry import (
     SafeCallError,
@@ -65,12 +66,34 @@ def test_safe_predict_success_first_try():
 def test_safe_predict_retry_then_success(monkeypatch):
     # monkeypatch time.sleep to avoid actual sleep
     monkeypatch.setattr("lab_analysis.dspy_modules._retry.time.sleep", lambda s: None)
+    # 用真实的瞬时传输层异常：safe_predict 现在只重试 is_retryable() 认可的故障,
+    # 裸 RuntimeError 属于「不可重试」(参数错误/缺 key 等), 会被直接 fail-fast。
     pred = safe_predict(
-        _stub_predictor([RuntimeError("net1"), RuntimeError("net2"), {"y": "ok"}]),
+        _stub_predictor(
+            [
+                requests.ConnectionError("net1"),
+                requests.ConnectionError("net2"),
+                {"y": "ok"},
+            ]
+        ),
         module_name="t",
         backoff_base=0.1,
     )
     assert pred.y == "ok"
+
+
+def test_safe_predict_non_retryable_fails_fast(monkeypatch):
+    """不可重试的异常不应浪费重试预算。"""
+    calls = []
+
+    def _boom(**kwargs):
+        calls.append(1)
+        raise RuntimeError("not transient")
+
+    monkeypatch.setattr("lab_analysis.dspy_modules._retry.time.sleep", lambda s: None)
+    with pytest.raises(SafeCallError):
+        safe_predict(_boom, module_name="t", backoff_base=0.1)
+    assert len(calls) == 1, "不可重试的异常应当只尝试一次"
 
 
 def test_safe_predict_raises_safe_call_error_after_exhausting(monkeypatch):
@@ -88,9 +111,13 @@ def test_safe_predict_raises_safe_call_error_after_exhausting(monkeypatch):
 def test_safe_predict_backoff_grows(monkeypatch):
     sleeps = []
     monkeypatch.setattr("lab_analysis.dspy_modules._retry.time.sleep", lambda s: sleeps.append(s))
+    # 抖动是刻意加的 (并发患者不锁步重试), 这里固定系数才能断言精确的指数增长
+    monkeypatch.setattr(
+        "lab_analysis.dspy_modules._retry._JITTER_RNG.uniform", lambda a, b: 1.0
+    )
     with pytest.raises(SafeCallError):
         safe_predict(
-            _stub_predictor([RuntimeError("x")] * 3),
+            _stub_predictor([requests.ConnectionError("x")] * 3),
             module_name="t",
             max_retries=3,
             backoff_base=2.0,
@@ -98,6 +125,22 @@ def test_safe_predict_backoff_grows(monkeypatch):
     # 2 retries (after attempt 1 fail, after attempt 2 fail)
     # base^1 = 2.0, base^2 = 4.0
     assert sleeps == [2.0, 4.0]
+
+
+def test_safe_predict_backoff_has_jitter(monkeypatch):
+    """抖动系数应落在 [0.5, 1.5] 区间内, 且不同次尝试取值不同。"""
+    sleeps = []
+    monkeypatch.setattr("lab_analysis.dspy_modules._retry.time.sleep", lambda s: sleeps.append(s))
+    with pytest.raises(SafeCallError):
+        safe_predict(
+            _stub_predictor([requests.ConnectionError("x")] * 3),
+            module_name="t",
+            max_retries=3,
+            backoff_base=1.0,
+        )
+    assert len(sleeps) == 2
+    for actual, base in zip(sleeps, (1.0, 1.0), strict=True):
+        assert 0.5 * base <= actual <= 1.5 * base, f"抖动越界: {actual} 不在 [{base * 0.5}, {base * 1.5}]"
 
 
 # -------------------- make_empty_prediction --------------------

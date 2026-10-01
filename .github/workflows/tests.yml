@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -e ".[dev,mcp]"
 
       - name: Lint (ruff check)
         run: python -m ruff check .
@@ -78,6 +78,8 @@ jobs:
           "
 
       - name: Test with pytest + coverage
+        # 测试不允许依赖真实 API key: 模块 import 期不能读 DASHSCOPE_API_KEY 等真实密钥,
+        # 缺失时应降级/跳过而不是 collect 失败, 更不要在这里硬编码任何真实密钥。
         run: python -m pytest --cov=lab_analysis --cov-report=term-missing --cov-report=xml:coverage.xml --cov-branch
         env:
           LAB_DEID_KEY: "VW5pdFRlc3RLZXktLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLXM="
@@ -124,7 +126,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -e ".[dev,mcp]"
 
       - name: Gate on PASS fixture (expect exit 0)
         run: |
@@ -159,6 +161,9 @@ jobs:
               print('No sidecar, skip')
               sys.exit(0)
           d = json.load(open(p))
+          # 生产端同时输出新键 passed/details 与旧键 overall_pass/results, 两种 schema 都要能读
+          overall = d.get('passed', d.get('overall_pass'))
+          details = d.get('details', d.get('results', []))
           sha = os.environ.get('GITHUB_SHA', '?')[:7]
           run_id = os.environ.get('GITHUB_RUN_ID', '?')
           lines = [
@@ -166,13 +171,13 @@ jobs:
               '',
               f\"**Commit**: `{sha}` | **Run**: {run_id}\",
               '',
-              f\"**Overall**: {'✅ PASS' if d['passed'] else '❌ FAIL'} \",
+              f\"**Overall**: {'✅ PASS' if overall else '❌ FAIL'} \",
               f\"({d['n_passed']}/{d['n_total']} passed, {d['n_failed']} failed, {d['n_skipped']} skipped)\",
               '',
               '| metric | result | detail |',
               '|--------|--------|--------|',
           ]
-          for r in d['details']:
+          for r in details:
               icon = '⏭️ SKIP' if r['skipped'] else '✅' if r['passed'] else '❌'
               lines.append(f\"| {r['metric']} | {icon} | {r.get('reason', '')} |\")
           out = '\n'.join(lines)
@@ -202,12 +207,15 @@ jobs:
               return;
             }
             const d = JSON.parse(fs.readFileSync(sidecar, 'utf-8'));
+            // 生产端同时输出新键 passed/details 与旧键 overall_pass/results, 两种 schema 都要能读
+            const pass = (d.passed !== undefined) ? d.passed : d.overall_pass;
+            const details = d.details || d.results || [];
             const sha = (process.env.GITHUB_SHA || '?').slice(0, 7);
             const runId = process.env.GITHUB_RUN_ID || '?';
             const repo = process.env.GITHUB_REPOSITORY || '';
             const runUrl = 'https://github.com/' + repo + '/actions/runs/' + runId;
-            const overall = d.passed ? 'PASS' : 'FAIL';
-            const overallColor = d.passed ? '2ca02c' : 'd62728';
+            const overall = pass ? 'PASS' : 'FAIL';
+            const overallColor = pass ? '2ca02c' : 'd62728';
             const lines = [
               '## Quant Eval Gate Result',
               '',
@@ -218,7 +226,7 @@ jobs:
               '| metric | result | detail |',
               '|--------|--------|--------|',
             ];
-            for (const r of d.details) {
+            for (const r of details) {
               let tag = 'FAIL', emoji = 'x', color = 'd62728';
               if (r.skipped) { tag = 'SKIP'; emoji = 'white_check_mark'; color = '888888'; }
               else if (r.passed) { tag = 'PASS'; emoji = 'white_check_mark'; color = '2ca02c'; }

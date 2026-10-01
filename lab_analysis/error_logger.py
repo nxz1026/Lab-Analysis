@@ -148,7 +148,7 @@ def get_recent_errors(n: int = 100) -> list:
         return []
     try:
         result = deque(maxlen=n)
-        with open(ERROR_LOG_FILE, "r", encoding="utf-8") as f:
+        with ERROR_LOG_FILE.open("r", encoding="utf-8") as f:
             for line in f:
                 result.append(line.rstrip("\n").rstrip("\r"))
         return list(result)

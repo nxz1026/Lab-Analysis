@@ -3,10 +3,38 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from pathlib import Path
 
 from . import mcp
+
+# id / ts 类入参白名单: 只允许 base64url 字符, 挡掉 "..\\"、绝对路径、分隔符等
+_SEGMENT_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+
+def _validate_segment(name: str, value: str) -> None:
+    """校验 id_card / std_ts / dspy_ts 这类会直接进路径的入参。
+
+    非法时抛 ValueError, 由工具外层 except 转成既有 error dict 返回, 不外泄异常。
+    """
+    if not _SEGMENT_RE.match(value):
+        raise ValueError(f"参数 {name} 非法: {value!r} (仅允许 A-Za-z0-9_-, 长度 1-64)")
+
+
+def _resolve_artifact_dir(out_dir: str, fallback: Path) -> Path:
+    """把产物目录解析成绝对路径, 并强制其位于 WORK_ROOT 之内。
+
+    out_dir 来自 LLM 调用方, 不加约束会变成任意目录创建 / 任意文件覆盖入口,
+    故解析后必须通过 is_relative_to 校验。
+    """
+    from lab_analysis.config import WORK_ROOT  # noqa: PLC0415
+
+    target = Path(out_dir).resolve() if out_dir else fallback.resolve()
+    root = WORK_ROOT.resolve()
+    if not target.is_relative_to(root):
+        raise ValueError(f"out_dir 必须位于 WORK_ROOT 内: {target} 不在 {root} 下")
+    return target
 
 
 @mcp.tool()
@@ -46,6 +74,11 @@ def run_quant_eval(
             render_metrics_html,
         )
         from lab_analysis.utils import WORK_ROOT  # noqa: PLC0415
+
+        # 入参白名单校验 (失败由外层 except 转成 error dict)
+        _validate_segment("id_card", id_card)
+        _validate_segment("std_ts", std_ts)
+        _validate_segment("dspy_ts", dspy_ts)
 
         base = WORK_ROOT / "data" / id_card
         std_md = base / std_ts / "04_reports" / "final_integrated_report.md"
@@ -90,7 +123,7 @@ def run_quant_eval(
         }
 
         # 可选: 写 json + 跑 gate + 渲染 visual
-        artifact_dir = Path(out_dir) if out_dir else base / dspy_ts / "04_reports"
+        artifact_dir = _resolve_artifact_dir(out_dir, base / dspy_ts / "04_reports")
         artifact_dir.mkdir(parents=True, exist_ok=True)
 
         json_path = artifact_dir / "quant_eval_report.json"

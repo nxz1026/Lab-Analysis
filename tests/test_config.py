@@ -15,7 +15,7 @@ class TestWorkRoot:
         assert WORK_ROOT.is_absolute()
 
     def test_resolved(self):
-        assert WORK_ROOT == WORK_ROOT.resolve()
+        assert WORK_ROOT.resolve() == WORK_ROOT
 
 
 class TestGet:

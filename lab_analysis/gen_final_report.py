@@ -44,6 +44,29 @@ def parse_args():
     return parser.parse_args()
 
 
+def _pick_literature_path(data_dir: Path) -> Path:
+    """优先使用 evidence_grader 筛选后的文献集, 没有则回退到原始检索结果。
+
+    步骤⑤b(literature_filter) 产出 literature_results.filtered.json, 其中带
+    tier 分级与踢除摘要。此前只有评分卡读它, 最终报告仍读未筛选的
+    literature_results.json —— 也就是说证据分级对交付物完全没有影响。
+    """
+    filtered = data_dir / "03_literature" / "literature_results.filtered.json"
+    if filtered.exists():
+        return filtered
+    return data_dir / "03_literature" / "literature_results.json"
+
+
+def _extract_papers(lit: dict) -> list:
+    """兼容两种文献文件 schema: 筛选版用 filtered_papers, 原始版用 all_papers。"""
+    if not isinstance(lit, dict):
+        return []
+    papers = lit.get("filtered_papers")
+    if papers is None:
+        papers = lit.get("all_papers", [])
+    return papers or []
+
+
 def assess_three_source_consistency(data_dir: Path) -> str:
     """评估三源一致性，生成质控段落。
 
@@ -89,29 +112,38 @@ def assess_three_source_consistency(data_dir: Path) -> str:
             mri = json.loads(mri_path.read_text(encoding="utf-8"))
             checks = mri.get("results", []) if isinstance(mri, dict) else []
             if checks:
-                confirmed = sum((1 for c in checks if c.get("status") == "success"))
-                suspicious = sum((1 for c in checks if c.get("status") == "partial"))
-                mri_summary = f"共{len(checks)}项，成功{confirmed}项，存疑{suspicious}项"
-                if confirmed > suspicious:
+                confirmed = sum(1 for c in checks if c.get("status") == "success")
+                # 生产者只产出 "success" / "error"; "partial" 无任何来源,
+                # 原先按 partial 统计会让存疑恒为 0 → CONFLICT 信号永不可达,
+                # 即使大部分序列分析失败也会报「影像印证无显著异常」。
+                failed = sum(1 for c in checks if c.get("status") == "error")
+                mri_summary = f"共{len(checks)}项，成功{confirmed}项，失败{failed}项"
+                if not mri.get("cross_checked", True):
                     signals.append(
-                        ("影像印证", "SUPPORT", f"{confirmed}项影像发现与报告一致，支持检验结论")
+                        ("影像印证", "NEUTRAL", "未提供纸质报告文本，影像仅作描述未做报告印证")
                     )
-                elif suspicious > 0:
-                    signals.append(("影像印证", "CONFLICT", f"{suspicious}项影像发现与报告存疑"))
+                elif failed and confirmed <= failed:
+                    signals.append(
+                        ("影像印证", "CONFLICT", f"{failed}项影像分析失败或与报告不一致")
+                    )
+                elif failed:
+                    signals.append(
+                        ("影像印证", "SUPPORT", f"{confirmed}项影像发现与报告一致，{failed}项失败")
+                    )
                 else:
-                    signals.append(("影像印证", "NEUTRAL", "影像印证无显著异常"))
+                    signals.append(("影像印证", "SUPPORT", f"{confirmed}项影像发现与报告一致"))
             else:
                 mri_summary = "影像印证结果为空"
         except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
             mri_summary = "影像数据解析失败"
-    lit_results_path = data_dir / "03_literature" / "literature_results.json"
+    lit_results_path = _pick_literature_path(data_dir)
     lit_interp_path = data_dir / "03_literature" / "literature_interpretation.json"
     lit_summary = "文献证据暂缺"
     if lit_results_path.exists():
         try:
             lit = json.loads(lit_results_path.read_text(encoding="utf-8"))
             count = lit.get("total_unique_papers", 0)
-            papers = lit.get("all_papers", [])
+            papers = _extract_papers(lit)
             year_range = ""
             if papers:
                 years = [int(p["year"]) for p in papers if p.get("year", "").isdigit()]
@@ -206,11 +238,11 @@ def build_prompt(data_dir: Path, patient_id: str) -> str:
         except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
             lab_data = "(检验数据解析失败)"
     lit_data = ""
-    lit_path = data_dir / "03_literature" / "literature_results.json"
+    lit_path = _pick_literature_path(data_dir)
     if lit_path.exists():
         try:
             lit = json.loads(lit_path.read_text(encoding="utf-8"))
-            papers = lit.get("all_papers", [])[:6]
+            papers = _extract_papers(lit)[:6]
             if papers:
                 lit_lines = [
                     f"- {p.get('year', '?')} | {p.get('title', '')[:60]}... (PMID:{p.get('pmid')})"
@@ -294,7 +326,7 @@ def main():
     )
     logger.info(f"Content length: {len(content)}")
     if content:
-        with open(output_path, "w", encoding="utf-8") as f:
+        with output_path.open("w", encoding="utf-8") as f:
             f.write(content)
         logger.info(f"\n报告已保存: {output_path}")
         if args.compare_mode:

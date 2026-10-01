@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from lab_analysis.organize_local_files import build_paths, copy_file_to_folder, create_local_folder
 
 

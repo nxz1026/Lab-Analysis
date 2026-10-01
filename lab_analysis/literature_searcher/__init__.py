@@ -115,6 +115,12 @@ def main() -> None:
         ts = raw_ts.split("/")[-1] if "/" in raw_ts else (raw_ts or args.id_card)
         lit_dir = _get_work_root() / "data" / args.id_card / ts / "03_literature"
         args.out = args.out or str(lit_dir / "literature_results.json")
+    elif not args.out:
+        # 独立运行 (本模块 docstring 里的 `python -m lab_analysis.literature_searcher
+        # --topic ...`) 不带 --id-card 时 args.out 仍是 None, 后面 Path(None)
+        # 会抛 TypeError, 在真正开始检索之前就崩掉。给一个工作区内的默认落点。
+        args.out = str(_get_work_root() / "data" / "literature_results.json")
+        print(f"[提示] 未指定 --out, 结果将写入: {args.out}")
         # pipeline 模式下自动定位 analysis_results.json
         if args.auto_queries and not args.analysis_results:
             analyzed_dir = _get_work_root() / "data" / args.id_card / ts / "02_analyzed"
@@ -175,12 +181,12 @@ def main() -> None:
 
     out_path = args.out
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
+    with Path(out_path).open("w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
     # 生成 Markdown 版
     md_path = str(Path(out_path).with_suffix(".md"))
-    with open(md_path, "w", encoding="utf-8") as f:
+    with Path(md_path).open("w", encoding="utf-8") as f:
         f.write("# 文献检索结果\n\n")
         f.write(
             f"**检索时间**: {results['generated']}  |  "

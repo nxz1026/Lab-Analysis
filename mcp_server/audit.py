@@ -24,16 +24,16 @@ def audit_dspy_models() -> str:
         }
     """
     try:
-        results = audit_mod.main()  # 不传 argv
-        return json.dumps(results, ensure_ascii=False, indent=2)
-    except SystemExit as e:
-        # --ci 模式下 audit 失败会 sys.exit(1), 这里捕获
+        # 走 print-free 的 collect(), 不调 main(): main() 会往 stdout 打 ~30 行,
+        # 污染 MCP stdio JSON-RPC 帧 (见 mcp_server.py 的 stdio transport)。
+        audit = audit_mod.collect()
         return json.dumps(
             {
-                "overall_up_to_date": False,
-                "stale_modules": ["(see CLI exit)"],
-                "details": [],
-                "error": f"audit exit code = {e.code}",
+                "overall_up_to_date": not audit["overall_needs_recompile"],
+                "stale_modules": [d["module"] for d in audit["details"] if not d["is_up_to_date"]],
+                "details": audit["details"],
+                "latest_src_mtime": audit["latest_src_mtime"],
+                "checked_at": audit["checked_at"],
             },
             ensure_ascii=False,
             indent=2,

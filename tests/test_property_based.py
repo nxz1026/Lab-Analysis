@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import string
+from pathlib import Path
 
 import pytest
 from hypothesis import HealthCheck, assume, given, settings
@@ -19,7 +20,7 @@ from hypothesis import strategies as st
 
 # 确保 master key 已配置 (conftest.py 通常已设, 这里再确认一次)
 os.environ.setdefault("LAB_DEID_KEY", "")
-os.environ.setdefault("WORK_ROOT", os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+os.environ.setdefault("WORK_ROOT", os.path.normpath(str(Path(__file__).parent / "..")))
 
 from lab_analysis import patient_id  # noqa: E402
 from lab_analysis.scoring_card import dimensions  # noqa: E402

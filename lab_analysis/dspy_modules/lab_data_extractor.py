@@ -209,14 +209,22 @@ def run_dspy_extraction(image_path: Path, initial_ocr_text: str = ""):
     logger.info(f"[DSPy] 提取说明: {result.extraction_notes}")
     structured_data = module.to_structured_dict(result)
     try:
-        prompts_dir = work_root / "data" / "lab_extractor_dspy_prompts"
+        prompts_dir = WORK_ROOT / "data" / "lab_extractor_dspy_prompts"
         prompts_dir.mkdir(parents=True, exist_ok=True)
         save_dspy_prompts(module, prompts_dir)
         from .prompt_inspector import save_actual_dspy_prompt
 
         save_actual_dspy_prompt("lab_data_extractor", prompts_dir)
         structured_data["prompts_dir"] = str(prompts_dir)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+    except (
+        ValueError,
+        TypeError,
+        KeyError,
+        AttributeError,
+        NameError,
+        OSError,
+        RuntimeError,
+    ) as e:
         logger.info(f"  [警告] 保存 DSPy prompts 失败: {e}")
     return structured_data
 

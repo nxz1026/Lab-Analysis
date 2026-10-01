@@ -33,9 +33,15 @@ SRC_DIR = ROOT / "lab_analysis" / "dspy_modules"
 
 def get_git_head() -> str:
     """获取当前 HEAD commit SHA (短 hash 7 位),失败返回 'unknown'."""
+    # 显式解析 git 可执行文件, 避免 PATH 上的同名程序被误调用
+    git = shutil.which("git")
+    if git is None:
+        print("[错误] PATH 中未找到 git, source_commit 记为 'unknown'", file=sys.stderr)
+        return "unknown"
     try:
-        out = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
+        # 参数为列表且无 shell=True; git 路径已由 shutil.which 显式解析
+        out = subprocess.check_output(  # noqa: S603
+            [git, "rev-parse", "--short", "HEAD"],
             cwd=ROOT,
             stderr=subprocess.DEVNULL,
             timeout=5,

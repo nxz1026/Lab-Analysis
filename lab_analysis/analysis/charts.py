@@ -279,13 +279,14 @@ def plot_moving_average(df: pd.DataFrame, results: dict, output_path: Path):
     axes = axes.flatten() if n > 1 else [axes]
 
     dates = pd.to_datetime(df["report_date"])
-    date_labels = dates.dt.strftime("%m-%d").tolist()
 
     for i, metric in enumerate(metrics_to_plot):
         ax = axes[i]
         ma_info = ma_data[metric]
         original = df[metric].dropna()
         x_idx = np.arange(len(original))
+        # 点位来自 dropna 序列，日期标签必须套用同一掩码，否则缺测指标会被贴错日期
+        date_labels = dates[df[metric].notna()].dt.strftime("%m-%d").tolist()
         ax.plot(
             x_idx,
             original.values,
@@ -322,7 +323,7 @@ def plot_moving_average(df: pd.DataFrame, results: dict, output_path: Path):
             )
 
         ax.set_xticks(x_idx)
-        ax.set_xticklabels(date_labels[: len(x_idx)], fontsize=9)
+        ax.set_xticklabels(date_labels, fontsize=9)
         ax.set_title(f"{metric}\n趋势: {ma_info['trend']}", fontsize=11, fontweight="bold")
         ax.grid(True, alpha=0.3)
         ax.legend(fontsize=8, loc="best")

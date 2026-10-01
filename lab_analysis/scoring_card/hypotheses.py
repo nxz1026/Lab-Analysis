@@ -154,13 +154,16 @@ def evaluate_hypotheses(
             continue
 
         # 从 5 维评分计算置信度调整
-        # 炎症权重最大，文献和影像次之
+        # 权重: 炎症 0.35, 文献 0.20, 影像 0.15, 实验室异常 0.20, 稳定性 0.10
+        # ⚠️ 必须先按极性归一化: inflammation / lab_abnormality 是「越高越差」,
+        # 直接正向加权会让「炎症越重 → 慢性胰腺炎(缓解期)置信度越高」, 方向完全相反。
+        norm_dims = _normalized_dim_scores(dim_scores)
         dim_avg = (
-            dim_scores.get("inflammation", 50) * 0.35
-            + dim_scores.get("lab_abnormality", 50) * 0.20
-            + dim_scores.get("literature_support", 50) * 0.20
-            + dim_scores.get("imaging_consistency", 50) * 0.15
-            + dim_scores.get("variability_stability", 50) * 0.10
+            norm_dims.get("inflammation", 50) * 0.35
+            + norm_dims.get("lab_abnormality", 50) * 0.20
+            + norm_dims.get("literature_support", 50) * 0.20
+            + norm_dims.get("imaging_consistency", 50) * 0.15
+            + norm_dims.get("variability_stability", 50) * 0.10
         ) / 100.0
 
         confidence = min(0.95, max(0.10, dim_avg + base_confidence))
@@ -188,13 +191,39 @@ def evaluate_hypotheses(
     return hypotheses[:3]
 
 
+# 「越高越差」的维度。加权与综合评估前必须先归一化, 否则方向是反的。
+# 与 io._DIM_HIGHER_IS_BETTER / dimensions.py 模块 docstring 保持一致。
+_HIGHER_IS_WORSE = ("inflammation", "lab_abnormality")
+
+
+def _normalized_dim_scores(dim_scores: DimensionScores) -> dict[str, float]:
+    """把 5 维分值统一归一化为「越高越好」(0-100)。"""
+    return {k: (100.0 - v if k in _HIGHER_IS_WORSE else v) for k, v in dim_scores.items()}
+
+
 def generate_overall_assessment(
     dim_scores: DimensionScores,
     hypotheses: list[Hypothesis],
+    has_data: bool = True,
 ) -> str:
-    """生成一段综合评估文本。"""
+    """生成一段综合评估文本。
+
+    Args:
+        dim_scores: 5 维原始分 (极性不一致, 见 _HIGHER_IS_WORSE)。
+        hypotheses: 诊断假设列表。
+        has_data: 是否存在任何真实分析数据。为 False 时只输出数据不足提示 ——
+            绝不能用缺省分值拼出「多项指标异常, 建议尽快临床干预」。
+    """
+    if not has_data:
+        return (
+            "数据不足：本次运行未找到检验/文献/影像分析结果，无法给出临床评估结论。"
+            "请先完成数据分析步骤后重新生成评分卡。"
+        )
+
+    norm = _normalized_dim_scores(dim_scores)
     parts: list[str] = []
-    avg = sum(dim_scores.values()) / len(dim_scores) if dim_scores else 0
+    # 必须用归一化后的分值求平均: 原始分把「高=差」和「高=好」混在一起平均没有意义
+    avg = sum(norm.values()) / len(norm) if norm else 0
 
     if avg >= 70:
         parts.append("综合多源数据，各项评分较高，整体情况可控。")

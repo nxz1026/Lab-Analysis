@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
+from lab_analysis._log import get_logger
 from lab_analysis.patient_id import encode
 from lab_analysis.utils import WORK_ROOT
-from lab_analysis._log import get_logger
 
 
 def repo_root() -> Path:
@@ -33,6 +34,12 @@ def _load_patient_mapping() -> dict[str, str]:
     return {}
 
 
+# P1: deid 会直接拼进 WORK_ROOT 下的路径 (raw/patient_<deid>, data/<deid>/...) 并最终
+# 被 cleanup_runs 用 shutil.rmtree 删除, 因此只接受不含路径分隔符的裸目录名,
+# 避免 "../../../shared" 之类的 mapping key 逃逸出 WORK_ROOT。
+_DEID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+
 def get_deid(id_card: str) -> str:
     """身份证号 → 脱敏 ID。
 
@@ -41,11 +48,21 @@ def get_deid(id_card: str) -> str:
     2. 调用 encode(id_card) 生成新 deid（确定性 AES-GCM，见 patient_id.encode）
 
     此机制让现有 raw/patient_<existing_deid>/ 目录能复用，无需重跑数据摄入。
+
+    P1: mapping 的 key 来自可手工编辑的 JSON, 未经校验就直接进路径拼接, 故只接受
+    匹配 ``^[A-Za-z0-9_-]{1,64}$`` 的 key; 非法 key 记 error 并跳过, 最终落到
+    ``encode()`` —— 与"映射表里查不到该身份证号"时完全一致的既有返回契约。
     """
     mapping = _load_patient_mapping()
     for deid, original in mapping.items():
         if original == id_card:
-            return deid
+            if _DEID_RE.match(deid):
+                return deid
+            get_logger(__name__).error(
+                "patient_mapping.json 中的 deid 非法（仅允许字母/数字/下划线/连字符，≤64 字符），"
+                "已忽略并改用 encode() 生成：%r",
+                deid,
+            )
     return encode(id_card)
 
 

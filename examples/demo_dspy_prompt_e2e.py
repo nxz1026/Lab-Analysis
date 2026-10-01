@@ -49,7 +49,7 @@ analysis_results = {
     "linear_regression": {"RDW_vs_time": {"slope": 0.65, "r_squared": 0.94}},
 }
 analysis_path = ANALYZED_DIR / "analysis_results.json"
-with open(analysis_path, "w", encoding="utf-8") as f:
+with analysis_path.open("w", encoding="utf-8") as f:
     json.dump(analysis_results, f, ensure_ascii=False, indent=2)
 print(f"[OK] Created: {analysis_path}")
 
@@ -77,13 +77,13 @@ literature_results = {
     ],
 }
 lit_path = LIT_DIR / "literature_results.json"
-with open(lit_path, "w", encoding="utf-8") as f:
+with lit_path.open("w", encoding="utf-8") as f:
     json.dump(literature_results, f, ensure_ascii=False, indent=2)
 print(f"[OK] Created: {lit_path}")
 
 # 3. 运行标准模式 (不传 --use-dspy)
 print("\n[Step 1] Running standard mode...")
-result = subprocess.run(
+result = subprocess.run(  # noqa: S603  # 参数为固定列表,无 shell 插值
     [
         sys.executable,
         "-m",
@@ -109,7 +109,7 @@ if result.stderr:
 
 # 4. 运行 DSPy 模式 (传 --use-dspy)
 print("\n[Step 2] Running DSPy mode...")
-result = subprocess.run(
+result = subprocess.run(  # noqa: S603  # 参数为固定列表,无 shell 插值
     [
         sys.executable,
         "-m",
@@ -137,7 +137,7 @@ if result.stderr:
 
 # 5. 运行对比工具
 print("\n[Step 3] Running comparison tool...")
-result = subprocess.run(
+result = subprocess.run(  # noqa: S603  # 参数为固定列表,无 shell 插值
     [
         sys.executable,
         str(WORK_ROOT / "examples" / "dspy_prompt_comparison.py"),

@@ -1,4 +1,12 @@
-"""scoring_card.dimensions — 5 维评分函数。"""
+"""scoring_card.dimensions — 5 维评分函数。
+
+⚠️ 维度极性 (极易搞反, 渲染与加权都必须区分)
+- **越高越差**: ``inflammation`` (炎症活动度)、``lab_abnormality`` (实验室异常度)
+- **越高越好**: ``literature_support``、``imaging_consistency``、``variability_stability``
+
+统一取值表见 ``io._DIM_HIGHER_IS_BETTER``; 置信度加权与综合评估前必须先经
+``hypotheses._normalized_dim_scores()`` 归一化。新增维度时两处必须同步更新。
+"""
 
 from __future__ import annotations
 
@@ -6,7 +14,7 @@ from .types import DimensionScores
 
 
 def score_inflammation(results: dict) -> float:
-    """炎症活动度评分 (0-100)。
+    """炎症活动度评分 (0-100)。**越高越差**。
 
     基于 hs-CRP 分期、趋势、急性期占比。
     """
@@ -42,7 +50,7 @@ def score_inflammation(results: dict) -> float:
 
 
 def score_lab_abnormality(results: dict, alerts: list[dict]) -> float:
-    """实验室异常度评分 (0-100)。
+    """实验室异常度评分 (0-100)。**越高越差**。
 
     基于异常指标数量、Z-score 严重异常、告警级别。
     """
@@ -55,10 +63,11 @@ def score_lab_abnormality(results: dict, alerts: list[dict]) -> float:
     n_abnormal = len(abnormal)
     score += min(40, n_abnormal * 8)
 
-    # 严重 Z-score 异常（最多 30 分）
-    for _metric, info in zscores.items():
-        severe = info.get("outliers_severe", {})
-        score += min(30, severe.get("count", 0) * 15)
+    # 严重 Z-score 异常（整项最多 30 分）
+    # 必须先累加再封顶: 在循环内逐个 min(30, ...) 会让 n 个指标累计出 30*n,
+    # 该维度很快饱和到 100 并失去区分度
+    n_severe = sum(info.get("outliers_severe", {}).get("count", 0) for info in zscores.values())
+    score += min(30, n_severe * 15)
 
     # CRITICAL 告警（最多 30 分）
     n_critical = sum(1 for a in alerts if a.get("level") == "CRITICAL")
@@ -94,6 +103,11 @@ def score_imaging_consistency(mri_results: dict) -> float:
     """影像一致性评分 (0-100)。
 
     基于 MRI 检查结果中成功/存疑/失败的比例。
+
+    ⚠️ 只有真正做了「报告印证」的结果才有意义。qwen_vl_report_check* 只在调用成功
+    时才追加一条 result, 失败的不写; 若没有纸质报告文本 (cross_checked=False) 就
+    只做纯影像描述。此时 confirmed/total 恒为 1.0, 公式给出 130 → 截断成 100,
+    反而显示「影像一致性 ✅ 良好」—— 这比没数据更糟。必须显式返回中值。
     """
     checks = []
     if isinstance(mri_results, dict):
@@ -101,6 +115,9 @@ def score_imaging_consistency(mri_results: dict) -> float:
 
     if not checks:
         return 50.0  # 无影像数据时给中值
+
+    if isinstance(mri_results, dict) and mri_results.get("cross_checked") is False:
+        return 50.0  # 未做报告印证: 无对照基准, 不能给高分
 
     total = len(checks)
     if total == 0:

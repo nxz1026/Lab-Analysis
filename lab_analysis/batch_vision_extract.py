@@ -73,7 +73,15 @@ def run_vision_extractor(image_path: Path, interactive: bool = False) -> dict:
     logger.info(f"[识别] 正在识别: {image_path.name}")
     logger.info(f"{'=' * 60}")
 
-    result = subprocess.run(cmd, cwd=str(project_root), capture_output=True, text=True)  # noqa: S603
+    # 显式 UTF-8: zh-CN Windows 默认按 GBK 解码, 会 UnicodeDecodeError
+    result = subprocess.run(  # noqa: S603
+        cmd,
+        cwd=str(project_root),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
 
     if result.stdout:
         logger.info(result.stdout)
@@ -116,7 +124,15 @@ def run_ingest_data(image_path: Path, patient_id: str, report_date: str, report_
     logger.info(f"   日期: {report_date}")
     logger.info(f"   类型: {report_type}")
 
-    result = subprocess.run(cmd, cwd=str(project_root), capture_output=True, text=True)  # noqa: S603
+    # 显式 UTF-8: zh-CN Windows 默认按 GBK 解码, 会 UnicodeDecodeError
+    result = subprocess.run(  # noqa: S603
+        cmd,
+        cwd=str(project_root),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
 
     if result.returncode == 0:
         logger.info("[OK] 存入成功")

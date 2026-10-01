@@ -18,7 +18,7 @@ def load_dspy_samples(data_file: Path = None) -> List[Dict]:
         data_file = Path(__file__).parent.parent / "data" / "dspy_training_enhanced.jsonl"
 
     samples = []
-    with open(data_file, "r", encoding="utf-8") as f:
+    with data_file.open("r", encoding="utf-8") as f:
         for line in f:
             if line.strip():
                 samples.append(json.loads(line))
@@ -182,7 +182,7 @@ def generate_performance_report(results: Dict, output_file: Path):
 
     # 保存 JSON 报告
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, "w", encoding="utf-8") as f:
+    with output_file.open("w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
     print(f"[成功] 报告已保存到: {output_file}")

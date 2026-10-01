@@ -150,7 +150,7 @@ def test_literature_interpreter_dspy():
             if output_path and output_path != ".":
                 output_file = Path(output_path)
                 if output_file.exists():
-                    with open(output_file, "r", encoding="utf-8") as f:
+                    with output_file.open("r", encoding="utf-8") as f:
                         data = json.load(f)
                     interpretation = data.get("response", "")
                     print(f"   解读长度: {len(interpretation)} 字符")
@@ -331,7 +331,7 @@ def generate_test_report(results: dict):
     report_file = project_root / "reports" / "dspy_e2e_test_report.json"
     report_file.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(report_file, "w", encoding="utf-8") as f:
+    with report_file.open("w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
     print(f"\n[保存] 测试报告已保存到: {report_file}")

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
@@ -130,7 +133,7 @@ def _make_full_doc(**overrides) -> dict:
         "confidence": 0.85,
         "report_markdown": md,
         "sections": raw,
-        "prompts_dir": "/tmp",
+        "prompts_dir": str(Path(tempfile.gettempdir())),
     }
     doc.update(overrides)
     return doc

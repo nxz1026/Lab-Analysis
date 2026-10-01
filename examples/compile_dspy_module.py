@@ -51,7 +51,7 @@ def load_training_data(data_path: Path = None):
         raise FileNotFoundError(f"训练数据文件不存在: {data_path}")
 
     samples = []
-    with open(data_path, "r", encoding="utf-8") as f:
+    with data_path.open("r", encoding="utf-8") as f:
         for line in f:
             if line.strip():
                 samples.append(json.loads(line))

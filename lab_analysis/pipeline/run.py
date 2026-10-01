@@ -72,27 +72,46 @@ def _clear_memory(val: str) -> None:
     try:
         buf = ctypes.create_string_buffer(val.encode("utf-8"))
         ctypes.memset(buf, 0, len(buf))
-    except Exception:
-        pass
+    except Exception:  # noqa: BLE001 - 尽力而为的内存擦除, 失败无副作用可处理
+        # 纯 best-effort: 这里没有任何可恢复的补救动作, 记录反而会在日志里
+        # 留下「擦除失败」噪声。val 为 None(自动识别 deid 的路径)时也走这里。
+        logger.debug("[DEBUG] 内存擦除跳过 (best-effort)")
+
+
+def _ingest_timeout() -> int:
+    """步骤①摄入子进程的超时秒数。
+
+    P2: 步骤①不经 run_step, 而是直接 subprocess.run, 此前没有任何 timeout。
+    与 steps.run_step 保持同一语义 (PIPELINE_STEP_TIMEOUT, 默认 1800s),
+    避免 OCR/VLM/DICOM 子进程 hang 时 pipeline 永久阻塞且无错误日志。
+    """
+    try:
+        return int(os.environ.get("PIPELINE_STEP_TIMEOUT", "1800"))
+    except ValueError:
+        return 1800
 
 
 def main():
     args = parse_args()
-    raw_id = None
-    logger.info("[INFO] 尝试从已摄入的检验报告中自动提取身份证号...")
-    raw_id = extract_patient_id_from_reports()
-    if not raw_id:
-        logger.info("[INFO] 未能自动识别身份证号，请手动输入")
+    deid = None
+    raw_id = None  # 只有手动输入分支才会拿到明文身份证号 (metadata.md 不再存明文)
+    logger.info("[INFO] 尝试从已摄入的检验报告中自动提取脱敏病人ID...")
+    detected = extract_patient_id_from_reports()
+    if detected:
+        # metadata.md 里存的是 deid (明文身份证号不落盘), 直接用, 不再校验/加密
+        deid = detected
+    else:
+        logger.info("[INFO] 未能自动识别病人，请手动输入身份证号")
         try:
             raw_id = input("请输入患者身份证号: ").strip()
-        except (EOFError, KeyboardInterrupt):
+        except (EOFError, KeyboardInterrupt) as e:
             logger.error("\n[ERROR] 无法读取输入，本 Pipeline 要求交互式提供合法身份证号")
+            raise SystemExit(1) from e
+        raw_id = validate_id_card(raw_id, interactive=True)
+        if not raw_id:
+            logger.error("[ERROR] 未获得有效的身份证号，退出")
             raise SystemExit(1)
-    raw_id = validate_id_card(raw_id, interactive=True)
-    if not raw_id:
-        logger.error("[ERROR] 未获得有效的身份证号，退出")
-        raise SystemExit(1)
-    deid = get_deid(raw_id)
+        deid = get_deid(raw_id)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     ctx = PipelineContext(deid=deid, timestamp=ts)
     ts_dir = f"{deid}/{ts}"
@@ -104,12 +123,26 @@ def main():
     logger.info(f"输出目录: data/{ts_dir}/")
     logger.info(f"时间戳: {ts}")
     if not args.skip_ingest:
-        auto_ingest_from_origin_data(
-            id_card=raw_id,
-            report_date=args.report_date,
-            report_type=args.report_type,
-            no_interactive=args.no_interactive,
-        )
+        if raw_id is None:
+            # 从 metadata.md 自动识别出的只有 deid, 没有明文身份证号可供摄入使用
+            # (摄入需要它来 OCR 校验报告归属)。此时明确跳过, 而不是把 None 传下去。
+            logger.warning(
+                "[跳过] 数据摄入需要明文身份证号, 但本次是从 metadata.md 自动识别出的脱敏ID。"
+                "\n       如需重新摄入, 请用 --skip-ingest 之外的流程手动提供身份证号。"
+            )
+        else:
+            auto_ingest_from_origin_data(
+                id_card=raw_id,
+                report_date=args.report_date,
+                report_type=args.report_type,
+                no_interactive=args.no_interactive,
+            )
+        if raw_id is None:
+            logger.error(
+                "[ERROR] 手动摄入需要明文身份证号 (LAB_RAW_ID_CARD), 但本次是从 metadata.md "
+                "自动识别出的脱敏ID —— 请改用交互输入身份证号的流程。"
+            )
+            raise SystemExit(1)
         if (
             args.ingest_lab
             or args.ingest_dicom_zip
@@ -123,6 +156,7 @@ def main():
             pp = str(root)
             full_env["PYTHONPATH"] = pp + os.pathsep + full_env.get("PYTHONPATH", "")
             full_env["LAB_RAW_ID_CARD"] = raw_id  # P0: 通过环境变量传递明文ID，避免进程列表泄露
+            ingest_timeout = _ingest_timeout()
             if args.ingest_lab:
                 for lab_path in args.ingest_lab:
                     cmd = [
@@ -139,7 +173,13 @@ def main():
                     if args.report_type:
                         cmd += ["--report-type", args.report_type]
                     logger.info(f"  摄入检验报告: {lab_path}")
-                    r = subprocess.run(cmd, cwd=str(root), env=full_env)  # noqa: S603
+                    try:
+                        r = subprocess.run(  # noqa: S603
+                            cmd, cwd=str(root), env=full_env, timeout=ingest_timeout
+                        )
+                    except subprocess.TimeoutExpired:
+                        logger.error(f"  [!] 摄入超时 (> {ingest_timeout}s): {lab_path}")
+                        continue
                     if r.returncode != 0:
                         logger.info(f"  [!] 摄入失败: {lab_path}")
             if args.ingest_dicom_zip or args.ingest_dicom_dir:
@@ -156,9 +196,15 @@ def main():
                     cmd += ["--dicom-dir", args.ingest_dicom_dir]
                 if args.report_date:
                     cmd += ["--report-date", args.report_date]
-                r = subprocess.run(cmd, cwd=str(root), env=full_env)  # noqa: S603
-                if r.returncode != 0:
-                    logger.error("  [!] DICOM摄入失败")
+                try:
+                    r = subprocess.run(  # noqa: S603
+                        cmd, cwd=str(root), env=full_env, timeout=ingest_timeout
+                    )
+                except subprocess.TimeoutExpired:
+                    logger.error(f"  [!] DICOM摄入超时 (> {ingest_timeout}s)")
+                else:
+                    if r.returncode != 0:
+                        logger.error("  [!] DICOM摄入失败")
             if args.ingest_mri_report:
                 cmd = [
                     python,
@@ -171,9 +217,15 @@ def main():
                 ]
                 if args.report_date:
                     cmd += ["--report-date", args.report_date]
-                r = subprocess.run(cmd, cwd=str(root), env=full_env)  # noqa: S603
-                if r.returncode != 0:
-                    logger.error("  [!] MRI报告摄入失败")
+                try:
+                    r = subprocess.run(  # noqa: S603
+                        cmd, cwd=str(root), env=full_env, timeout=ingest_timeout
+                    )
+                except subprocess.TimeoutExpired:
+                    logger.error(f"  [!] MRI报告摄入超时 (> {ingest_timeout}s)")
+                else:
+                    if r.returncode != 0:
+                        logger.error("  [!] MRI报告摄入失败")
             del full_env["LAB_RAW_ID_CARD"]
             logger.info("\n[OK] 数据摄入完成，继续执行Pipeline...\n")
     _clear_memory(raw_id)

@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 from datetime import datetime
 from pathlib import Path
@@ -69,6 +70,91 @@ def _build_patient(deid: str) -> dict:
             ]
         },
     }
+
+
+_SLUG_KEEP = "-_"
+
+
+def _slugify(text: str) -> str:
+    """把指标名/日期压成 FHIR id 可用的安全片段 (FHIR id 限 ``[A-Za-z0-9\\-.]{1,64}``)。
+
+    ⚠️ 必须限 ASCII: ``str.isalnum()`` 对中文也返回 True, 直接用会生成
+    ``白细胞计数`` 这种非法 id。
+    """
+    out = []
+    for ch in str(text):
+        if (ch.isascii() and ch.isalnum()) or ch in _SLUG_KEEP:
+            out.append(ch)
+        else:
+            out.append("-")
+    slug = "".join(out).strip("-")
+    return slug or "x"
+
+
+def _observation_id(deid: str, metric: str, date: str) -> str:
+    """构造唯一且长度合规的 Observation.id。
+
+    不能只用指标名: ``data_loader`` 对每份报告会同时写 ``NEUT%`` 与 ``NEUT#``
+    (以及 LYMPH/MONO/EO/BASO 的 % 与 # 两列), 同一 report_date 下二者若都被
+    slug 成 ``NEUT`` 就会在同一个 Bundle 里产生重复 id。而 slug 化本身是有损的
+    (``%``/``#`` 都会被替换掉), 所以额外拼一个短哈希保证唯一。
+
+    deid 本身就有 62 字符, 直接和 slug + 日期拼接会超出 64 上限, 故 deid 截断。
+    """
+    stamp = _slugify(date) if date else "na"
+    key = f"{metric}|{date}"
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()[:8]
+    return f"{_slugify(deid)[:20]}-{_slugify(metric)[:20]}-{_slugify(stamp)[:12]}-{digest}"
+
+
+# 宽表行里的非指标列 (data_loader.to_csv/to_json 的 fixed_cols)
+_REPORT_META_KEYS = frozenset(
+    {
+        "report_id",
+        "report_date",
+        "diagnosis",
+        "department",
+        "physician",
+        "visit_type",
+        "is_inpatient",
+    }
+)
+
+
+def _pivot_lab_metrics(rows: list[dict] | None) -> list[dict]:
+    """把检验指标统一成窄表 ``[{metric, value, unit, date}]``。
+
+    生产侧 ``data_loader.to_json()`` 写出的 ``reports`` 是**宽表**: 每行一份报告,
+    指标各占一列 (WBC / CRP / hs-CRP ... , 另有一列 ``<指标>_status``)。
+    若按窄表解析, 每行都取不到 ``metric``/``value``, 导致 FHIR Bundle 里
+    一条有效检验数据都没有, 而单测用的是窄表假数据所以一直发现不了。
+
+    同时兼容本来就是窄表的输入 (含 ``metric`` / ``name`` 键)。
+    """
+    out: list[dict] = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        if row.get("metric") or row.get("name"):
+            out.append(
+                {
+                    "metric": row.get("metric") or row.get("name", ""),
+                    "value": row.get("value")
+                    if row.get("value") is not None
+                    else row.get("latest_value"),
+                    "unit": row.get("unit") or "",
+                    "date": row.get("date") or row.get("report_date") or "",
+                }
+            )
+            continue
+        date = row.get("report_date", "")
+        for key, value in row.items():
+            if key in _REPORT_META_KEYS or key.endswith("_status"):
+                continue
+            if value is None or value == "":
+                continue
+            out.append({"metric": key, "value": value, "unit": "", "date": date})
+    return out
 
 
 def _build_observation(
@@ -242,11 +328,20 @@ def build_fhir_bundle(
         scoring_card: build_scoring_card() 输出的评分卡。
         alerts: generate_alerts() 输出的告警列表。
         report_md: 最终报告 Markdown 文本。
-        lab_metrics: 检验指标的 [{metric, value, unit, date}, ...] 列表。
+        lab_metrics: 检验指标。**两种形状都接受**:
+            - 窄表 ``[{"metric": "CRP", "value": 12.3, "unit": "mg/L", "date": ...}]``
+            - 宽表 ``[{"report_id": ..., "report_date": ..., "WBC": 6.1, "CRP": 12.3}]``
+              (生产侧 ``lab_metrics.json`` 的 ``reports`` 就是这种, 每行一份报告)
+            宽表会由 ``_pivot_lab_metrics()`` 自动转成窄表。
+
+            ⚠️ 已知限制: 宽表不含单位列, 导出的 ``valueQuantity.unit`` 只能留 "?"。
+            补 UCUM ``system``/``code`` 需要一份经核验的指标→单位编码映射,
+            不应凭空生成医学编码。
 
     Returns:
         FHIR R4 Bundle dict，可序列化为 JSON。
     """
+
     from lab_analysis.analysis._base import REF_RANGES
 
     entry: list[dict] = []
@@ -256,18 +351,24 @@ def build_fhir_bundle(
     entry.append({"resource": _build_patient(deid)})
 
     # 2. Observations（来自 REF_RANGES 的指标）
-    if lab_metrics:
-        for lm in lab_metrics:
-            metric = lm.get("metric", lm.get("name", ""))
-            value = lm.get("value") if lm.get("value") is not None else lm.get("latest_value")
-            unit = lm.get("unit") or "?"
-            date = lm.get("date") or lm.get("report_date")
-            ref = REF_RANGES.get(metric)
-            ref_low, ref_high = ref if ref else (None, None)
-            obs_id = f"{deid}-{metric.lower().replace('#', 'n').replace('_', '-')}"
-            obs = _build_observation(obs_id, metric, value, unit, ref_low, ref_high, date)
-            entry.append({"resource": obs})
-            obs_ids.append(obs_id)
+    # ⚠️ 必须先归一化: 生产侧 data_loader.to_json() 写出的 reports 是**宽表**
+    # (每行一份报告, 指标各占一列), 直接按窄表解析会得到 metric="" / value=None,
+    # 结果是 Bundle 里一条有效检验数据都没有。
+    for lm in _pivot_lab_metrics(lab_metrics):
+        metric = lm["metric"]
+        value = lm["value"]
+        if not metric or value is None:
+            continue
+        unit = lm["unit"] or "?"
+        date = lm["date"] or None
+        ref = REF_RANGES.get(metric)
+        ref_low, ref_high = ref if ref else (None, None)
+        # id 必须保证唯一: 同一 report_date 下 NEUT% 与 NEUT# 都会出现,
+        # 单纯 slug 化会把两者都压成 NEUT 而撞 id
+        obs_id = _observation_id(deid, metric, lm["date"])
+        obs = _build_observation(obs_id, metric, value, unit, ref_low, ref_high, date)
+        entry.append({"resource": obs})
+        obs_ids.append(obs_id)
 
     # 2b. Alert Observations
     for i, alert in enumerate(alerts):
@@ -314,7 +415,9 @@ def build_fhir_bundle(
         "resourceType": "Bundle",
         "id": f"lab-analysis-{deid}",
         "type": "collection",
-        "timestamp": datetime.now().isoformat(),
+        # Bundle.timestamp 是 FHIR instant, 必须带时区偏移; naive 时间会被真实
+        # 校验器拒收
+        "timestamp": datetime.now().astimezone().isoformat(),
         "entry": entry,
     }
     return bundle
@@ -378,6 +481,9 @@ def _cli():
     )
 
     out_path = args.out or str(reports_dir / "fhir_bundle.json")
+    # 独立运行时 04_reports/ 可能还不存在(pipeline 里由评分卡步骤创建),
+    # 不建目录会直接 FileNotFoundError 崩掉, 与 scoring_card 的行为保持一致
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     Path(out_path).write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info(f"[OK] FHIR Bundle 已保存: {out_path}")
 

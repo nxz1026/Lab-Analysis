@@ -46,6 +46,9 @@ def trigger_dspy_recompile(force: bool = False, timeout_sec: int = 600) -> str:
             cmd,
             capture_output=True,
             text=True,
+            # 显式 UTF-8: zh-CN Windows 默认按 GBK 解码, 会 UnicodeDecodeError
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout_sec,
             cwd=str(_PROJECT_ROOT),
             check=False,

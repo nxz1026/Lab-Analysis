@@ -57,9 +57,10 @@ omit = [
 ]
 
 [tool.coverage.report]
-# CI 阈值渐进 (P2-7 → P2-3): 25% -> 40% -> 42%
-# 历史: 22.80% (2026-05) -> 25% (2026-06 初) -> 40% (2026-06-23 P2-7) -> 42% (2026-06-23 P2-3)
-# 后续每 PR +2%, 但要求总覆盖大于阈值 +1 缓冲
+# 当前 CI 门禁: 总覆盖率必须 >= 60% (fail_under), 低于即 fail。
+# 注意: 60 是当前生效值, 是否与真实覆盖率匹配需要 maintainer 复核后决定。
+# 下面是历史阈值渐进记录 (已不是当前门禁值, 仅供追溯):
+#   22.80% (2026-05) -> 25% (2026-06 初) -> 40% (2026-06-23 P2-7) -> 42% (2026-06-23 P2-3)
 fail_under = 60
 show_missing = true
 skip_covered = false
@@ -96,13 +97,18 @@ extend-select = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "C408"]
 "lab_analysis/gen_final_report_dspy.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 "lab_analysis/literature_interpreter_dspy.py" = ["PLR0915"]
 "lab_analysis/literature_searcher/__init__.py" = ["C901", "PLR0911", "PLR0912", "PLR0915"]
+# add_file_handler 是配置型 API: 2 个定位参数 + 4 个带默认值的 keyword-only 选项
+# (level / formatter / max_bytes / backup_count)。强行并成 5 个会让调用端更难读,
+# 故按 COMPLEXITY_BASELINE.md 的既有基线机制登记豁免。
+"lab_analysis/_log.py" = ["PLR0913"]
 "lab_analysis/literature_searcher/parser.py" = ["C901", "PLR0912"]
 "lab_analysis/organize_local_files.py" = ["C901", "PLR0911", "PLR0912", "PLR0915"]
 "lab_analysis/qwen_vl_report_check.py" = ["C901", "PLR0912", "PLR0915"]
 "lab_analysis/qwen_vl_report_check_dspy.py" = ["PLR0915"]
 "lab_analysis/analysis/run.py" = ["C901", "PLR0912", "PLR0915"]
 "lab_analysis/dspy_modules/_retry.py" = ["PLR0911"]
-"lab_analysis/dspy_modules/final_report_generator.py" = ["PLR0913"]
+# run_dspy_final_report 因加入「LLM 失败降级标记 + 失败横幅」后 C901 13 / PLR0915 63
+"lab_analysis/dspy_modules/final_report_generator.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
 "lab_analysis/dspy_modules/prompt_inspector.py" = ["C901", "PLR0912"]
 "lab_analysis/evidence_grader.py" = ["PLR0911"]
 "lab_analysis/extract_lab_data/parser.py" = ["C901"]
@@ -119,4 +125,6 @@ extend-select = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "C408"]
 "scripts/*.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 "mcp_server/*.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 "migrate_deid.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
-"tests/*.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "C408"]
+# S101 (assert) 在 pytest 里就是断言机制本身, 禁掉没法写测试;
+# 生产代码 lab_analysis/ 下的 S101 仍然全局强制, 不受此豁免影响。
+"tests/*.py" = ["C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "C408", "S101"]

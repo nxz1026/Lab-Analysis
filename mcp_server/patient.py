@@ -25,10 +25,13 @@ def list_patients() -> str:
           "pairs": {patient_id: [[std_ts, dspy_ts], ...]}
         }
     """
-    _PATIENT_RE = re.compile(r"^[A-Za-z0-9_-]{15,50}$")
+    # deid = base64url(12B nonce + 18B 明文 + 16B GCM tag) = 62 字符,
+    # 原上界 {15,50} 会把所有真实 deid 过滤掉 → list_patients 永远返回 0 个患者。
+    # 与 pipeline/cli.py 的 _DEID_RE 保持一致 ({1,64}), 同时兼容旧的纯数字 ID 目录。
+    _PATIENT_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
     _TEMPLATE_KEYWORDS = re.compile(r"(dspy|prompts?|template|test)", re.IGNORECASE)
     try:
-        # 过滤: 匹配 base64url 脱敏 ID 模式 (字母数字+下划线+连字符, 15-50 字符)
+        # 过滤: 匹配 base64url 脱敏 ID 模式 (字母数字+下划线+连字符, 1-64 字符)
         # 并排除包含已知模板关键词的目录名
         all_pids = mp.list_patients()
         pids = [p for p in all_pids if _PATIENT_RE.match(p) and not _TEMPLATE_KEYWORDS.search(p)]

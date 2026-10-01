@@ -5,16 +5,16 @@
 
 本地文件结构（模拟飞书云盘）：
 {WORK_ROOT}/local_upload/
-└── {今天日期}/          ← 当天年月日文件夹
-    ├── 原始数据/          ← 检验+影像原始数据
-    ├── 文献参考/          ← 文献检索结果
-    ├── 中间结果/          ← 循证解读
-    ├── 统计结果/          ← 统计分析图表
-    └── final_integrated_report.md    ← 最终综合报告（根目录）
+└── {今天日期}/                  ← 当天年月日文件夹
+    └── patient_{脱敏ID}/       ← 病人维度子目录（避免同日多病人互相覆盖）
+        ├── 原始数据/          ← 检验+影像原始数据
+        ├── 文献参考/          ← 文献检索结果
+        ├── 中间结果/          ← 循证解读
+        ├── 统计结果/          ← 统计分析图表
+        └── final_integrated_report.md    ← 最终综合报告（患者目录根）
 """
 
 import argparse
-import os
 import shutil
 from datetime import date
 from pathlib import Path
@@ -22,7 +22,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from . import _log
-from .utils import WORK_ROOT, build_paths as build_paths_utils
+from .utils import WORK_ROOT
+from .utils import build_paths as build_paths_utils
 
 logger = _log.get_logger(__name__)
 load_dotenv()
@@ -92,7 +93,9 @@ def main():
         (lit_dir / "literature_results.md", "文献参考", None),
         (lit_dir / "literature_interpretation.md", "中间结果", None),
         (lit_dir / "mri_report_check_results.md", "中间结果", None),
-        (analyzed_dir / "analysis_results_report.md", "中间结果", None),
+        # analysis_results_report.md 由 analysis/_base.py 写在 04_reports/,
+        # 从 02_analyzed/ 取永远取不到, 会静默跳过统计报告
+        (reports_dir / "analysis_results_report.md", "中间结果", None),
         (figures_dir / "fig_01_trend_regression.png", "统计结果", None),
         (figures_dir / "fig_02_correlation_heatmap.png", "统计结果", None),
         (figures_dir / "fig_03_inflammation_status.png", "统计结果", None),
@@ -102,7 +105,9 @@ def main():
         (figures_dir / "fig_07_zscore_distribution.png", "统计结果", None),
         (reports_dir / "final_integrated_report.md", None, None),
     ]
-    day_folder = LOCAL_UPLOAD_ROOT / TODAY
+    # P1: 带上病人维度 (patient_<deid>), 否则同一天处理两位病人时,
+    # lab_metrics.csv / final_integrated_report.md 等固定文件名会互相覆盖。
+    day_folder = LOCAL_UPLOAD_ROOT / TODAY / f"patient_{patient_id}"
     logger.info(f"① 创建当天文件夹: {day_folder}")
     if not create_local_folder(day_folder):
         logger.error("  [失败] 当天文件夹创建失败，退出")
@@ -137,35 +142,45 @@ def main():
         else:
             skipped_count += 1
     logger.info("\n④ 合并 DSPy prompts 目录")
-    dspy_target = subfolders.get("中间结果") / "dspy_prompts"
-    dspy_target.mkdir(parents=True, exist_ok=True)
-    dspy_sources = [
-        lit_dir / "dspy_prompts",
-        reports_dir / "dspy_prompts",
-        WORK_ROOT / "data" / "mri_dspy_prompts",
-        WORK_ROOT / "data" / "lab_extractor_dspy_prompts",
-    ]
     dspy_merged = 0
-    for src in dspy_sources:
-        if not src.exists() or not src.is_dir():
-            continue
-        for item in src.iterdir():
-            dest = dspy_target / item.name
-            try:
-                if item.is_file():
-                    shutil.copy2(item, dest)
-                elif item.is_dir():
-                    if dest.exists():
-                        shutil.rmtree(dest)
-                    shutil.copytree(item, dest)
-                dspy_merged += 1
-                logger.info(f"  [成功] {src.name}/{item.name} -> 中间结果/dspy_prompts/{item.name}")
-            except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
-                logger.info(f"  [失败] 合并 {item.name} 失败: {e}")
-    if dspy_merged == 0:
-        logger.warning("  [警告] 未找到任何 DSPy prompts 源目录")
+    # 「中间结果」可能创建失败(路径被占用/被杀软锁定), 此时 .get() 返回 None,
+    # 直接 / "dspy_prompts" 会抛 TypeError 并让整个归档步骤以非零码退出。
+    # 这里降级为「跳过合并」而不是直接 return —— 早退会跳过末尾的统计汇总,
+    # 让一次静默失败的归档看起来像完全成功。
+    mid_folder = subfolders.get("中间结果")
+    if mid_folder is None:
+        logger.warning("  [警告] 「中间结果」子文件夹不可用，跳过 DSPy prompts 合并")
     else:
-        logger.info(f"  [完成] 共合并 {dspy_merged} 个 DSPy 产物")
+        dspy_target = mid_folder / "dspy_prompts"
+        dspy_target.mkdir(parents=True, exist_ok=True)
+        dspy_sources = [
+            lit_dir / "dspy_prompts",
+            reports_dir / "dspy_prompts",
+            WORK_ROOT / "data" / "mri_dspy_prompts",
+            WORK_ROOT / "data" / "lab_extractor_dspy_prompts",
+        ]
+        for src in dspy_sources:
+            if not src.exists() or not src.is_dir():
+                continue
+            for item in src.iterdir():
+                dest = dspy_target / item.name
+                try:
+                    if item.is_file():
+                        shutil.copy2(item, dest)
+                    elif item.is_dir():
+                        if dest.exists():
+                            shutil.rmtree(dest)
+                        shutil.copytree(item, dest)
+                    dspy_merged += 1
+                    logger.info(
+                        f"  [成功] {src.name}/{item.name} -> 中间结果/dspy_prompts/{item.name}"
+                    )
+                except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+                    logger.info(f"  [失败] 合并 {item.name} 失败: {e}")
+        if dspy_merged == 0:
+            logger.warning("  [警告] 未找到任何 DSPy prompts 源目录")
+        else:
+            logger.info(f"  [完成] 共合并 {dspy_merged} 个 DSPy 产物")
     logger.info(f"\n{'=' * 60}")
     logger.info("[完成] 全部完成！")
     logger.info(f"   [成功] 成功复制: {copied_count} 个文件")

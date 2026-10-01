@@ -23,7 +23,8 @@
         --auto-pick --quant
 
     # 跑一次新 pipeline (含双模式)
-    python examples/dual_mode_pipeline.py --run-fresh --id-card 513229198801040014
+    # ⚠️ 下列身份证号为合成测试值（校验位合法），禁止替换为真实号码
+    python examples/dual_mode_pipeline.py --run-fresh --id-card 110101199001010007
 
 输出:
     data/{deid}/{std_ts}/04_reports/
@@ -172,7 +173,7 @@ def _run_fresh_pipeline(id_card: str) -> int:
     ]
     print(f"[run-fresh] 执行: {' '.join(cmd)}")
     print("[run-fresh] 注意: 会要求交互式输入身份证号,会调 LLM API")
-    r = subprocess.run(cmd, cwd=str(PROJECT_ROOT), env=env)
+    r = subprocess.run(cmd, cwd=str(PROJECT_ROOT), env=env)  # noqa: S603
     return r.returncode
 
 

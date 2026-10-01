@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from unittest.mock import patch
-
-import pytest
-
 from lab_analysis.pipeline.ingest import auto_ingest_from_origin_data
 
 

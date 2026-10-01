@@ -188,7 +188,7 @@ def save_prompts_to_json(module_name: str, prompts_data: Dict, output_dir: Path)
     """保存 prompt 信息到 JSON 文件"""
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{module_name}_dspy_prompts.json"
-    with open(output_path, "w", encoding="utf-8") as f:
+    with output_path.open("w", encoding="utf-8") as f:
         json.dump(prompts_data, f, ensure_ascii=False, indent=2)
     return output_path
 
@@ -253,7 +253,7 @@ def save_prompts_to_markdown(module_name: str, prompts_data: Dict, output_dir: P
                     lines.append("")
         lines.append("---")
         lines.append("")
-    with open(output_path, "w", encoding="utf-8") as f:
+    with output_path.open("w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     return output_path
 

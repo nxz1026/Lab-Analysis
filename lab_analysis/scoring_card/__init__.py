@@ -48,10 +48,13 @@ __all__ = [
     # io
     "build_scoring_card",
     "format_scoring_md",
+    # CLI 入口 (pipeline 步骤⑧b 通过 `python -m lab_analysis.scoring_card` 调用,
+    # __main__.py 会 `from . import main`, 缺这个名字该步骤必然 ImportError)
+    "main",
 ]
 
 
-def _cli():
+def main():
     import argparse
     import json
     import os
@@ -89,4 +92,4 @@ def _cli():
 
 
 if __name__ == "__main__":
-    _cli()
+    main()

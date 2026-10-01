@@ -172,7 +172,9 @@ def test_list_patients_filters_non_id_dirs():
     """list_patients 应过滤 mri_dspy_prompts 这种模板目录。"""
     import re
     result = json.loads(mcp_server.list_patients())
-    patient_re = re.compile(r"^[A-Za-z0-9_-]{15,50}$")
+    # 真实 deid = base64url(12B nonce + 18B 明文 + 16B tag) = 62 字符,
+    # 上界必须 >= 64, 否则本断言会把所有真实患者误判为「非脱敏ID格式」
+    patient_re = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
     for pid in result["per_patient"]:
         assert patient_re.match(pid), f"非脱敏ID格式: {pid}"
     # mri_dspy_prompts 不应出现在 per_patient 里

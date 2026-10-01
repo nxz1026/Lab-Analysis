@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import sys
-from pathlib import Path
 
 from ..utils import WORK_ROOT, append_to_json_log
 

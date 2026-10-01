@@ -263,7 +263,7 @@ def generate_markdown_report(comparisons: List[Dict], output_path: Path):
     lines.append("4. **模型无关**: 同一套 prompt 可适配不同 LLM (DeepSeek, Qwen-VL 等)")
     lines.append("")
 
-    with open(output_path, "w", encoding="utf-8") as f:
+    with output_path.open("w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
 
@@ -274,7 +274,7 @@ def generate_json_report(comparisons: List[Dict], output_path: Path):
         "total_comparisons": len(comparisons),
         "comparisons": comparisons,
     }
-    with open(output_path, "w", encoding="utf-8") as f:
+    with output_path.open("w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
 

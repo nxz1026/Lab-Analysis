@@ -6,8 +6,7 @@ DSPy 模块包
 注意: 模块注册使用手动 dict（见各子模块），新增模块后必须在此 __init__.py 中手动导入并加入 __all__。
 """
 
-from ._retry import make_empty_prediction, safe_predict, SafeCallError
-
+from ._retry import SafeCallError, make_empty_prediction, safe_predict
 from .final_report_generator import (
     FinalReportGenerator,
     compile_report_generator,

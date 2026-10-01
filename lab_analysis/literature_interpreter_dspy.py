@@ -25,7 +25,7 @@ def run_standard_mode(args):
     prompts_dir = Path(args.out).parent / "dspy_prompts"
     prompts_dir.mkdir(parents=True, exist_ok=True)
     standard_prompt_path = prompts_dir / "literature_interpreter_standard_prompt.txt"
-    with open(standard_prompt_path, "w", encoding="utf-8") as f:
+    with standard_prompt_path.open("w", encoding="utf-8") as f:
         f.write(prompt)
     logger.info(f"[标准] 原始 prompt 已保存: {standard_prompt_path}")
     logger.info(f"[标准] prompt 长度: {len(prompt)} 字符")
@@ -62,10 +62,10 @@ def run_dspy_mode(args):
         from lab_analysis.dspy_modules import LiteratureInterpreterModule
 
         logger.info("[DSPy] 加载分析结果...")
-        with open(args.analysis, "r", encoding="utf-8") as f:
+        with Path(args.analysis).open("r", encoding="utf-8") as f:
             analysis_results = json.load(f)
         logger.info("[DSPy] 加载文献结果...")
-        with open(args.lit, "r", encoding="utf-8") as f:
+        with Path(args.lit).open("r", encoding="utf-8") as f:
             literature_results = json.load(f)
         patient_id = args.id_card or "unknown"
         logger.info(f"[DSPy] 创建模块实例 (患者ID: {patient_id})...")
@@ -125,13 +125,13 @@ def run_dspy_mode(args):
     except ImportError as e:
         logger.info(f"[错误] DSPy 模块导入失败: {e}")
         logger.info("请安装 DSPy: pip install dspy-ai")
-        raise SystemExit(1)
+        raise SystemExit(1) from e
     except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
         logger.info(f"[错误] DSPy 执行失败: {e}")
         import traceback
 
         traceback.print_exc()
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
 
 def main():
@@ -168,12 +168,12 @@ def main():
     logger.info(f"{'=' * 60}\n")
     output = run_dspy_mode(args) if args.use_dspy else run_standard_mode(args)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as f:
+    with Path(args.out).open("w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
     md_path = Path(args.out).with_suffix(".md")
     interpretation_text = output.get("response") or output.get("interpretation", "")
     md_content = f"# 循证医学解读报告\n\n**生成时间**: {output['generated']}\n**模型**: {output['model']}\n**模式**: {output.get('mode', 'unknown')}\n\n---\n\n{interpretation_text}\n"
-    with open(md_path, "w", encoding="utf-8") as f:
+    with md_path.open("w", encoding="utf-8") as f:
         f.write(md_content)
     logger.info(f"\n[成功] 文献解读完成 → {args.out}")
     logger.info(f"[报告] Markdown 已保存: {md_path}")

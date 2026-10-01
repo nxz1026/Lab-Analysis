@@ -35,6 +35,7 @@ import threading
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from ._phi_filter import PHIFilter
 from .config import WORK_ROOT
 
 _CONFIGURED = False
@@ -109,6 +110,11 @@ def configure(level: str | int | None = None) -> None:
             )
         else:
             root.setLevel(lvl)
+        # 双保险: 全局脱敏已由 LogRecord factory 兜底, 这里再给每个 handler 挂一层,
+        # 覆盖第三方往 root 上追加 handler 的情况
+        for h in root.handlers:
+            if not any(isinstance(f, PHIFilter) for f in h.filters):
+                h.addFilter(PHIFilter())
         # 默认抑制 DSPy / LiteLLM 的过度啰嗦，除非 LOG_LEVEL 显式指定
         default_noisy_level = logging.WARNING
         if "LOG_LEVEL" in os.environ:
@@ -166,6 +172,7 @@ def add_file_handler(
     handler.setFormatter(formatter)
     if level is not None:
         handler.setLevel(_resolve_level(level))
+    handler.addFilter(PHIFilter())
     logger.addHandler(handler)
     return handler
 

@@ -17,7 +17,6 @@ from pathlib import Path
 
 from . import _log
 from .config import WORK_ROOT
-from .retry import api_retry_decorator
 
 logger = _log.get_logger(__name__)
 

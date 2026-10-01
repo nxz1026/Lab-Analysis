@@ -35,7 +35,7 @@ from typing import Any, Optional
 
 import requests
 
-from lab_analysis.utils import api_retry_decorator
+from lab_analysis.retry import api_retry_decorator
 
 # ── 各 Provider 的默认配置 ──────────────────────────────────────────────
 # 集中维护，避免散落在调用方。
@@ -203,12 +203,18 @@ def call_dashscope_multimodal(
     model: str = "qwen-vl-plus",
     timeout: int = 120,
     api_key: Optional[str] = None,
-) -> str:
-    """调用 DashScope 原生 multimodal-generation 接口，返回 assistant 文本。
+) -> Any:
+    """调用 DashScope 原生 multimodal-generation 接口，返回 assistant 内容。
 
     注意 DashScope 原生 API 的 payload/response 形态与 OpenAI **不**兼容：
       - 请求多一层 ``input`` 包裹；content 项用 ``{"image": ...}`` / ``{"text": ...}``。
       - 响应多一层 ``output`` 包裹。
+
+    ⚠️ 返回值是**多态**的, 本函数原样透传 ``message.content``, 不做形状归一:
+      - 常规形态: ``[{"text": "..."}, ...]`` (content 块列表)
+      - 退化形态: ``"..."`` (纯字符串)
+    见 tests/test_llm_client_extra.py 两种形态的断言。调用方必须自行兼容,
+    不要假定它一定是 list 或一定是 str。推荐在写入下游契约前先归一。
 
     Args:
         image_b64:  图片 base64（**不含** data-URL 前缀；本函数自动拼接）。

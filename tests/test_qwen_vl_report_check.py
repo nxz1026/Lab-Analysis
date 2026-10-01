@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from lab_analysis.qwen_vl_report_check import load_api_key, load_dicom_image
 
 

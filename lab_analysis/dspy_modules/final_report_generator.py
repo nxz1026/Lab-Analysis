@@ -14,7 +14,7 @@ from .. import _log
 from ..config import WORK_ROOT
 from ..report_schema import REPORT_MD_TEMPLATE, REPORT_SECTIONS
 from ._cache_metrics import record_hit, record_load_fail, record_miss
-from ._retry import SafeCallError, make_empty_prediction, safe_predict
+from ._retry import SafeCallError, is_empty_prediction, make_empty_prediction, safe_predict
 from .prompt_inspector import extract_module_prompts, save_prompts_to_json, save_prompts_to_markdown
 
 logger = _log.get_logger(__name__)
@@ -193,8 +193,10 @@ def run_dspy_final_report(
         _model_ref = _pkg_files("lab_analysis").joinpath("models/dspy/final_report_generator_compiled.json")
         if _model_ref.is_file():
             compiled_model_path = Path(str(_model_ref))
-    except Exception:
-        pass
+    except Exception as e:
+        # 尽力而为: 探测打包资源失败不代表致命错误, 下面的回退路径会加载磁盘上的编译模型;
+        # 真正的调用失败由上层的错误处理兜底, 因此这里只记 debug 日志, 不中断流程。
+        logger.debug(f"[DSPy] 探测随包编译模型失败, 改用磁盘回退: {e}")
     if compiled_model_path is None:
         compiled_model_path = (
             Path(__file__).parent.parent.parent
@@ -228,6 +230,15 @@ def run_dspy_final_report(
             quality_control=quality_control,
         )
         logger.info(f"[DSPy] 置信度: {result.confidence:.2f}")
+        # LLM 连续失败时 forward() 会返回全零兜底预测, 数值上完全合法。
+        # 若不识别, 这里会产出一份「格式完整、正文全空」的临床报告并落盘,
+        # 任何下游读报告的人都看不出生成其实失败了。
+        degraded = is_empty_prediction(result)
+        if degraded:
+            logger.error(
+                "[DSPy] 警告: LLM 调用失败, 返回的是全零兜底结果 —— "
+                "本报告内容不可用, 不得作为临床依据"
+            )
         today = dt.date.today().strftime("%Y年%m月%d日")
         report_md = REPORT_MD_TEMPLATE.format(
             report_title=result.report_title,
@@ -248,6 +259,13 @@ def run_dspy_final_report(
             section_8_followup=result.section_8_followup,
             section_9_prognosis=result.section_9_prognosis,
         )
+        if degraded:
+            report_md = (
+                "> ## ⚠️ 本报告生成失败\n>\n"
+                f"> LLM 服务在 {today} 连续调用失败, 以下正文为**空白占位**, "
+                "**不可作为临床依据**, 也不得用于任何诊断决策。\n"
+                "> 请检查 API Key / 网络 / 服务商状态后重新生成。\n\n---\n\n"
+            ) + report_md
     except Exception:
         raise
     else:
@@ -265,6 +283,7 @@ def run_dspy_final_report(
             "mode": "dspy",
             "patient_id": patient_id,
             "confidence": result.confidence,
+            "degraded": degraded,
             "report_markdown": report_md,
             "prompts_dir": str(prompts_dir) if "prompts_dir" in dir() else None,
             "sections": {

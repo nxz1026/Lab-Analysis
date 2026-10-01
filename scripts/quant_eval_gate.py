@@ -86,15 +86,20 @@ class GateReport:
     source: str = ""
 
     def to_dict(self) -> dict:
+        results = [r.to_dict() for r in self.results]
         return {
             "overall_pass": self.overall_pass,
+            # ── passed / details 是给 CI 消费方 (workflow 侧) 读的别名 ──
+            # sidecar 历史上按 passed/details 取值, 这里同时保留, 兼容旧读取方。
+            "passed": self.overall_pass,
             "n_total": len(self.results),
             # n_passed 只算真正 pass (不含 skip), 否则 skip 也会抬高数字
             "n_passed": sum(1 for r in self.results if r.passed and not r.skipped),
             "n_failed": sum(1 for r in self.results if not r.passed and not r.skipped),
             "n_skipped": sum(1 for r in self.results if r.skipped),
             "source": self.source,
-            "results": [r.to_dict() for r in self.results],
+            "results": results,
+            "details": results,
         }
 
 

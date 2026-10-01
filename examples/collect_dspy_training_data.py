@@ -55,17 +55,17 @@ def collect_literature_interpretation_samples(data_root: Path = None) -> List[Di
 
             try:
                 # 加载分析结果
-                with open(analysis_file, "r", encoding="utf-8") as f:
+                with analysis_file.open("r", encoding="utf-8") as f:
                     analysis_results = json.load(f)
 
                 # 加载文献结果
-                with open(lit_file, "r", encoding="utf-8") as f:
+                with lit_file.open("r", encoding="utf-8") as f:
                     literature_results = json.load(f)
 
                 # 加载专家解读(如果存在)
                 interpretation = ""
                 if interp_file.exists():
-                    with open(interp_file, "r", encoding="utf-8") as f:
+                    with interp_file.open("r", encoding="utf-8") as f:
                         interp_data = json.load(f)
                         interpretation = interp_data.get("response", "")
 
@@ -120,7 +120,7 @@ def collect_lab_extraction_samples(data_root: Path = None) -> List[Dict]:
             continue
 
         try:
-            with open(result_file, "r", encoding="utf-8") as f:
+            with result_file.open("r", encoding="utf-8") as f:
                 extraction_result = json.load(f)
 
             sample = {
@@ -210,7 +210,7 @@ def save_training_data(samples: List[Dict], output_file: Path):
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     # 写入 JSONL 文件
-    with open(output_file, "w", encoding="utf-8") as f:
+    with output_file.open("w", encoding="utf-8") as f:
         for sample in samples:
             f.write(json.dumps(sample, ensure_ascii=False) + "\n")
 

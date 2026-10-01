@@ -299,7 +299,7 @@ def to_csv(reports, output_path):
 
     fieldnames = fixed_cols + metric_cols
 
-    with open(output_path, "w", newline="", encoding="utf-8") as f:
+    with Path(output_path).open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         for r in reports:
@@ -327,7 +327,7 @@ def to_json(reports, output_path):
         "reports": reports_sorted,
     }
 
-    with open(output_path, "w", encoding="utf-8") as f:
+    with Path(output_path).open("w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
     logger.info(f"JSON 已写入: {output_path}")

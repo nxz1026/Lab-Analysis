@@ -57,9 +57,19 @@ def _check_one(json_path: Path, latest_src_mtime: float) -> tuple[dict, bool]:
     new_hits = [s for s in NEW_ENDPOINTS if s in text_blob]
 
     # 是否源文件改动后未重新 compile
+    # 双重判定: (1) JSON metadata 里冻结的 latest_src_mtime 晚于 compile 时间;
+    #          (2) 真实文件系统 mtime 晚于 JSON 冻结值 —— 后者才是"改完源码没重 compile"
+    #          的真实信号, 只看冻结值的话该检查永远无法触发.
     stale = bool(
         latest_src_iso and datetime.fromisoformat(latest_src_iso).timestamp() > compiled_ts
     )
+    if not stale and latest_src_iso:
+        try:
+            recorded_ts = datetime.fromisoformat(latest_src_iso).timestamp()
+        except ValueError:
+            recorded_ts = None
+        if recorded_ts is not None and latest_src_mtime > recorded_ts:
+            stale = True
 
     detail = {
         "module": json_path.stem,
@@ -76,30 +86,61 @@ def _check_one(json_path: Path, latest_src_mtime: float) -> tuple[dict, bool]:
     return detail, stale
 
 
+def collect() -> dict:
+    """收集审计结果, 不做任何打印。
+
+    单独拆出 collect() 是因为 mcp_server/audit.py 通过 stdio JSON-RPC 暴露本脚本,
+    直接调 main() 会把 ~30 行 print 写进 stdout 污染 JSON-RPC 帧。main() 只负责
+    渲染 + 退出码, 所有数据收集都放在这里, 保证 print-free 路径可用。
+    """
+    # 1) 源代码最新改动时间
+    latest_src_mtime = 0
+    src_rows: list[tuple[str, float]] = []
+    for src in sorted(SRC_DIR.glob("*.py")):
+        mt = src.stat().st_mtime
+        latest_src_mtime = max(latest_src_mtime, mt)
+        src_rows.append((src.name, mt))
+
+    # 2) 每个 compiled JSON 的状态
+    overall_needs_recompile = False
+    details: list[dict] = []
+    stale_flags: list[bool] = []
+    for json_path in sorted(MODELS.glob("*.json")):
+        detail, stale = _check_one(json_path, latest_src_mtime)
+        details.append(detail)
+        stale_flags.append(stale)
+        if stale:
+            overall_needs_recompile = True
+
+    return {
+        "overall_needs_recompile": overall_needs_recompile,
+        "details": details,
+        "stale_flags": stale_flags,
+        "src_rows": src_rows,
+        "latest_src_mtime": latest_src_mtime,
+        "checked_at": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
 def main():
     print("=" * 72)
     print(f"  dspy compiled models 审计 @ {datetime.now():%Y-%m-%d %H:%M}")
     print("=" * 72)
 
-    # 1) 源代码最新改动时间
-    print("\n[1] 源代码 dspy_modules/ 最后改动:")
-    latest_src_mtime = 0
-    for src in sorted(SRC_DIR.glob("*.py")):
-        mt = src.stat().st_mtime
-        latest_src_mtime = max(latest_src_mtime, mt)
-        print(f"  {src.name:40s}  {datetime.fromtimestamp(mt):%Y-%m-%d %H:%M}")
+    audit = collect()
+    details = audit["details"]
+    stale_flags = audit["stale_flags"]
+    latest_src_mtime = audit["latest_src_mtime"]
+    overall_needs_recompile = audit["overall_needs_recompile"]
 
-    # 2) 每个 compiled JSON 的状态
+    print("\n[1] 源代码 dspy_modules/ 最后改动:")
+    for name, mt in audit["src_rows"]:
+        print(f"  {name:40s}  {datetime.fromtimestamp(mt):%Y-%m-%d %H:%M}")
+
     print("\n[2] compiled JSON 状态:")
-    overall_needs_recompile = False
-    details: list[dict] = []
-    for json_path in sorted(MODELS.glob("*.json")):
-        detail, stale = _check_one(json_path, latest_src_mtime)
-        details.append(detail)
-        if stale:
-            overall_needs_recompile = True
+    for detail, stale in zip(details, stale_flags, strict=True):
         flag = "STALE " if stale else "OK     "
-        print(f"\n  [{flag}] {json_path.name}")
+        print(f"\n  [{flag}] {Path(detail['json_path']).name}")
         print(
             f"    compiled_at:   {detail['compiled_at']} (source: metadata)"
             if "解析失败" not in detail["compiled_at"]

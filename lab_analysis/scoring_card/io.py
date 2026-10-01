@@ -38,14 +38,16 @@ def build_scoring_card(patient_id: str, data_dir: Path) -> ScoringResult:
     """
     analyzed_dir = data_dir / "02_analyzed"
     lit_dir = data_dir / "03_literature"
-    imaging_dir = data_dir / "05_imaging"
     results = _load_json(analyzed_dir / "analysis_results.json")
     alerts = _load_alerts(analyzed_dir / "alerts.json")
     lit_filtered_path = lit_dir / "literature_results.filtered.json"
     lit_filtered = _load_json(lit_filtered_path)
     if not lit_filtered:
         logger.warning("  [WARNING] %s 不存在或为空，请先运行文献筛选", lit_filtered_path.name)
-    mri_results = _load_json(imaging_dir / "mri_report_check_results.json")
+    # 影像印证结果由 qwen_vl_report_check*.py 写入 03_literature/ (不是 05_imaging/)。
+    # 原先读 05_imaging/ 恒为空 → 影像一致性维度永远是中性 50.0,
+    # imaging_lab_conflict 规则永远无法触发。
+    mri_results = _load_json(lit_dir / "mri_report_check_results.json")
 
     if not results:
         logger.warning("  [WARNING] analysis_results.json 为空，评分可能不完整")
@@ -69,7 +71,8 @@ def build_scoring_card(patient_id: str, data_dir: Path) -> ScoringResult:
         dim_scores,
         confidence_adjustments=fb_adjustments,
     )
-    assessment = generate_overall_assessment(dim_scores, hypotheses)
+    has_any_data = bool(results or alerts or lit_filtered or mri_results)
+    assessment = generate_overall_assessment(dim_scores, hypotheses, has_data=has_any_data)
     data_quality = {
         "has_analysis_results": bool(results),
         "has_alerts": bool(alerts),
@@ -97,10 +100,35 @@ _DIM_LABELS = {
 }
 
 
-def _status_emoji(score: float) -> str:
-    if score >= 70:
+# 维度极性: True = 分值越高越好, False = 分值越高越差
+# 与 dimensions.py 模块 docstring 保持一致, 两处必须同步更新。
+# 历史上这里只有一个全局阈值映射, 导致「炎症活动度 100/100 ✅良好」。
+_DIM_HIGHER_IS_BETTER = {
+    "inflammation": False,
+    "lab_abnormality": False,
+    "literature_support": True,
+    "imaging_consistency": True,
+    "variability_stability": True,
+}
+
+
+def _status_emoji(score: float, dim: str = "") -> str:
+    """按维度极性返回状态标签。
+
+    Args:
+        score: 0-100 分值。
+        dim:  维度键; 未知维度按「越高越好」处理(保守默认, 与历史行为一致)。
+    """
+    if _DIM_HIGHER_IS_BETTER.get(dim, True):
+        if score >= 70:
+            return "✅ 良好"
+        if score >= 40:
+            return "⚠️ 关注"
+        return "🔴 异常"
+    # 越高越差的维度: 低分才是好
+    if score <= 30:
         return "✅ 良好"
-    if score >= 40:
+    if score <= 60:
         return "⚠️ 关注"
     return "🔴 异常"
 
@@ -120,7 +148,7 @@ def format_scoring_md(card: ScoringResult) -> str:
 
     for dim, score in card.get("dimension_scores", {}).items():
         label = _DIM_LABELS.get(dim, dim)
-        lines.append(f"| {label} | {score}/100 | {_status_emoji(score)} |")
+        lines.append(f"| {label} | {score}/100 | {_status_emoji(score, dim)} |")
 
     lines.extend(["", "---\n", "## 诊断假设（按置信度排序）\n"])
     for h in card.get("top_hypotheses", []):

@@ -36,11 +36,24 @@ logger = _log.get_logger(__name__)
 
 
 def extract_patient_id_from_reports() -> str | None:
-    """从已摄入的检验报告 metadata.md 中提取身份证号。"""
+    """从已摄入的检验报告 metadata.md 中提取**脱敏 ID**。
+
+    metadata.md 的 ``患者ID`` 行写的是 deid 而非明文身份证号
+    (见 extract_lab_data/report.py: 明文 PHI 不落盘), 因此本函数返回的就是
+    deid, 调用方 run.py 可直接使用, 不需要再走 validate + get_deid。
+
+    P1: raw/ 下可能同时存在多个病人目录, 因此按目录名 sorted() 遍历 (结果可复现),
+    并收集**全部**候选, 而不再取"文件系统第一个":
+    - 只发现 1 个脱敏 ID → 返回它 (单病人常规路径, 行为不变)
+    - 发现 >1 个不同脱敏 ID → 记 ERROR 并返回 None, 由调用方 (pipeline/run.py) 走
+      "无法自动识别" 分支 (交互输入 / 非交互时终止), 避免整轮分析被静默归属到任意病人。
+    """
     raw_dir = WORK_ROOT / "raw"
     if not raw_dir.exists():
         return None
-    for patient_dir in raw_dir.iterdir():
+
+    found: dict[str, str] = {}  # 脱敏 ID → 来源病人目录名
+    for patient_dir in sorted(raw_dir.iterdir()):
         if not (patient_dir.is_dir() and patient_dir.name.startswith("patient_")):
             continue
         papers_dir = patient_dir / "papers"
@@ -54,19 +67,26 @@ def extract_patient_id_from_reports() -> str | None:
                 continue
             for line in meta_path.read_text(encoding="utf-8").splitlines():
                 line = line.strip()
-                if line.startswith("|") and ("身份证号" in line or "患者ID" in line):
+                if line.startswith("|") and ("患者ID" in line or "身份证号" in line):
                     parts = [p.strip() for p in line.split("|")]
                     if len(parts) >= 3 and parts[2]:
-                        id_card = parts[2]
-                        from lab_analysis.pipeline.cli import get_deid
-
-                        logger.info(
-                            f"[INFO] 从检验报告中提取到身份证号（已脱敏）: {get_deid(id_card)}"
-                        )
-                        _ret = id_card
-                        del id_card
-                        return _ret
-    return None
+                        found.setdefault(parts[2], patient_dir.name)
+    if not found:
+        return None
+    if len(found) > 1:
+        # 不猜测: 日志只输出脱敏 ID / 目录名, 不落明文身份证号
+        candidates = ", ".join(sorted(found.values()))
+        logger.error(
+            f"[ERROR] {raw_dir} 下发现 {len(found)} 个不同病人, "
+            f"无法确定本次分析的病人：\n  - {candidates}\n"
+            "  请移走 raw/ 下多余的病人目录后重跑, 或在交互提示中手动输入本次病人的身份证号。"
+        )
+        return None
+    deid = next(iter(found))
+    logger.info(f"[INFO] 从检验报告中提取到脱敏病人ID: {deid}")
+    _ret = deid
+    del deid
+    return _ret
 
 
 def check_patient_data(deid: str) -> bool:
@@ -266,7 +286,7 @@ def pipeline_step(
                 )
                 if fatal:
                     logger.error(f"[!] {name} 抛异常 ({elapsed:.2f}s), 终止 pipeline")
-                    raise SystemExit(1)
+                    raise SystemExit(1) from e
                 logger.error(f"[!] {name} 抛异常 ({elapsed:.2f}s), 标记非致命")
                 return 1
             elapsed = time.monotonic() - start

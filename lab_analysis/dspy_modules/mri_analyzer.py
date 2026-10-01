@@ -208,14 +208,22 @@ def run_dspy_mri_analysis(
     }
     logger.info(f"[成功] 分析完成 (置信度: {result.confidence_score:.2f})")
     try:
-        prompts_dir = work_root / "data" / "mri_dspy_prompts"
+        prompts_dir = WORK_ROOT / "data" / "mri_dspy_prompts"
         prompts_dir.mkdir(parents=True, exist_ok=True)
         save_dspy_prompts(module, prompts_dir)
         from .prompt_inspector import save_actual_dspy_prompt
 
         save_actual_dspy_prompt("mri_analyzer", prompts_dir)
         output["prompts_dir"] = str(prompts_dir)
-    except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+    except (
+        ValueError,
+        TypeError,
+        KeyError,
+        AttributeError,
+        NameError,
+        OSError,
+        RuntimeError,
+    ) as e:
         logger.info(f"  [警告] 保存 DSPy prompts 失败: {e}")
     return output
 
@@ -224,9 +232,10 @@ if __name__ == "__main__":
     logger.info("=" * 60)
     logger.info("DSPy MRI 分析模块测试")
     logger.info("=" * 60)
+    # 合成示例数据, 不得使用真实患者的年龄/性别/主诉
     test_image_desc = "T2WI横断面，肝脏层面，肝右后叶区域"
     test_report = "肝右后叶上段：长径约2.2cm异常信号影，T1稍低、T2及STIR稍高，\n增强少许点片状弱强化，考虑感染性病变，较前明显缩小"
-    test_clinical = "男，38岁，胰管支架置入后复查，腹痛待查"
+    test_clinical = "[合成测试数据] 男, 00岁, 影像随访"
     try:
         result = run_dspy_mri_analysis(
             image_desc=test_image_desc, report_findings=test_report, clinical_context=test_clinical

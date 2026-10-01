@@ -38,11 +38,14 @@ README_PATTERNS: tuple[re.Pattern[str], ...] = (
 def actual_test_count(pytest_args: list[str]) -> int:
     """跑 `pytest --collect-only -q` 解析最后一行的 collected 数。"""
     cmd = [sys.executable, "-m", "pytest", "--collect-only", "-q", *pytest_args]
-    result = subprocess.run(
+    result = subprocess.run(  # noqa: S603  # 参数为列表且无 shell=True, 仅执行固定的 pytest 收集命令
         cmd,
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        # 显式 UTF-8: zh-CN Windows 默认按 GBK 解码 pytest 输出, 会 UnicodeDecodeError
+        encoding="utf-8",
+        errors="replace",
         timeout=180,
         check=False,
     )

@@ -9,7 +9,11 @@ patient_id.py — 患者身份证号脱敏与校验
 - master_key 不进仓库：优先级
     1. 环境变量 ``LAB_DEID_KEY``（base64）
     2. ``.hermes/master.key``（base64，已 gitignore）
-    3. 首次运行自动生成并写入 ``.hermes/master.key``（权限 0600），打印警告
+    3. 首次运行自动生成并写入 ``.hermes/master.key``，打印警告
+
+⚠️ 密钥文件权限：POSIX 下尝试 chmod 0600；**Windows 上 ``os.chmod`` 仅切换只读属性，
+并不会限制其他本地用户读取**（且本项目的开发/CI 平台正是 Windows）。因此 Windows 下
+密钥文件实际未被操作系统保护，请务必改用环境变量 ``LAB_DEID_KEY`` 注入。
 
 ⚠️ ``decode()`` 仅供本地数据回溯，禁止分发，仅 ``.hermes/`` 有权访问。
 """
@@ -23,8 +27,6 @@ import hmac
 import os
 import secrets
 import stat
-import sys
-from pathlib import Path
 from typing import Optional
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -35,7 +37,6 @@ from .config import WORK_ROOT
 
 logger = _log.get_logger(__name__)
 from lab_analysis.utils import validate_chinese_id as _is_valid_id_card
-
 
 _KEY_FILE = WORK_ROOT / ".hermes" / "master.key"
 _NONCE_LEN = 12
@@ -58,7 +59,15 @@ def _load_or_create_master_key() -> bytes:
     new_key = secrets.token_bytes(32)
     _KEY_FILE.write_text(base64.urlsafe_b64encode(new_key).decode("ascii"), encoding="utf-8")
     with contextlib.suppress(OSError):
-        os.chmod(_KEY_FILE, stat.S_IRUSR | stat.S_IWUSR)
+        _KEY_FILE.chmod(stat.S_IRUSR | stat.S_IWUSR)
+    if os.name == "nt":
+        # Windows 的 chmod 只切换只读属性，不做 POSIX 式访问控制，
+        # 上面的 chmod 等于没有生效——必须明确告知，避免误以为文件已受保护。
+        logger.error(
+            "[ERROR] 当前为 Windows 平台：chmod 无法限制密钥文件访问权限，"
+            f"{_KEY_FILE} 对本机其他用户是可读的。\n"
+            "       请改用环境变量 LAB_DEID_KEY 注入脱敏主密钥，不要依赖该文件。"
+        )
     logger.warning(
         f"[WARN] 已生成新的脱敏主密钥: {_KEY_FILE}\n       该文件包含还原身份证号的唯一凭证，切勿提交或外传。\n       生产环境建议改用环境变量 LAB_DEID_KEY 注入。"
     )
@@ -152,9 +161,9 @@ def validate_id_card(
         logger.info(f"[INFO] 将采用 OCR 识别值(脱敏): {_deid_log(extracted_id)}")
         return extracted_id
     if id_card and (not id_ok):
-        logger.info(f"[WARNING] 提供的身份证号不是有效的 15/18 位格式")
+        logger.info("[WARNING] 提供的身份证号不是有效的 15/18 位格式")
     if extracted_id and (not ext_ok):
-        logger.info(f"[WARNING] OCR 识别值也非有效身份证号")
+        logger.info("[WARNING] OCR 识别值也非有效身份证号")
     if not interactive:
         logger.error("[ERROR] 非交互模式下必须提供有效身份证号，放弃此数据")
         return None

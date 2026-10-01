@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from lab_analysis.utils import build_paths as build_paths_utils
 
 from .. import _log
-from ..utils import WORK_ROOT
 
 logger = _log.get_logger(__name__)
 

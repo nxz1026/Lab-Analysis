@@ -112,9 +112,9 @@ def run_dspy_interpretation(patient_id: str, data_dir: Path):
 
     analysis_path = data_dir / "02_analyzed" / "analysis_results.json"
     literature_path = data_dir / "03_literature" / "literature_results.json"
-    with open(analysis_path, "r", encoding="utf-8") as f:
+    with analysis_path.open("r", encoding="utf-8") as f:
         analysis_results = json.load(f)
-    with open(literature_path, "r", encoding="utf-8") as f:
+    with literature_path.open("r", encoding="utf-8") as f:
         literature_results = json.load(f)
     interpreter = LiteratureInterpreterModule()
     result = interpreter(
@@ -129,7 +129,7 @@ def run_dspy_interpretation(patient_id: str, data_dir: Path):
         "model": "DSPy-LiteratureInterpreter",
     }
     output_path = data_dir / "03_literature" / "literature_interpretation_dspy.json"
-    with open(output_path, "w", encoding="utf-8") as f:
+    with output_path.open("w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
     try:
         prompts_dir = data_dir / "03_literature" / "dspy_prompts"

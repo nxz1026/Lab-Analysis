@@ -7,7 +7,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime
 
-from lab_analysis.utils import api_retry_decorator
+from lab_analysis.retry import api_retry_decorator
 
 _USER_AGENT = "Hermes-Lab-Analyzer/1.0"
 

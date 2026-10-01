@@ -65,7 +65,7 @@ def extract_training_samples(data_root: Path = None) -> List[Dict]:
             analysis_results = {}
             if analysis_json.exists():
                 try:
-                    with open(analysis_json, "r", encoding="utf-8") as f:
+                    with analysis_json.open("r", encoding="utf-8") as f:
                         analysis_results = json.load(f)
                     print("    [成功] 加载分析结果")
                 except Exception as e:
@@ -81,7 +81,7 @@ def extract_training_samples(data_root: Path = None) -> List[Dict]:
 
             if search_results_json.exists():
                 try:
-                    with open(search_results_json, "r", encoding="utf-8") as f:
+                    with search_results_json.open("r", encoding="utf-8") as f:
                         literature_results = json.load(f)
                     print("    [成功] 加载文献结果")
                 except Exception as e:
@@ -121,7 +121,7 @@ def save_training_data(samples: List[Dict], output_path: Path = None):
 
     print(f"\n[保存] 保存到: {output_path}")
 
-    with open(output_path, "w", encoding="utf-8") as f:
+    with output_path.open("w", encoding="utf-8") as f:
         for sample in samples:
             f.write(json.dumps(sample, ensure_ascii=False) + "\n")
 

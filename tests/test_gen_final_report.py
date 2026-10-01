@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from lab_analysis.gen_final_report import (
     assess_three_source_consistency,
     build_prompt,

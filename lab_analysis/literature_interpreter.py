@@ -21,7 +21,7 @@ _DEEPSEEK_SYSTEM_PROMPT = (
 
 def load_json(path: str, default=None):
     try:
-        with open(path, encoding="utf-8") as f:
+        with Path(path).open(encoding="utf-8") as f:
             return json.load(f)
     except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError):
         return default if default is not None else {}
@@ -78,7 +78,6 @@ def call_deepseek(prompt: str) -> str:
 
 def main():
     import argparse
-    from pathlib import Path
 
     parser = argparse.ArgumentParser(description="文献解读")
     parser.add_argument("--analysis", default=None, help="analysis_results.json 路径")
@@ -116,11 +115,11 @@ def main():
         "response": response,
     }
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as f:
+    with Path(args.out).open("w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
     md_path = Path(args.out).with_suffix(".md")
     md_content = f"# 循证医学解读报告\n\n**生成时间**: {output['generated']}\n**模型**: {output['model']}\n\n---\n\n{response}\n"
-    with open(md_path, "w", encoding="utf-8") as f:
+    with md_path.open("w", encoding="utf-8") as f:
         f.write(md_content)
     logger.info(f"\n[成功] 文献解读完成 → {args.out}")
     logger.info(f"[报告] Markdown 已保存: {md_path}")

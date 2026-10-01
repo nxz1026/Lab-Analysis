@@ -157,13 +157,13 @@ def collect_samples_from_runs(data_root: Path):
 
         analysis_json = ts_dir / "02_analyzed" / "analysis_results.json"
         if analysis_json.exists():
-            with open(analysis_json, encoding="utf-8") as f:
+            with analysis_json.open(encoding="utf-8") as f:
                 s["analysis_results"] = json.load(f)
             s["analysis_results_str"] = json.dumps(s["analysis_results"], ensure_ascii=False)
 
         lit_json = ts_dir / "03_literature" / "literature_results.json"
         if lit_json.exists():
-            with open(lit_json, encoding="utf-8") as f:
+            with lit_json.open(encoding="utf-8") as f:
                 s["literature_results"] = json.load(f)
             s["literature_summary"] = (
                 s["literature_results"].get("summary", "")
@@ -173,7 +173,7 @@ def collect_samples_from_runs(data_root: Path):
 
         interp_json = ts_dir / "03_literature" / "literature_interpretation.json"
         if interp_json.exists():
-            with open(interp_json, encoding="utf-8") as f:
+            with interp_json.open(encoding="utf-8") as f:
                 interp_data = json.load(f)
             s["interpretation"] = (
                 interp_data.get("response")
@@ -191,7 +191,7 @@ def collect_samples_from_runs(data_root: Path):
         if not mri_json.exists():
             mri_json = ts_dir / "03_literature" / "mri_analysis_results.json"
         if mri_json.exists():
-            with open(mri_json, encoding="utf-8") as f:
+            with mri_json.open(encoding="utf-8") as f:
                 mri_data = json.load(f)
             paper_findings = ""
             for key in ("paper_report", "findings", "paper_findings", "findings_summary"):
@@ -233,7 +233,8 @@ def collect_samples_from_runs(data_root: Path):
                     s["lab_samples"].append(
                         {
                             "image_description": metrics_md.read_text(encoding="utf-8")[:1500],
-                            "patient_id": "513229198801040014",
+                            # 合成测试用假身份证号（校验位合法），禁止替换为真实号码
+                            "patient_id": "110101199001010007",
                             "report_date": "2024-02-19",
                             "report_type": "inpatient",
                             "department": "消化内科",

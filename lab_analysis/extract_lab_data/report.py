@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import shutil
-from pathlib import Path
 
 from .. import _log
 from ..utils import WORK_ROOT
@@ -18,12 +17,25 @@ def generate_metadata_md(data: dict, validated_patient_id: str) -> str:
     Args:
         data: AI 提取的数据
         validated_patient_id: 用户验证过的患者 ID（优先使用）
+
+    ⚠️ 这里**不写明文身份证号**。metadata.md 位于 raw/patient_<deid>/papers/ 下,
+    属于会被打包/备份/随手复制的目录; 里面躺着明文身份证号, 等于让整个目录
+    失去脱敏意义 (与 patient_id.py 的「杜绝 PHI 落盘」设计相悖)。
+    下游 pipeline/steps.py 用 ``患者ID`` 行定位病人, 因此这里写**脱敏 ID**。
     """
     patient_id = validated_patient_id if validated_patient_id else data.get("patient_id", "")
+    deid = ""
+    if patient_id:
+        try:
+            from lab_analysis.pipeline.cli import get_deid
+
+            deid = get_deid(patient_id)
+        except (ValueError, TypeError, KeyError, AttributeError, OSError, RuntimeError) as e:
+            logger.info(f"  [警告] 脱敏失败, metadata.md 的患者ID 留空: {e}")
     return (
         f"| 字段 | 值 |\n"
         f"|------|-----|\n"
-        f"| 身份证号 | {patient_id} |\n"
+        f"| 患者ID | {deid} |\n"
         f"| 报告日期 | {data.get('report_date', '')} |\n"
         f"| 报告类型 | {data.get('report_type', '')} |\n"
         f"| 科室 | {data.get('department', '')} |\n"

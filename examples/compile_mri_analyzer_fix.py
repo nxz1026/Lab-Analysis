@@ -39,7 +39,7 @@ def collect_mri_samples():
             mri_json = ts_dir / "03_literature" / "mri_analysis_results.json"
         if not mri_json.exists():
             continue
-        with open(mri_json, encoding="utf-8") as f:
+        with mri_json.open(encoding="utf-8") as f:
             mri_data = json.load(f)
         report_findings = (
             mri_data.get("report_findings", "")
